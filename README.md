@@ -11,6 +11,8 @@ Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
 To be discussed by Leo.
 
+Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.org) Emergency Department.
+
 
 ### Dependencies
 
@@ -18,9 +20,10 @@ To be discussed by Leo.
 - [numpy](http://www.numpy.org) for calculations
 - [matplotlib](http://matplotlib.org) for plotting
 - [Pyro4](https://pythonhosted.org/Pyro4/) for python-to-python communication
+- [PyYAML](http://pyyaml.org) for configuration info
 
-The [Anaconda](http://continuum.io/downloads) scientific python distribution includes numpy and matplotlib, and it
-works well for PERSEUS.  Pyro4 can be installed onto anaconda with `pip` or `easy_install`.
+The [Anaconda](http://continuum.io/downloads) scientific python distribution includes numpy, matplotlib and pyyaml, and
+it works well for PERSEUS.  Pyro4 can be installed onto anaconda with `pip` or `easy_install`.
 
 
 ### Usage
@@ -52,14 +55,6 @@ A similar mechanism exists for setting up new control nodes, but this require mo
 new$ python -m Pyro4.naming
 new$ ./PERSEUS.py --pid control0  --type control --devices '{"phone001": {"number": 4014445555, "carrier": "verizon"}}'
 ```
-
-#### Security
-
-As the usage examples imply, PERSEUS is promiscuous in transmitting data input or display requests.  Access can be 
-controlled at the network level by using a VPN, or by using Pyro4's HMAC authentication and a required shared key.  
-However, this is not particularly secure as anyone with access to your shadow.yaml file or code will be able to extract
-the key in plain.  
-
 
 #### Configuration
 
@@ -102,17 +97,26 @@ Unless otherwise specified, the default controller for a listener or display nod
 Also note that any confidential information (SMS credentials, phone numbers) can be referenced with a value "shadow" and
 included in a corresponding `shadow.yaml` file that follows the same format.  `shadow.yaml` is `.gitignored` by default.
 
+
+#### Security
+
+#### Network Security
+
+PERSEUS is promiscuous in transmitting data input or display requests.  Access can be controlled at the network level by
+using a VPN or private network, or by using Pyro4's HMAC authentication and a required shared key.  However, this is not
+particularly secure as anyone with access to your shadow.yaml file or code will be able to extract the key in plain.  
+
+#### SMS Alerts
+
+Using gmail as the SMS relay requires either turning off app security in gmail, or assigning a unique relay password
+in the context of 2-step auth.
+
+
 #### Code Organization Overview
 
 ![Network organization](perseus_overview.png)
 
 _TODO: update code organization chart_
-
-
-### SMS Alerts
-
-Using gmail as the SMS relay requires either turning off app security in gmail, or assigning a unique relay password
-in the context of 2-step auth.
 
 
 ### Acknowledgements
