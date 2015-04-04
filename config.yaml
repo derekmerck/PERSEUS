@@ -1,18 +1,25 @@
+# SAMPLE PERSEUS CONFIG FILE
+
+# Any settings that should be kept private can be put in a local "shadow.yaml"
+# file that follows the same 3-part format as this document.  Adding the key with
+# the value "shadow" in this file is optional, but can be useful for readability.
+
+
 # PERSEUS SYSTEM SETTINGS
 
 LOGGING_LEVEL: DEBUG
 
-SMS:
-  ENABLED: False
-  name: PERSEUS Alert
-  email: perseus.alerts@gmail.com
-  relay_password: abcd
+SMS_ENABLED: False
+SMS_NAME: PERSEUS Alert
+SMS_EMAIL: shadow
+SMS_RELAY_PASSWORD: shadow
 
 ---
 
 # PERSEUS NETWORK TOPOLOGY
+#
 # Each node is a separate instance of PERSEUS.py
-
+#
 # {$pnode_id}:
 #   type: {control|listener|display enum}
 #   location: {$loc_string}
@@ -52,22 +59,22 @@ display1:
 ---
 
 # PERSEUS REGISTERED DEVICES
-
+#
 # {$device_id}:
 #   number: {10-digit str}
-#   carrier: {***REMOVED***|sprint|etc..}
+#   carrier: {verizon|sprint|etc..}
 
 dereks_phone:
-  number: ***REMOVED***
-  carrier: ***REMOVED***
+  number: shadow
+  carrier: shadow
 
 lisas_phone:
-  number: ***REMOVED***
-  carrier: ***REMOVED***
+  number: shadow
+  carrier: shadow
 
 leos_phone:
-  number: ***REMOVED***
-  carrier: ***REMOVED***
+  number: shadow
+  carrier: shadow
 
 # Assignable devices
 

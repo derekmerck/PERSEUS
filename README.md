@@ -8,15 +8,17 @@ See PERSEUS.py docstring for usage.
 
 ### Overview
 
-To be discussed...
+To be discussed by Leo.
 
 
 #### Network Component Organization
 
 ![Network organization](perseus_overview.png)
 
+_todo: update organization chart_
 
-### Dependencies:
+
+### Dependencies
 
 - Python 2.7
 - [numpy](http://www.numpy.org) for calculations
@@ -29,7 +31,7 @@ works well for PERSEUS.  Pyro4 can be simply installed with `pip` or `easy_insta
 See the docstring for additional package information.
 
 
-### Usage:
+### Usage
 
 ```bash
 main$ python -m Pyro4.naming
@@ -70,25 +72,25 @@ listener0:
 
 phone001:
   number: 4014445555
-  carrier: ***REMOVED***
+  carrier: verizon
 
 ---
 ```
 
 Unless otherwise specified, the default controller for a listener or display node is the _first_ control-type node listed (with subsequent controls being used as backup).
 
-PERSEUS can also be used without a config file to stand-up a single listener or display node and connect to an existing controller:
+PERSEUS can also be used without a config file to stand-up a new listener or display node and connect to an existing controller:
 
 ```bash
-main$ ./PERSEUS.py --pid display0  --type display --controller control0
-remote$ ./PERSEUS.py --pid listener0 --type listener --controller control0 --alert_device phone001
+new$ ./PERSEUS.py --pid display0  --type display --controller control0
+new$ ./PERSEUS.py --pid listener0 --type listener --controller control0 --alert_device phone001
 ```
 
 A similar mechanism exists for setting up new control nodes, but this require more complex arguments.  See `PERSEUS.py --help` for details.
 
 ```bash
-main$ python -m Pyro4.naming
-main$ ./PERSEUS.py --pid control0  --type control --devices '{"phone001": {"number": 4014445555, "carrier": "***REMOVED***"}}'
+new$ python -m Pyro4.naming
+new$ ./PERSEUS.py --pid control0  --type control --devices '{"phone001": {"number": 4014445555, "carrier": "verizon"}}'
 ```
 
 ### Notes
@@ -96,13 +98,13 @@ main$ ./PERSEUS.py --pid control0  --type control --devices '{"phone001": {"numb
 If the SMS messenger is using gmail as a relay, this requires _either_ turning off app security in gmail, or assigning a special password in the context of 2-step auth.
 
 
-### Acknowledgements:
+### Acknowledgements
 
 - Initial development funded through an healthcare quality improvement award from the AHRQ
 - SMS Messenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
 
 
-### License:
+### License
 
-To be determined ...
+[MIT](http://opensource.org/licenses/mit-license.html) (probably, to confirm with Leo)
 

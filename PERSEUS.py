@@ -1,78 +1,22 @@
+"""
+PERSEUS Core
+Push Electronic Relay for Smart Alarms for End User Situational Awareness (PERSEUS)
+
+Merck and Kobayashi, Spring 2015
+
+Dependencies: Numpy, matplotlib, Pyro4
+
+Source available at: https://github.com/derekmerck/PERSEUS
+
+See README.md for usage, notes, and license info.
+"""
+
 from __future__ import print_function
 
 __author__ = 'Derek Merck'
-__version_info__ = ('0', '1', '0')
+__email__ = "derek_merck@brown.edu"
+__version_info__ = ('0', '1', '1')
 __version__ = '.'.join(__version_info__)
-
-"""
-PERSEUS Core, Spring 2015
-Merck
-
-Dependencies: Pyro4
-
-Config-file-free usage:
-    main$ python -m Pyro4.naming
-    main$ ./PERSEUS.py --pid control0  --type control --devices '{"phone001": {"number": 4014445555, "carrier": "***REMOVED***"}}'
-    main$ ./PERSEUS.py --pid display0  --type display --controller control0
-    remote$ ./PERSEUS.py --pid listener0 --type listener --controller control0 --alert_device phone001
-
-Usage with config file:
-    main$ python -m Pyro4.naming
-    main$ ./PERSEUS.py -p control0  -c config.yaml
-    main$ ./PERSEUS.py -p display0  -c config.yaml
-    remote$ ./PERSEUS.py -p listener0 -c config.yaml
-
-Where config.yaml looks like this:
-
-    ---
-    # Settings
-
-    LOGGING_LEVEL: warning
-    ENABLE_SMS: False
-    SMS_USER: perseus_dispatch
-    # ... etc.
-
-    ---
-    # Topology
-
-    control0:
-      type: control
-      location: Main station
-
-    display0:
-      type: display
-      location: Main station
-
-    listener0:
-      type: listener
-      location: Remote patient monitor
-      alert_device: phone001
-
-    --
-    # Alert Devices
-
-    phone001:
-      number: 4014445555
-      carrier: ***REMOVED***
-
-    ---
-
-And the controller for a listener or display node is the _first_ control-type node listed
-(with subsequent controls being used as backup)
-
-Notes:
-
-If the SMS Messenger is using gmail, this requires _either_ turning off app
-security in gmail, or assigning a special password in the context of 2-step auth.
-
-Acknowledgements:
-- Messenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
-
-
-Todo:
-- console type?
-
-"""
 
 import os
 import sys
@@ -85,50 +29,50 @@ import smtplib
 import Pyro4
 import numpy as np
 
-if sys.version_info<(3,0):
-    input = raw_input
-
 # Check args
 parser = argparse.ArgumentParser(description='PERSEUS Core')
-
 parser.add_argument('-p', '--pid',
                     help='P-node id',
                     required=True)
-
 parser.add_argument('-c', '--config',
                     help='Configuration file (default: config.yaml)',
                     default='config.yaml')
-
+parser.add_argument('-s', '--shadow',
+                    help='Shadow config (default: shadow.yaml)',
+                    default='shadow.yaml')
 # If no config file is provided, _type_ at least is required and controller and location may also be specified
 parser.add_argument('--type',       help='P-node type (server, monitor, display)')
 parser.add_argument('--controller', help='Controller node name (default=control0)', default='control0')
 parser.add_argument('--location',   help='P-node location',                         default='Unspecified')
-
 args = parser.parse_args()
 
 # Load config
 package_directory = os.path.dirname(os.path.abspath(__file__))
+# TODO: Add catch for no config file
 fn = os.path.join(package_directory, args.config)
 f = open(fn, 'r')
 [settings, topology, devices] = yaml.load_all(f)
+
+fn = os.path.join(package_directory, args.shadow)
+f = open(fn, 'r')
+[sh_settings, sh_topology, sh_devices] = yaml.load_all(f)
+if sh_settings is not None: settings.update(sh_settings)
+if sh_topology is not None: topology.update(sh_topology)
+if sh_devices is not None: devices.update(sh_devices)
 
 # Setup logging
 logging.basicConfig()
 logger = logging.getLogger('PERSEUS.Core')
 logger.setLevel(settings['LOGGING_LEVEL'])
 
-logger.info("SETTINGS=" + str(settings))
-logger.info("TOPOLOGY=" + str(topology))
-logger.info("DEVICES =" + str(devices))
-
-# Setup consts
-alerts = Enum('alerts', 'info ok moderate severe')
-
-if sys.version_info < (3, 0):
-    input = raw_input
-
+logger.debug("SETTINGS=" + str(settings))
+logger.debug("TOPOLOGY=" + str(topology))
+logger.debug("DEVICES =" + str(devices))
 
 class Pnode:
+    """
+    Base class for shared code across PERSEUS nodes.
+    """
 
     def __init__(self):
         self.data = {}
@@ -137,6 +81,9 @@ class Pnode:
 class Control(Pnode):
 
     class Messenger:
+        """
+        Handles SMS alerts
+        """
 
         services = textwrap.dedent( '''
             # Sender relay servers
@@ -147,11 +94,11 @@ class Control(Pnode):
             alltel:     message.alltel.com
             att:        txt.att.net
             boost:      myboostmobile.com
-            ***REMOVED***:     messaging.sprintpcs.com
+            nextel:     messaging.sprintpcs.com
             sprint:     messaging.sprintpcs.com
             t-mobile:   tmomail.net
             uscellular: email.uscc.net
-            ***REMOVED***:    vtext.com
+            verizon:    vtext.com
             virgin:     vmobl.com
             ''' )
         relays, gateways = yaml.load_all(services)
@@ -160,11 +107,11 @@ class Control(Pnode):
         logger.setLevel(settings['LOGGING_LEVEL'])
 
         def __init__(self):
-            self.fromaddr = '%s <%s>' % (settings['SMS']['name'], settings['SMS']['email'])
+            self.fromaddr = '%s <%s>' % (settings['SMS']['name'], settings['SMS_EMAIL'])
             tmp = settings['SMS']['email'].split('@')
             self.relay_username = tmp[0]
             self.relay_server = self.relays[tmp[1]]
-            self.relay_password = settings['SMS']['relay_password']
+            self.relay_password = settings['SMS_RELAY_PASSWORD']
 
         def message(self, msg, did):
             number = devices[did]['number']
@@ -209,6 +156,8 @@ class Control(Pnode):
         self.data[key] = value
         self.logger.debug("{0} set {1} to {2}.".format(pid, key, self.data[key]))
 
+    #TODO: Consider how to push updates back to listener nodes, is that necessary?
+
 class Listener(Pnode):
 
     def __init__(self, pid, controller):
@@ -229,6 +178,7 @@ class Listener(Pnode):
             self.control.put(self.pid, value)
             self.logger.debug("For key {0}, set {1}.".format(self.pid, value))
 
+    # TODO: Replace this with an interactive connection to a local "METEOR"
     def generate_data(self):
         data = np.random.rand(1)
         self.put(data)
