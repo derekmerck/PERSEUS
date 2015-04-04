@@ -22,7 +22,6 @@ Usage with config file:
     main$ ./PERSEUS.py -p display0  -c config.yaml
     remote$ ./PERSEUS.py -p listener0 -c config.yaml
 
-
 Where config.yaml looks like this:
 
     ---
