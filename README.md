@@ -6,14 +6,14 @@ Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
 See PERSEUS.py docstring for usage.
 
-### Overview:
+### Overview
 
 To be discussed...
 
-#### Topology:
+
+#### Network Component Organization
 
 ![Network organization](perseus_overview.png)
-
 
 
 ### Dependencies:
@@ -30,7 +30,6 @@ See the docstring for additional package information.
 
 
 ### Usage:
-
 
 ```bash
 main$ python -m Pyro4.naming
@@ -99,7 +98,8 @@ If the SMS messenger is using gmail as a relay, this requires _either_ turning o
 
 ### Acknowledgements:
 
-SMS Messenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
+- Initial development funded through an healthcare quality improvement award from the AHRQ
+- SMS Messenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
 
 
 ### License:
