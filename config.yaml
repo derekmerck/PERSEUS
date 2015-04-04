@@ -1,0 +1,76 @@
+# PERSEUS SYSTEM SETTINGS
+
+LOGGING_LEVEL: DEBUG
+
+SMS:
+  ENABLED: False
+  name: PERSEUS Alert
+  email: perseus.alerts@gmail.com
+  relay_password: abcd
+
+---
+
+# PERSEUS NETWORK TOPOLOGY
+# Each node is a separate instance of PERSEUS.py
+
+# {$pnode_id}:
+#   type: {control|listener|display enum}
+#   location: {$loc_string}
+#   controller: {$controller_pid}*
+#   alert_device: {$device_id}
+#
+# * If type is control, no controller is required
+#   If no controller is listed, the _first_ controller listed is default
+
+control0:
+  type: control
+  location: Main station
+
+listener0:
+  type: listener
+  location: Main station
+  controller: control0
+  alert_device: dereks_phone
+
+listener1:
+  type: listener
+  location: Remote patient monitor station
+  controller: control0
+  alert_device: phone001
+
+display0:
+  type: display
+  controller: control0
+  location: Main station
+
+display1:
+  type: display
+  controller: control0
+  location: Remote data review station
+
+
+---
+
+# PERSEUS REGISTERED DEVICES
+
+# {$device_id}:
+#   number: {10-digit str}
+#   carrier: {***REMOVED***|sprint|etc..}
+
+dereks_phone:
+  number: ***REMOVED***
+  carrier: ***REMOVED***
+
+lisas_phone:
+  number: ***REMOVED***
+  carrier: ***REMOVED***
+
+leos_phone:
+  number: ***REMOVED***
+  carrier: ***REMOVED***
+
+# Assignable devices
+
+phone001:
+  number: 5555555555
+  carrier: att
