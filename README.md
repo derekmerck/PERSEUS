@@ -6,13 +6,19 @@ Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
 See PERSEUS.py docstring for usage.
 
-### Purpose:
+### Overview:
 
 To be discussed...
+
+#### Topology:
+
+![Network organization](perseus_overview.png)
+
 
 
 ### Dependencies:
 
+- Python 2.7
 - [numpy](http://www.numpy.org) for calculations
 - [matplotlib](http://matplotlib.org) for plotting
 - [Pyro4](https://pythonhosted.org/Pyro4/) for python-to-python communication
@@ -70,7 +76,7 @@ phone001:
 ---
 ```
 
-And the controller for a listener or display node is the _first_ control-type node listed (with subsequent controls being used as backup)
+Unless otherwise specified, the default controller for a listener or display node is the _first_ control-type node listed (with subsequent controls being used as backup).
 
 PERSEUS can also be used without a config file to stand-up a single listener or display node and connect to an existing controller:
 
