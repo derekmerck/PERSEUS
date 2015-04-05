@@ -2,11 +2,13 @@
 PERSEUS Core
 Push Electronic Relay for Smart Alarms for End User Situational Awareness (PERSEUS)
 
-Merck and Kobayashi, Spring 2015
+[Derek Merck](derek_merck@brown.edu)
+[Leo Kobayashi](lkobayashi@lifespan.org)
+Spring 2015
+
+<https://github.com/derekmerck/PERSEUS>Spring 2015
 
 Dependencies: Numpy, matplotlib, Pyro4
-
-Source available at: https://github.com/derekmerck/PERSEUS
 
 See README.md for usage, notes, and license info.
 """
@@ -141,10 +143,12 @@ class Control(Pnode):
         return self._status
 
     def get(self, pid, key):
+        """Getting 'active' returns a list of available streams"""
         self.logger.debug("{0} requested {1}, returning {2}.".format(pid, key, self.data[key]))
         return self.data[key]
 
     def put(self, pid, value, key=None):
+        # TODO: Anytime a pid is added, set a key 'active'; after it stops, move it to 'inactive'
         if key is None:
             key = pid
         self.data[key] = value
@@ -189,8 +193,8 @@ class Display(Pnode):
             self.logger.debug("Requested key {0}, got {1}.".format(key, data))
             return data
 
-    def stripchart(self):
-        import Stripchart
+    def simple_display(self):
+        import SimpleDisplay
 
         def emitter(p=0.03):
             """return a random value with probability p, else 0"""
@@ -201,14 +205,8 @@ class Display(Pnode):
                 else:
                     yield np.random.rand(1)
 
-        fig, ax = Stripchart.plt.subplots()
-        scope = Stripchart.Scope(ax)
-
-        # pass a generator in "emitter" to produce data for the update func
-        ani = Stripchart.animation.FuncAnimation(fig, scope.update, emitter, interval=10, blit=True)
-
-        Stripchart.plt.show()
-
+        #TODO: Pass in get from listener0
+        SimpleDisplay.Stripchart(emitter)
 
 
 def start_control(pid):
@@ -230,7 +228,7 @@ def start_listener(pid, controller):
 def start_display(pid, controller):
     node = Display(pid, controller)
 #    node.get('listener0')
-    node.stripchart()
+    node.simple_display()
 
 
 if __name__=="__main__":

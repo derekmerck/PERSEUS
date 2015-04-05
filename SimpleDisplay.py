@@ -1,19 +1,32 @@
 """
-Emulate an oscilloscope.  Requires the animation API introduced in
-matplotlib 1.0 SVN.
+PERSEUS SimpleDisplay
+
+[Derek Merck](derek_merck@brown.edu)
+[Leo Kobayashi](lkobayashi@lifespan.org)
+Spring 2015
+
+<https://github.com/derekmerck/PERSEUS>Spring 2015
+
+Dependencies: Numpy, matplotlib
+
+Cribbed in part from matplotlib's [strip_chart example](http://matplotlib.org/1.4.0/examples/animation/strip_chart_demo.html)
+
+See README.md for usage, notes, and license info.
 """
+
 import numpy as np
-
 import matplotlib
-matplotlib.use('TkAgg')
-
+matplotlib.use('TkAgg')  # There is a problem with the default renderer under OSX
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 
-class Scope:
-    def __init__(self, ax, maxt=2, dt=0.02):
+class Stripchart:
+    def __init__(self, emitter, maxt=2, dt=0.02):
+
+        fig, ax = plt.subplots()
+
         self.ax = ax
         self.dt = dt
         self.maxt = maxt
@@ -23,6 +36,14 @@ class Scope:
         self.ax.add_line(self.line)
         self.ax.set_ylim(-.1, 1.1)
         self.ax.set_xlim(0, self.maxt)
+
+        self.emitter = emitter()
+
+        # pass a generator in "emitter" to produce data for the update func
+        self.ani = animation.FuncAnimation(fig, self.update, emitter, interval=10, blit=True)
+
+        plt.show()
+
 
     def update(self, y):
         lastt = self.tdata[-1]
@@ -50,10 +71,4 @@ if __name__ == "__main__":
             else:
                 yield np.random.rand(1)
 
-    fig, ax = plt.subplots()
-    scope = Scope(ax)
-
-    # pass a generator in "emitter" to produce data for the update func
-    ani = animation.FuncAnimation(fig, scope.update, emitter, interval=10, blit=True)
-
-    plt.show()
+    Stripchart(emitter)

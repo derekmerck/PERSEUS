@@ -40,6 +40,11 @@ main$ ./PERSEUS.py -p display0  -c config.yaml
 remote$ ./PERSEUS.py -p listener0 -c config.yaml
 ```
 
+In this case, the main station is running two concurrent nodes, the controller and a graphical display.  The controller
+acts as a central dispatch server, that accepts data streams, passes alerts to the SMS system, and pushes data streams 
+out to graphical displays.  The remote station is running a listener that will forward information from bedside 
+telemetry (a "METEOR" system) to the controller.
+
 PERSEUS can also be invoked without a shared config file to stand-up a new listener or display node and connect to an 
 existing controller:
 
