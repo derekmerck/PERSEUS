@@ -1,8 +1,8 @@
 # PERSEUS
 Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
-[Derek Merck](derek_merck@brown.edu)  
-[Leo Kobayashi](lkobayashi@lifespan.org)  
+[Derek Merck](mailto:derek_merck@brown.edu)  
+[Leo Kobayashi](mailto:lkobayashi@lifespan.org)  
 
 <https://github.com/derekmerck/PERSEUS>
 
