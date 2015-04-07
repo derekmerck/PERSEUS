@@ -1,8 +1,8 @@
 # PERSEUS
 Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
-[Derek Merck](derek_merck@brown.edu)  
-[Leo Kobayashi](lkobayashi@lifespan.org)  
+[Derek Merck](email:derek_merck@brown.edu)  
+[Leo Kobayashi](email:lkobayashi@lifespan.org)  
 
 <https://github.com/derekmerck/PERSEUS>
 
@@ -14,6 +14,11 @@ To be discussed by Leo.
 Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.org) Emergency Department.
 
 
+### Installation
+
+`$ pip install https://github.com/derekmerck/PERSEUS`
+
+
 ### Dependencies
 
 - Python 2.7
@@ -23,13 +28,37 @@ Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.
 - [PyYAML](http://pyyaml.org) for configuration info
 
 The [Anaconda](http://continuum.io/downloads) scientific python distribution includes numpy, matplotlib and pyyaml, and
-it works well for PERSEUS.  Pyro4 can be installed onto anaconda with `pip` or `easy_install`.
+it works well for PERSEUS.  Pyro4 can be installed onto anaconda with `pip`.
 
 
 ### Usage
 
 PERSEUS is run as a number of semi-independent instances that form a hub topology about a control server.  A shared
 `config.yaml` file is the easiest way to describe the topology and provide other network settings.
+
+````bash
+usage: PERSEUS.py [-h] -p PID [-c CONFIG] [-s SHADOW] [--type TYPE]
+                  [--controller CONTROLLER] [--location LOCATION]
+                  [--devices DEVICES]
+
+PERSEUS Core
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p PID, --pid PID     P-node id REQ
+  -c CONFIG, --config CONFIG
+                        Configuration file (default: config.yaml)
+  -s SHADOW, --shadow SHADOW
+                        Shadow config file (default: shadow.yaml)
+  --type TYPE           (config-free REQ) P-node type (server, monitor,
+                        display)
+  --controller CONTROLLER
+                        (config-free OPT) Controller node name
+                        (default=control0)
+  --location LOCATION   (config-free OPT) P-node location
+  --devices DEVICES     (config-free OPT) Dictionary of alert devices for
+                        control nodes
+````
 
 The following would invoke a two node network.
 
@@ -50,7 +79,8 @@ existing controller:
 
 ```bash
 new$ ./PERSEUS.py --pid display0  --type display --controller control0
-new$ ./PERSEUS.py --pid listener0 --type listener --controller control0 --alert_device phone001
+new$ ./PERSEUS.py --pid listener0 --type listener --controller control0 \
+     --alert_device phone001
 ```
 
 A similar mechanism exists for setting up new control nodes, but this require more complex arguments.  See 
@@ -58,7 +88,8 @@ A similar mechanism exists for setting up new control nodes, but this require mo
 
 ```bash
 new$ python -m Pyro4.naming
-new$ ./PERSEUS.py --pid control0  --type control --devices '{"phone001": {"number": 4014445555, "carrier": "verizon"}}'
+new$ ./PERSEUS.py --pid control0  --type control --devices \
+    '{"phone001": {"number": 4014445555, "carrier": "verizon"}}'
 ```
 
 #### Configuration
@@ -113,7 +144,7 @@ particularly secure as anyone with access to your shadow.yaml file or code will 
 
 #### SMS Alerts
 
-Using gmail as the SMS relay requires either turning off app security in gmail, or assigning a unique relay password
+Using gmail as the SMS relay requires either turning off app security in gmail, or assigning a unique relay password 
 in the context of 2-step auth.
 
 

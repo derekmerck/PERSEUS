@@ -6,7 +6,7 @@ Push Electronic Relay for Smart Alarms for End User Situational Awareness (PERSE
 [Leo Kobayashi](lkobayashi@lifespan.org)
 Spring 2015
 
-<https://github.com/derekmerck/PERSEUS>Spring 2015
+<https://github.com/derekmerck/PERSEUS>
 
 Dependencies: Numpy, matplotlib, Pyro4
 
@@ -15,8 +15,12 @@ See README.md for usage, notes, and license info.
 
 from __future__ import print_function
 
+__name__ = "PERSEUS"
+__description__ = "Push Electronic Relay for Smart Alarms for End User Situational Awareness"
+__url__ = "https://github.com/derekmerck/PERSEUS"
 __author__ = 'Derek Merck'
 __email__ = "derek_merck@brown.edu"
+__license__ = "MIT"
 __version_info__ = ('0', '1', '2')
 __version__ = '.'.join(__version_info__)
 
