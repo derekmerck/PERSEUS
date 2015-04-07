@@ -1,3 +1,10 @@
+"""
+PERSEUS Setup
+Merck, Spring 2015
+
+Indebted to discussion of pip at <https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/>
+"""
+
 import os
 from setuptools import setup, find_packages
 
@@ -15,7 +22,7 @@ setup(
     name="PERSEUS",
     version=version,
     description="Push Electronic Relay for Smart Alarms for End User Situational Awareness",
-    long_description=read('README.rst'),
+    long_description=read('README.md'),
     url="https://github.com/derekmerck/PERSEUS",
     license="MIT",
     #packages=find_packages(exclude=['tests*']),
