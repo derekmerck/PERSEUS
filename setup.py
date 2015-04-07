@@ -6,10 +6,9 @@ Indebted to discussion of pip at <https://hynek.me/articles/sharing-your-labor-o
 """
 
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
+import PERSEUS
 
-version_info = ('0', '1', '2')
-version = '.'.join(version_info)
 
 def read(*paths):
     """Build a file path from *paths* and return the contents."""
@@ -17,16 +16,14 @@ def read(*paths):
         return f.read()
 
 setup(
-    author='Derek Merck',
-    author_email="derek_merck@brown.edu",
-    name="PERSEUS",
-    version=version,
-    description="Push Electronic Relay for Smart Alarms for End User Situational Awareness",
+    name=PERSEUS.__name__,
+    description=PERSEUS.__description__,
+    author=PERSEUS.__author__,
+    author_email=PERSEUS.__email__,
+    version=PERSEUS.__version__,
     long_description=read('README.md'),
-    url="https://github.com/derekmerck/PERSEUS",
-    license="MIT",
-    #packages=find_packages(exclude=['tests*']),
-    #packages = ["PERSEUS"],
+    url=PERSEUS.__url__,
+    license=PERSEUS.__license__,
     py_modules=["PERSEUS", "SimpleDisplay"],
     include_package_data=True,
     zip_safe=True,
@@ -39,5 +36,5 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering :: Medical Science Apps.'
-    ],
+    ]
 )

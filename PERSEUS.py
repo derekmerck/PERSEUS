@@ -21,7 +21,7 @@ __url__ = "https://github.com/derekmerck/PERSEUS"
 __author__ = 'Derek Merck'
 __email__ = "derek_merck@brown.edu"
 __license__ = "MIT"
-__version_info__ = ('0', '1', '2')
+__version_info__ = ('0', '1', '3')
 __version__ = '.'.join(__version_info__)
 
 import os
@@ -33,41 +33,6 @@ import smtplib
 import Pyro4
 import numpy as np
 
-# Check args
-parser = argparse.ArgumentParser(description='PERSEUS Core')
-parser.add_argument('-p', '--pid',    help='P-node id REQ', required=True)
-parser.add_argument('-c', '--config', help='Configuration file (default: config.yaml)',                  default='config.yaml')
-parser.add_argument('-s', '--shadow', help='Shadow config file (default: shadow.yaml)',                  default='shadow.yaml')
-parser.add_argument('--type',         help='(config-free REQ) P-node type (server, monitor, display)')
-parser.add_argument('--controller',   help='(config-free OPT) Controller node name (default=control0)',  default='control0')
-parser.add_argument('--location',     help='(config-free OPT) P-node location',                          default='Unspecified')
-parser.add_argument('--devices',      help='(config-free OPT) Dictionary of alert devices for control nodes')
-args = parser.parse_args()
-
-# Load config & shadow config
-package_directory = os.path.dirname(os.path.abspath(__file__))
-# TODO: Add catch for no config file
-fn = os.path.join(package_directory, args.config)
-f = open(fn, 'r')
-[settings, topology, devices] = yaml.load_all(f)
-# TODO: Add catch for no shadow file
-fn = os.path.join(package_directory, args.shadow)
-f = open(fn, 'r')
-[sh_settings, sh_topology, sh_devices] = yaml.load_all(f)
-if sh_settings is not None: settings.update(sh_settings)
-if sh_topology is not None: topology.update(sh_topology)
-if sh_devices  is not None: devices.update(sh_devices)
-
-# Setup logging
-logging.basicConfig()
-logger = logging.getLogger('PERSEUS.Core')
-logger.setLevel(settings['LOGGING_LEVEL'])
-logger.info('version %s' % __version__)
-
-# Output config to logger
-logger.debug("SETTINGS=" + str(settings))
-logger.debug("TOPOLOGY=" + str(topology))
-logger.debug("DEVICES =" + str(devices))
 
 class Pnode:
     """
@@ -107,7 +72,7 @@ class Control(Pnode):
         relays, gateways = yaml.load_all(services)
 
         logger = logging.getLogger('PERSEUS.Messenger')
-        logger.setLevel(settings['LOGGING_LEVEL'])
+        #logger.setLevel(settings['LOGGING_LEVEL'])
 
         def __init__(self):
             self.fromaddr = '%s <%s>' % (settings['SMS_NAME'], settings['SMS_EMAIL'])
@@ -235,7 +200,47 @@ def start_display(pid, controller):
     node.simple_display()
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
+
+
+    # Check args
+    parser = argparse.ArgumentParser(description='PERSEUS Core')
+    parser.add_argument('-p', '--pid',    help='P-node id REQ', required=True)
+    parser.add_argument('-c', '--config', help='Configuration file (default: config.yaml)',                  default='config.yaml')
+    parser.add_argument('-s', '--shadow', help='Shadow config file (default: shadow.yaml)',                  default='shadow.yaml')
+    parser.add_argument('--type',         help='(config-free REQ) P-node type (server, monitor, display)')
+    parser.add_argument('--controller',   help='(config-free OPT) Controller node name (default=control0)',  default='control0')
+    parser.add_argument('--location',     help='(config-free OPT) P-node location',                          default='Unspecified')
+    parser.add_argument('--devices',      help='(config-free OPT) Dictionary of alert devices for control nodes')
+    args = parser.parse_args()
+
+    # Load config & shadow config
+    package_directory = os.path.dirname(os.path.abspath(__file__))
+    # TODO: Add catch for no config file
+    fn = os.path.join(package_directory, args.config)
+    f = open(fn, 'r')
+    [settings, topology, devices] = yaml.load_all(f)
+    # TODO: Add catch for no shadow file
+    fn = os.path.join(package_directory, args.shadow)
+    f = open(fn, 'r')
+    [sh_settings, sh_topology, sh_devices] = yaml.load_all(f)
+    if sh_settings is not None: settings.update(sh_settings)
+    if sh_topology is not None: topology.update(sh_topology)
+    if sh_devices  is not None: devices.update(sh_devices)
+
+    # Setup logging
+    logging.basicConfig()
+    logger = logging.getLogger('PERSEUS.Core')
+    logger.setLevel(settings['LOGGING_LEVEL'])
+    logger.info('version %s' % __version__)
+
+    # Output config to logger
+    logger.debug("SETTINGS=" + str(settings))
+    logger.debug("TOPOLOGY=" + str(topology))
+    logger.debug("DEVICES =" + str(devices))
+
+
+
 
     # TODO: Add catch for no topology file by using input args
     _pid = args.pid
