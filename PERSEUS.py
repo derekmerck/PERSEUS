@@ -17,6 +17,7 @@ from __future__ import print_function
 import os
 import argparse
 import logging
+import time
 import yaml
 import textwrap
 import smtplib
@@ -30,7 +31,7 @@ __url__ = "https://github.com/derekmerck/PERSEUS"
 __author__ = 'Derek Merck'
 __email__ = "derek_merck@brown.edu"
 __license__ = "MIT"
-__version_info__ = ('0', '1', '4')
+__version_info__ = ('0', '2', '0')
 __version__ = '.'.join(__version_info__)
 
 
@@ -44,15 +45,52 @@ class Pnode:
         self.settings = _settings
         self.topology = _topology
         self.data = {}
-        self._status = 'Ready'
+        self._status = 'Init'
         self.pn_type = self.topology[pid]['type']
         logging.basicConfig()
         self.logger = logging.getLogger('.'.join([__package__, self.pn_type]))
         self.logger.setLevel(self.settings['LOGGING_LEVEL'])
         self.logger.info('Starting up node %s' % self.pid)
+        self.clock = 0
+        self.update_interval = 1.0 / (self.settings['UPDATE_FREQ'])
+
+
+    def status(self):
+        return self._status
+
+
 
 
 class Control(Pnode):
+    """
+    Control's .data dictionary is organized like this:
+
+    ----
+    active: [listener01, listener02]
+    inactive: [listener02]
+
+    listener01:
+      stream: [  [0.1,100,200,0], [0.2,101,199,0], ...
+      stream_names:
+        - clock time
+        - alert status
+        - blood pressure
+        - heart rate
+
+    ---
+
+    listener01 establishes a stream with control.register_listener(self, stream_names) then it can push updates with
+    control.put(self,stream_data)
+
+    Stream data will be pushed into the fixed size deque, old data will be dropped.  Assuming the sample rate is 20/sec
+    and the stream_len variable is 2000, that gives us 100 secs or 1.5 mins of immediately available data.
+
+    Old data is flushed to log, csv, or h5 files as it is dumped.
+
+    """
+
+    # TODO: Consider how to push updates back to listener nodes, is that ever necessary?
+
     class Messenger:
         """
         Handles SMS alerts
@@ -108,36 +146,38 @@ class Control(Pnode):
 
     def __init__(self, _pid, _settings, _topology, _devices):
         Pnode.__init__(self, _pid, _settings, _topology)
+        self.max_stream_len = self.settings["CTRL_STREAM_LEN"]
         self.messenger = Control.Messenger(_settings, _topology, _devices)
 
     def send_alert(self, _pid):
-        # An alert has been raised in a listener node
+        """
+        Handle an alert raised in a listener node
+        """
         did = self.topology[_pid]['alert_device']
         self.messenger.message('There\'s an alert!', did)
 
-    def status(self):
-        return self._status
+    def get(self, _pid, key="stream", clock="0"):
+        """Getting 'stream_names' returns a list of available streams"""
+        if self.data.get(_pid) is not None:
+            if self.data[_pid].get(key) is not None:
+                value = self.data[_pid][key]
+                self.logger.debug("{0} requested {1}, returning {2}.".format(_pid, key, value))
+                return value
+        # TODO: If "clock" is set in the request, we want to only return samples that are bigger than that
 
-    def get(self, _pid, key):
-        """Getting 'active' returns a list of available streams"""
-        self.logger.debug("{0} requested {1}, returning {2}.".format(_pid, key, self.data[key]))
-        return self.data[key]
-
-    def put(self, _pid, value, key=None):
-        # TODO: Anytime a pid is added, set a key 'active'; after it stops, move it to 'inactive'
-        if key is None:
-            key = _pid
-        self.data[key] = value
-        self.logger.debug("{0} set {1} to {2}.".format(_pid, key, self.data[key]))
+    def put(self, _pid, value, key="stream"):
+        if self.data.get(_pid, None) is None:
+            self.data[_pid] = {}
+        self.data[_pid][key] = value
+        self.logger.debug("{0} set {1} to {2}.".format(_pid, key, self.data[_pid][key]))
 
     def start(self):
+        self._status = "Ready"
         Pyro4.Daemon.serveSimple(
             {
                 node: "perseus." + self.pid
             },
             ns=True)
-
-        # TODO: Consider how to push updates back to listener nodes, is that ever necessary?
 
 
 class Listener(Pnode):
@@ -145,20 +185,35 @@ class Listener(Pnode):
         Pnode.__init__(self, _pid, _settings, _topology)
         self.controller_id = self.topology[self.pid]['controller']
         self.control = Pyro4.Proxy("PYRONAME:perseus." + self.controller_id)
+        self.stream_names = ['clock', 'sample01', 'sample02']
 
-    def put(self, value):
+    def register(self):
         status = self.control.status()
         if status == 'Ready':
+            self.control.put(self.pid, self.stream_names, "stream_names")
+            self.logger.debug("{0} registering stream_names with {1}.".format(self.pid, self.controller_id))
+            self._status = "Ready"
+
+    def put(self, value):
+
+        while self._status != "Ready":
+            self.register()
+        # TODO: Add a timeout here
+
+        if self.control.status() == 'Ready':
             self.control.put(self.pid, value)
-            self.logger.debug("For key {0}, set {1}.".format(self.pid, value))
+            self.logger.debug("{0} sending stream {1}.".format(self.pid, value))
 
     # TODO: Replace this with an interactive connection to a local "METEOR"
     def generate_data(self):
-        data = np.random.rand(1)
-        self.put(data)
+        data = np.random.rand(2, 1).tolist()
+        self.put([self.clock, data[0][0], data[1][0]])
 
     def start(self):
-        self.put('Hello there!')
+        while True:
+            self.clock += self.update_interval
+            self.generate_data()
+            time.sleep(self.update_interval)
 
 
 class Display(Pnode):
@@ -167,11 +222,10 @@ class Display(Pnode):
         self.controller_id = self.topology[self.pid]['controller']
         self.control = Pyro4.Proxy("PYRONAME:perseus." + self.controller_id)
 
-    def get(self, key):
-        status = self.control.status()
-        if status == 'Ready':
-            data = self.control.get(self.pid, key)
-            self.logger.debug("Requested key {0}, got {1}.".format(key, data))
+    def get(self, _pid, key="stream", clock="-1"):
+        if self.control.status() == 'Ready':
+            data = self.control.get(_pid, key)
+            self.logger.debug("Requested pid {0}, got {1}.".format(_pid, data))
             return data
 
     def start(self):
@@ -179,20 +233,7 @@ class Display(Pnode):
 
     def simple_display(self):
         import SimpleDisplay
-
-        def emitter(p=0.03):
-            """
-            return a random value with probability p, else 0
-            """
-            while True:
-                v = np.random.rand(1)
-                if v > p:
-                    yield 0.
-                else:
-                    yield np.random.rand(1)
-
-        # TODO: Pass in get from listener0
-        SimpleDisplay.Stripchart(emitter)
+        SimpleDisplay.Stripchart(self)
 
 
 def get_args():
@@ -204,11 +245,13 @@ def get_args():
     parser.add_argument('-p', '--pid', help='P-node id REQ', required=True)
     parser.add_argument('-c', '--config', help='Configuration file (default: config.yaml)', default='config.yaml')
     parser.add_argument('-s', '--shadow', help='Shadow config file (default: shadow.yaml)', default='shadow.yaml')
+
+    # Can build a simple single node topology out of this if no config is provided
     parser.add_argument('--type', help='(config-free REQ) P-node type (server, monitor, display)')
-    parser.add_argument('--controller', help='(config-free OPT) Controller node name (default=control0)',
+    parser.add_argument('--controller', help='Controller node name (default=control0)',
                         default='control0')
-    parser.add_argument('--location', help='(config-free OPT) P-node location', default='Unspecified')
-    parser.add_argument('--devices', help='(config-free OPT) Dictionary of alert devices for control nodes')
+    parser.add_argument('--location', help='P-node location', default='Unspecified')
+    parser.add_argument('--devices', help='Dictionary of alert devices for control nodes', default={})
     return parser.parse_args()
 
 
@@ -228,18 +271,15 @@ def setup_config(args):
     f = open(fn, 'r')
     [sh_settings, sh_topology, sh_devices] = yaml.load_all(f)
     if sh_settings is not None:
-        settings.update(sh_settings)
+        settings_.update(sh_settings)
     if sh_topology is not None:
-        topology.update(sh_topology)
+        topology_.update(sh_topology)
     if sh_devices is not None:
-        devices.update(sh_devices)
+        devices_.update(sh_devices)
     return settings_, topology_, devices_
 
 
-print('hi')
 if __name__ == "__main__":
-
-    print("hello")
 
     arg_dict = get_args()
     settings, topology, devices = setup_config(arg_dict)
@@ -250,24 +290,28 @@ if __name__ == "__main__":
     logger.setLevel(settings['LOGGING_LEVEL'])
     logger.info('version %s' % __version__)
 
+    # TODO: Add sensible defaults for settings
+    # TODO: Add catch for no topology file by using input args
+    # TODO: Add empty dict for devices if none
+
     # Output config to logger
     logger.debug("SETTINGS=" + str(settings))
     logger.debug("TOPOLOGY=" + str(topology))
     logger.debug("DEVICES =" + str(devices))
 
     # Start up the node
-    # TODO: Add catch for no topology file by using input args
     pid = arg_dict.pid
     pn_type = topology[pid]['type']
 
+    node = None
     if pn_type == 'control':
         node = Control(pid, settings, topology, devices)
-        node.start()
     elif pn_type == 'display':
         node = Display(pid, settings, topology)
-        node.start()
     elif pn_type == 'listener':
         node = Listener(pid, settings, topology)
-        node.start()
     else:
         logger.warning('No P-node type to invoke for %s' % pn_type)
+
+    if node is not None:
+        node.start()

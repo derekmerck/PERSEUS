@@ -23,7 +23,8 @@ import matplotlib.animation as animation
 
 
 class Stripchart:
-    def __init__(self, emitter, maxt=2, dt=0.02):
+    def __init__(self, pnode, maxt=2, dt=0.02):
+        self.pnode = pnode
 
         fig, ax = plt.subplots()
 
@@ -36,18 +37,17 @@ class Stripchart:
         self.ax.add_line(self.line)
         self.ax.set_ylim(-.1, 1.1)
         self.ax.set_xlim(0, self.maxt)
-
-        self.emitter = emitter()
-
-        # pass a generator in "emitter" to produce data for the update func
-        self.ani = animation.FuncAnimation(fig, self.update, emitter, interval=10, blit=True)
+        self.ani = animation.FuncAnimation(fig, self.update, interval=self.pnode.update_interval * 1000, blit=True)
 
         plt.show()
 
 
-    def update(self, y):
+    def update(self, dummy):
+
+        y = self.pnode.get('listener0')[1]
+
         lastt = self.tdata[-1]
-        if lastt > self.tdata[0] + self.maxt: # reset the arrays
+        if lastt > self.tdata[0] + self.maxt:     # reset the arrays
             self.tdata = [self.tdata[-1]]
             self.ydata = [self.ydata[-1]]
             self.ax.set_xlim(self.tdata[0], self.tdata[0] + self.maxt)

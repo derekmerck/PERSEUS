@@ -9,6 +9,9 @@
 
 LOGGING_LEVEL: DEBUG
 
+CTRL_STREAM_LEN: 300   # Seconds
+UPDATE_FREQ: 10        # Per second
+
 SMS_ENABLED: False
 SMS_NAME: PERSEUS Alert
 SMS_EMAIL: shadow
