@@ -2,7 +2,14 @@
 PERSEUS Setup
 Merck, Spring 2015
 
-Indebted to discussion of pip at <https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/>
+## Distribution to a pypi server:
+
+```
+$ pandoc --from=markdown --to=rst --output=README.rst README.md
+$ python setup.py sdist
+$ python setup.py register [-r https://testpypi.python.org/pypi]
+$ python setup.py sdist upload  [-r https://testpypi.python.org/pypi]
+```
 """
 
 import os
@@ -15,13 +22,19 @@ def read(*paths):
     with open(os.path.join(*paths), 'r') as f:
         return f.read()
 
+# README.md is preferred
+long_desc = read('README.md')
+# pypi requires a README.rst, so we create one with pandoc and include it in the source distribution
+if os.path.exists('README.rst'):
+    long_desc = read('README.rst')
+
 setup(
-    name=PERSEUS.__name__,
+    name=PERSEUS.__package__,
     description=PERSEUS.__description__,
     author=PERSEUS.__author__,
     author_email=PERSEUS.__email__,
     version=PERSEUS.__version__,
-    long_description=read('README.md'),
+    long_description=long_desc,
     url=PERSEUS.__url__,
     license=PERSEUS.__license__,
     py_modules=["PERSEUS", "SimpleDisplay"],

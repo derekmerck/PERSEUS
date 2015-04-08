@@ -7,23 +7,23 @@ Push Electronic Relay for Smart Alarms for End User Situational Awareness
 <https://github.com/derekmerck/PERSEUS>
 
 
-### Overview
+## Overview
 
 To be discussed by Leo.
 
 Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.org) Emergency Department.
 
 
-### Installation
+## Installation
 
-`$ pip install https://github.com/derekmerck/PERSEUS`
+`$ pip install git+https://github.com/derekmerck/PERSEUS`
 
 
 ### Dependencies
 
 - Python 2.7
 - [numpy](http://www.numpy.org) for calculations
-- [matplotlib](http://matplotlib.org) for plotting
+- [matplotlib](http://matplotlib.org) for simple plotting
 - [Pyro4](https://pythonhosted.org/Pyro4/) for python-to-python communication
 - [PyYAML](http://pyyaml.org) for configuration info
 
@@ -31,10 +31,9 @@ The [Anaconda](http://continuum.io/downloads) scientific python distribution inc
 it works well for PERSEUS.  Pyro4 can be installed onto anaconda with `pip`.
 
 
-### Usage
+## Usage
 
-PERSEUS is run as a number of semi-independent instances that form a hub topology about a control server.  A shared
-`config.yaml` file is the easiest way to describe the topology and provide other network settings.
+PERSEUS is run as a number of semi-independent instances that form a hub topology about a control server.  
 
 ````bash
 usage: PERSEUS.py [-h] -p PID [-c CONFIG] [-s SHADOW] [--type TYPE]
@@ -60,7 +59,8 @@ optional arguments:
                         control nodes
 ````
 
-The following would invoke a two node network.
+A shared `config.yaml` file is the easiest way to describe the topology and provide other network settings.  The
+following would invoke a two node network.
 
 ```bash
 main$ python -m Pyro4.naming
@@ -92,7 +92,10 @@ new$ ./PERSEUS.py --pid control0  --type control --devices \
     '{"phone001": {"number": 4014445555, "carrier": "verizon"}}'
 ```
 
-#### Configuration
+Future plans include using [fabric](http://www.fabfile.org) to configure the entire network remotely.
+
+
+## Configuration
 
 `config.yaml` includes three document sections, settings, topology, and devices.  A basic format reference follows.
 
@@ -134,34 +137,33 @@ Also note that any confidential information (SMS credentials, phone numbers) can
 included in a corresponding `shadow.yaml` file that follows the same format.  `shadow.yaml` is `.gitignored` by default.
 
 
-#### Security
+## Security
 
-#### Network Security
+### Network Security
 
 PERSEUS is promiscuous in transmitting data input or display requests.  Access can be controlled at the network level by
 using a VPN or private network, or by using Pyro4's HMAC authentication and a required shared key.  However, this is not
 particularly secure as anyone with access to your shadow.yaml file or code will be able to extract the key in plain.  
 
-#### SMS Alerts
+### SMS Alerts
 
 Using gmail as the SMS relay requires either turning off app security in gmail, or assigning a unique relay password 
 in the context of 2-step auth.
 
 
-#### Code Organization Overview
+## Code Organization Overview
 
 ![Network organization](perseus_overview.png)
 
-_TODO: update code organization chart_
 
+## Acknowledgements
 
-### Acknowledgements
-
-- Initial development funded through an healthcare quality improvement award from the AHRQ
+- Initial development funded through a healthcare quality improvement award from the AHRQ
 - SMS Messenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
+- Indebted to discussion of pip at <https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/>
 
 
-### License
+## License
 
-[MIT](http://opensource.org/licenses/mit-license.html) _TODO: probably, need to confirm with Leo_
+[MIT](http://opensource.org/licenses/mit-license.html)
 
