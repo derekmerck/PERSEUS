@@ -35,6 +35,7 @@ SMS_RELAY_PASSWORD: shadow
 control0:
   type: control
   location: Main station
+  nameserver: ns0
 
 listener0:
   type: listener
