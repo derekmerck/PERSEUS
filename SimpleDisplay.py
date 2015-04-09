@@ -5,16 +5,14 @@ PERSEUS SimpleDisplay
 [Leo Kobayashi](lkobayashi@lifespan.org)
 Spring 2015
 
-<https://github.com/derekmerck/PERSEUS>Spring 2015
+<https://github.com/derekmerck/PERSEUS>
 
 Dependencies: Numpy, matplotlib
-
-Cribbed in part from matplotlib's [strip_chart example](http://matplotlib.org/1.4.0/examples/animation/strip_chart_demo.html)
 
 See README.md for usage, notes, and license info.
 """
 
-import numpy as np
+#import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')  # There is a problem with the default renderer under OSX
 from matplotlib.lines import Line2D
@@ -58,17 +56,3 @@ class Stripchart:
         self.ydata.append(y)
         self.line.set_data(self.tdata, self.ydata)
         return self.line,
-
-
-if __name__ == "__main__":
-
-    def emitter(p=0.03):
-        """return a random value with probability p, else 0"""
-        while True:
-            v = np.random.rand(1)
-            if v > p:
-                yield 0.
-            else:
-                yield np.random.rand(1)
-
-    Stripchart(emitter)

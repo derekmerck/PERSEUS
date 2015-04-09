@@ -2,10 +2,21 @@
 PERSEUS Fabfile
 Merck, Spring 2015
 
-## Deploy and starting a network node
+[Derek Merck](derek_merck@brown.edu)
+[Leo Kobayashi](lkobayashi@lifespan.org)
+Spring 2015
+
+<https://github.com/derekmerck/PERSEUS>
+
+Dependencies: Fabric
+
+See README.md for usage, notes, and license info.
+
+
+## Setting up the network with fabric
 
 ```
-$ fab configure deploy start                        # Stand up network
+$ fab --set config=config.yaml configure deploy start                        # Stand up network
 $ fab --set use_docker=true configure deploy start  # Stand up network inside of Docker containers
 $ fab host1 start:pid=listener0,type=listener,controller=control0 # Startup a single pre-deployed host w/o config
 ```
@@ -36,7 +47,7 @@ def configure():
     def configure_linux_host():
         run('wget https://repo.continuum.io/archive/Anaconda3-2.2.0-Linux-x86_64.sh')
         run('./Anaconda3-2.2.0-Linux-x86_64.sh')
-        run('conda update conda matplotlib numpy')
+        run('conda update conda matplotlib numpy pyyaml fabric')
         run('pip install Pyro4')
         run('apt-get update')
         run('apt-get install git')
@@ -51,7 +62,7 @@ def configure():
 
         # Start with the continuumio/anaconda distribution
         run('docker start -p 99500 my_container /bin/bash')  # Be sure to open the right port
-        run('conda update conda matplotlib numpy')
+        run('conda update conda matplotlib numpy pyyaml fabric')
         run('pip install Pyro4')
         run('apt-get update')
         run('apt-get install git')

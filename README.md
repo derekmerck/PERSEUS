@@ -26,9 +26,11 @@ Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.
 - [matplotlib](http://matplotlib.org) for simple plotting
 - [Pyro4](https://pythonhosted.org/Pyro4/) for python-to-python communication
 - [PyYAML](http://pyyaml.org) for configuration info
+- [Fabric](http://www.fabfile.org) for remote network administration
 
 The [Anaconda](http://continuum.io/downloads) scientific python distribution includes numpy, matplotlib and pyyaml, and
-it works well for PERSEUS.  Pyro4 can be installed onto anaconda with `pip`.
+it works well for PERSEUS (the reference fab file uses it as a base distribution).  Pyro4 can be installed onto anaconda
+with `pip`.
 
 
 ## Usage
@@ -161,6 +163,7 @@ in the context of 2-step auth.
 - Initial development funded through a healthcare quality improvement award from the AHRQ
 - SMS Messenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
 - Indebted to discussion of pip at <https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/>
+- SimpleDisplay based on matplotlib's [strip_chart example](http://matplotlib.org/1.4.0/examples/animation/strip_chart_demo.html)
 
 
 ## License
