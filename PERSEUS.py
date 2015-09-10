@@ -24,7 +24,6 @@ import smtplib
 import Pyro4
 import numpy as np
 
-
 __package__ = "PERSEUS"
 __description__ = "Push Electronic Relay for Smart Alarms for End User Situational Awareness"
 __url__ = "https://github.com/derekmerck/PERSEUS"
@@ -35,7 +34,7 @@ __version_info__ = ('0', '2', '0')
 __version__ = '.'.join(__version_info__)
 
 
-class Pnode:
+class PNode:
     """
     Base class for shared code across PERSEUS nodes.
     """
@@ -61,7 +60,7 @@ class Pnode:
 
 
 
-class Control(Pnode):
+class Control(PNode):
     """
     Control's .data dictionary is organized like this:
 
@@ -145,7 +144,7 @@ class Control(Pnode):
             server.quit()
 
     def __init__(self, _pid, _settings, _topology, _devices):
-        Pnode.__init__(self, _pid, _settings, _topology)
+        PNode.__init__(self, _pid, _settings, _topology)
         self.max_stream_len = self.settings["CTRL_STREAM_LEN"]
         self.messenger = Control.Messenger(_settings, _topology, _devices)
 
@@ -180,9 +179,9 @@ class Control(Pnode):
             ns=True)
 
 
-class Listener(Pnode):
+class Listener(PNode):
     def __init__(self, _pid, _settings, _topology):
-        Pnode.__init__(self, _pid, _settings, _topology)
+        PNode.__init__(self, _pid, _settings, _topology)
         self.controller_id = self.topology[self.pid]['controller']
         self.control = Pyro4.Proxy("PYRONAME:perseus." + self.controller_id)
         self.stream_names = ['clock', 'sample01', 'sample02']
@@ -216,9 +215,9 @@ class Listener(Pnode):
             time.sleep(self.update_interval)
 
 
-class Display(Pnode):
+class Display(PNode):
     def __init__(self, _pid, _settings, _topology):
-        Pnode.__init__(self, _pid, _settings, _topology)
+        PNode.__init__(self, _pid, _settings, _topology)
         self.controller_id = self.topology[self.pid]['controller']
         self.control = Pyro4.Proxy("PYRONAME:perseus." + self.controller_id)
 

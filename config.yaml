@@ -85,3 +85,41 @@ leos_phone:
 phone001:
   number: 5555555555
   carrier: att
+
+
+---
+
+# PERSEUS ALERT RULES
+#
+# Rules are matched in given order.
+#
+# {$rule_name}:
+#   priority: {SEVERE|MODERATE|LOW|VERY_LOW}
+#   conditions:
+#     {$var0}: [{$op0}, {$value0}]
+#     {$var1}: [{$op1}, {$value1}]
+#
+# where $var   is in [ekg, hr, spo2, bp] and
+#       $op    is in [<,<=,..<,==,!=,>,>=,..>] and
+#       $value is an integer
+#
+# The ..> and ..< symbols are for "trending above" and "trending below" respectively.
+
+Probably_no_trouble:    # Want to try to match this _before_ calling a "trouble" alert
+  priority: VERY_LOW
+  conditions:
+    <<: *trouble        # Based on 'trouble', but,
+    ekg:  ['==',  OK]   # Normal status
+
+Trouble:
+  priority: SEVERE
+  conditions:    &trouble
+    ekg:  ['!=',  OK]   # Abnormal status
+    hr:   ['..>', 10]   # Trending above 10
+    sp02: ['<',  100]   # Below 100
+
+# Match anything else
+All_OK:
+  priority: VERY_LOW
+
+
