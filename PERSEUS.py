@@ -186,6 +186,12 @@ class Listener(PNode):
         self.control = Pyro4.Proxy("PYRONAME:perseus." + self.controller_id)
         self.stream_names = ['clock', 'sample01', 'sample02']
 
+        self.times = None
+        self.values = None
+        self.i = None
+        self.setup_pseudodata_from_file('RIHEDUrg CDev-03MP90_PLETH_20150907_125701.txt'
+)
+
     def register(self):
         status = self.control.status()
         if status == 'Ready':
@@ -204,14 +210,24 @@ class Listener(PNode):
             self.logger.debug("{0} sending stream {1}.".format(self.pid, value))
 
     # TODO: Replace this with an interactive connection to a local "METEOR"
-    def generate_data(self):
+    def generate_random_data(self):
         data = np.random.rand(2, 1).tolist()
         self.put([self.clock, data[0][0], data[1][0]])
+
+    def setup_pseudodata_from_file(self, fn):
+        import mutils
+        self.times, self.values = mutils.read_numerics(fn)
+        self.i = 0
+
+    def generate_pseudodata(self):
+        self.i = self.i+1
+        self.clock = self.times(self.i)
+        self.data = self.values(self.i)
 
     def start(self):
         while True:
             self.clock += self.update_interval
-            self.generate_data()
+            self.generate_pseudodata()
             time.sleep(self.update_interval)
 
 

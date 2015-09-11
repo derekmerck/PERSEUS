@@ -16,8 +16,8 @@ See README.md for usage, notes, and license info.
 ## Setting up the network with fabric
 
 ```
-$ fab --set config=config.yaml configure deploy start                        # Stand up network
-$ fab --set use_docker=true configure deploy start  # Stand up network inside of Docker containers
+$ fab --set config=config.yaml configure deploy start          # Stand up network
+$ fab --set use_docker=true configure deploy start             # Stand up network inside of Docker containers
 $ fab host1 start:pid=listener0,type=listener,controller=control0 # Startup a single pre-deployed host w/o config
 ```
 
@@ -54,6 +54,10 @@ def configure():
 
     def configure_dow_host():
         # Docker on windows
+        pass
+
+    def configure_dom_host():
+        # Docker on mac
         pass
 
     def configure_dol_host():

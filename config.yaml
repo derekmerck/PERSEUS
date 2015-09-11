@@ -87,7 +87,7 @@ phone001:
   carrier: att
 
 
----
+#---
 
 # PERSEUS ALERT RULES
 #
@@ -105,21 +105,69 @@ phone001:
 #
 # The ..> and ..< symbols are for "trending above" and "trending below" respectively.
 
-Probably_no_trouble:    # Want to try to match this _before_ calling a "trouble" alert
-  priority: VERY_LOW
-  conditions:
-    <<: *trouble        # Based on 'trouble', but,
-    ekg:  ['==',  OK]   # Normal status
+#probably_no_trouble:    # Want to try to match this _before_ calling a "trouble" alert
+#  priority: VERY_LOW
+#  conditions:
+#    <<: *trouble        # Based on 'trouble', but,
+#    ekg:  ['==',  OK]   # Normal status
+#
+#trouble:
+#  priority: SEVERE
+#  conditions:    &trouble
+#    ekg:  ['!=',  OK]   # Abnormal status
+#    hr:   ['..>', 10]   # Trending above 10
+#    sp02: ['<',  100]   # Below 100
+#
+## Match anything else
+#all_ok:
+#  priority: VERY_LOW
+#
 
-Trouble:
-  priority: SEVERE
-  conditions:    &trouble
-    ekg:  ['!=',  OK]   # Abnormal status
-    hr:   ['..>', 10]   # Trending above 10
-    sp02: ['<',  100]   # Below 100
 
-# Match anything else
-All_OK:
-  priority: VERY_LOW
+#---
 
+# Topology #2
 
+# hostname:
+#   node_id:
+#     node config...
+#   node_id:
+#
+# docker_id@host_id:
+#   node_id:
+#     node config...
+#
+#localhost:
+#  control0:
+#    type: control
+#    location: Main station
+#    nameserver: ns0
+#
+#  display0:
+#    type: display
+#    controller: control0
+#    location: Main station
+#
+#  listener0:
+#    type: listener
+#    location: Main station
+#    controller: control0
+#    alert_device: dereks_phone
+
+#
+#localhost/perseus01:
+#  type: docker
+#  listener1:
+#    type: listener
+#    location: Remote patient monitor station
+#    controller: control0
+#    alert_device: phone001
+#
+#
+#localhost/perseus02:
+#  type: docker
+#  display1:
+#    type: display
+#    controller: control0
+#    location: Remote data review station
+#
