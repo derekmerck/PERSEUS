@@ -12,47 +12,54 @@ Dependencies: Numpy, matplotlib
 See README.md for usage, notes, and license info.
 """
 
-#import numpy as np
-import matplotlib
-matplotlib.use('TkAgg')  # There is a problem with the default renderer under OSX
+import logging
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 
 
 class Stripchart:
-    def __init__(self, pnode, maxt=2, dt=0.02):
-        self.pnode = pnode
+    def __init__(self, interval=0.01, maxt=2, dt=0.02):
 
-        fig, ax = plt.subplots()
+        self.logger = logging.getLogger('Stripchart')
 
-        self.ax = ax
-        self.dt = dt
-        self.maxt = maxt
+        self.striplen = 5
+        plt.ion()
+        self.fig, self.ax = plt.subplots()
         self.tdata = [0]
         self.ydata = [0]
-        self.line = Line2D(self.tdata, self.ydata)
+        self.line = Line2D(self.tdata, self.ydata, marker='o')
         self.ax.add_line(self.line)
-        self.ax.set_ylim(-.1, 1.1)
-        self.ax.set_xlim(0, self.maxt)
-        self.ani = animation.FuncAnimation(fig, self.update, interval=self.pnode.update_interval * 1000, blit=True)
+
+        self.ax.set_ylim(1000, 3000)
+        self.ax.set_xlim(0, 20)
 
         plt.show()
 
 
-    def update(self, dummy):
+    def update(self, *args):
 
-        y = self.pnode.get('listener0')[1]
+        t = args[0][0]
+        y = args[0][1]
 
-        lastt = self.tdata[-1]
-        if lastt > self.tdata[0] + self.maxt:     # reset the arrays
-            self.tdata = [self.tdata[-1]]
-            self.ydata = [self.ydata[-1]]
-            self.ax.set_xlim(self.tdata[0], self.tdata[0] + self.maxt)
-            self.ax.figure.canvas.draw()
+        # TODO: Add throttle for t less than my update interval
 
-        t = self.tdata[-1] + self.dt
+        if t < self.tdata[-1]:
+            self.tdata = [0]
+            self.ydata = [0]
+
         self.tdata.append(t)
         self.ydata.append(y)
+
+        # Truncate out old values that are off the strip
+        for i in range(len(self.tdata)):
+            if self.tdata[i] > self.tdata[-1] - self.striplen:
+                break
+
+        self.tdata = self.tdata[i:]
+        self.ydata = self.ydata[i:]
+
+        self.ax.set_xlim(self.tdata[-1] - self.striplen, self.tdata[-1] + 0.1)
+
         self.line.set_data(self.tdata, self.ydata)
-        return self.line,
+        self.fig.canvas.draw()
+
