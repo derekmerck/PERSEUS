@@ -1,3 +1,4 @@
 # Anything that shouldn't be put in version control
 shadow.yaml
 README.rst
+*.pyc

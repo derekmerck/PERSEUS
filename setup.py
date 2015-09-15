@@ -27,7 +27,6 @@ import os
 from setuptools import setup
 import PERSEUS
 
-
 def read(*paths):
     """Build a file path from *paths* and return the contents."""
     with open(os.path.join(*paths), 'r') as f:
@@ -48,10 +47,10 @@ setup(
     long_description=long_desc,
     url=PERSEUS.__url__,
     license=PERSEUS.__license__,
-    py_modules=["PERSEUS", "SimpleDisplay", "fabfile"],
+    py_modules=["PERSEUS", "SimpleDisplay", "fabfile", "PyroNode", "SMSMessenger"],
     include_package_data=True,
     zip_safe=True,
-    install_requires=['Pyro4', 'PyYAML', 'Numpy', 'Fabric'],
+    install_requires=['Pyro4', 'PyYAML', 'Numpy', 'Fabric', 'matplotlib'],
     classifiers=[
         'Development Status :: 1 - Planning',
         'Intended Audience :: Healthcare Industry',

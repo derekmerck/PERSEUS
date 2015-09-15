@@ -9,10 +9,9 @@ import re
 
 # Read a waveform data set
 def read_waveform(fn):
+
     data = np.fromfile(fn, 'uint16')
     data = np.reshape(data, (3, -1), 'F')
-
-    logging.debug(data.dtype)
 
     # First 2 bytes are milliseconds
     # Note that ^ is NOT ** in numpy-notation
@@ -81,7 +80,7 @@ def parse_numerics_message( m ):
         value = float(n[3])
         if n[0] == 'NOM_ECG_CARD_BEAT_RATE' and value < 300 and value > 0:
             bpm = value
-        elif n[0] == 'NOM_PULS_OXIM_SAT_O2':
+        elif n[0] == 'NOM_PULS_OXIM_SAT_O2' and value < 101 and value > 0:
             spo2 = value
 
     return t, (bpm, spo2)

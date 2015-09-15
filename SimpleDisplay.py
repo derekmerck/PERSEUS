@@ -13,16 +13,15 @@ See README.md for usage, notes, and license info.
 """
 
 import logging
-import matplotlib
-matplotlib.use('TkAgg')
-
+# import matplotlib
+# matplotlib.use('TkAgg')
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import time
 import numpy as np
 
-import statsmodels.api as sm
-lowess = sm.nonparametric.lowess
+# import statsmodels.api as sm
+# lowess = sm.nonparametric.lowess
 
 class Stripchart(object):
 
@@ -53,10 +52,6 @@ class Stripchart(object):
             t = args[0][0]
             y = args[0][1]
 
-            if t < self.tdata[-1] - 1:
-                self.tdata = np.array([0])
-                self.ydata = np.array([0])
-
             self.tdata = np.append(self.tdata, t)
             self.ydata = np.append(self.ydata, y)
 
@@ -68,36 +63,27 @@ class Stripchart(object):
             self.tdata = self.tdata[i:]
             self.ydata = self.ydata[i:]
 
-            self.ax.set_xlim(self.tdata[-1] - self.striplen, self.tdata[-1] - 0.1)
-
-            # z = lowess(self.ydata, self.tdata, frac=1./20)
-            # w = lowess(y, x, frac=1./3)
-
-            # self.line.set_data(z[:,0], z[:,1])
             self.line.set_data(self.tdata, self.ydata)
 
     def update_numeric(self, value):
         if not value: return
-        self.logger.debug(value)
         self.text.set_text("bpm:  {0}\nspo2: {1}".format(value[0], value[1]))
-
 
     def __init__(self):
 
         self.logger = logging.getLogger('Stripchart')
 
         plt.ion()
-        # self.fig, self.ax = plt.subplots(2, 1, sharex=True)
-        self.fig, self.ax = plt.subplots(2, 1)
+        self.fig, self.ax = plt.subplots(2, 1, sharex=True)
+        # self.fig, self.ax = plt.subplots(2, 1)
 
-        self.pleth = Stripchart.Datastrip('PLETH', 'SpO^2', (1000, 3000), self.ax[0])
-        #self.pleth = Stripchart.Datastrip('ECG',   'BPM',   (8100, 8300), self.ax[0])
-        self.ecg   = Stripchart.Datastrip('ECG',   'BPM',   (8100, 8300), self.ax[1])
+        self.pleth = Stripchart.Datastrip('PLETH', 'SpO^2', (900, 3150), self.ax[0])
+        self.ecg   = Stripchart.Datastrip('ECG',   'BPM',   (8050, 8400), self.ax[1])
 
         plt.show()
 
         self.tic = time.time()
-        self.interval = 0.15
+        self.interval = 0.08
 
         self.text = self.fig.text(0.79, 0.95,
                          'bpm:  \nspo2: ',
@@ -120,6 +106,9 @@ class Stripchart(object):
 
         self.toc = time.time()
         if (self.toc - self.tic) > self.interval:
+
+            self.ax[0].set_xlim(self.pleth.tdata[-1] - self.pleth.striplen, self.pleth.tdata[-1] - 0.1)
+
             self.fig.canvas.draw()
             self.tic = self.toc
 
