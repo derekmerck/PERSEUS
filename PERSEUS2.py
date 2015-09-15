@@ -1,3 +1,5 @@
+import sys
+sys.path.append('duppy')
 
 import logging
 from SimpleDisplay import Stripchart

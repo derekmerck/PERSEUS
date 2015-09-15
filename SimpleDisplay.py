@@ -13,6 +13,9 @@ See README.md for usage, notes, and license info.
 """
 
 import logging
+import matplotlib
+matplotlib.use('TkAgg')
+
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import time
