@@ -2,3 +2,4 @@
 shadow.yaml
 README.rst
 *.pyc
+old/*
