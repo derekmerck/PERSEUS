@@ -13,15 +13,6 @@ Dependencies: Pyro4, Numpy, matplotlib
 See README.md for usage, notes, and license info.
 """
 
-__package__ = "PERSEUS"
-__description__ = "Push Electronic Relay for Smart Alarms for End User Situational Awareness"
-__url__ = "https://github.com/derekmerck/PERSEUS"
-__author__ = 'Derek Merck'
-__email__ = "derek_merck@brown.edu"
-__license__ = "MIT"
-__version_info__ = ('0', '2', '0')
-__version__ = '.'.join(__version_info__)
-
 import sys
 # Assume that duppy may be in PERSEUS/duppy
 sys.path.append('duppy')
@@ -33,6 +24,15 @@ from SMSMessenger import SMSMessenger
 import time
 import os
 
+__package__ = "PERSEUS"
+__description__ = "Push Electronic Relay for Smart Alarms for End User Situational Awareness"
+__url__ = "https://github.com/derekmerck/PERSEUS"
+__author__ = 'Derek Merck'
+__email__ = "derek_merck@brown.edu"
+__license__ = "MIT"
+__version_info__ = ('0', '2', '1')
+__version__ = '.'.join(__version_info__)
+
 
 class ControlNode(PyroNode):
     # Acts as data broker and rule evaluator
@@ -40,6 +40,11 @@ class ControlNode(PyroNode):
     def __init__(self, **kwargs):
         super(ControlNode, self).__init__(**kwargs)
         self.messenger = SMSMessenger('derek@gmail.com', 'password')
+
+    # Add a channel->variable set translator for each node (set of channels)
+    # Add a rule-sieve to each variable set
+    # Add rules to the rule-sieve
+
 
 class ListenerNode(PyroNode):
 
@@ -154,7 +159,6 @@ class DisplayNode(PyroNode):
             self.add_channel(node, 'pleth')
             self.add_channel(node, 'ecg')
             self.add_channel(node, 'numerics')
-
 
 
 def test_perseus():
