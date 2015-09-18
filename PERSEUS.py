@@ -23,6 +23,12 @@ from mutils import read_waveform, read_numerics
 from SMSMessenger import SMSMessenger
 import time
 import os
+import argparse
+import yaml
+
+# import Pyro4
+# Pyro4.config.USE_MSG_WAITALL = False
+# Pyro4.config.NS_HOST = "10.229.156.225"
 
 __package__ = "PERSEUS"
 __description__ = "Push Electronic Relay for Smart Alarms for End User Situational Awareness"
@@ -33,6 +39,17 @@ __license__ = "MIT"
 __version_info__ = ('0', '2', '1')
 __version__ = '.'.join(__version_info__)
 
+
+def PERSEUSNode(pn_id, **kwargs):
+    # Factory function
+    if kwargs.get('type') == 'control':
+        return ControlNode(pn_id=pn_id, **kwargs)
+    elif kwargs.get('type') == 'listener':
+        return ListenerNode(pn_id=pn_id, **kwargs)
+    elif kwargs.get('type') == 'display':
+        return DisplayNode(pn_id=pn_id, **kwargs)
+    else:
+        raise NotImplementedError
 
 class ControlNode(PyroNode):
     # Acts as data broker and rule evaluator
@@ -164,12 +181,12 @@ class DisplayNode(PyroNode):
 def test_perseus():
     control0 = ControlNode(pn_id='control0')
     control0.run()
-
-    listener0 = ListenerNode(pn_id='listener0',
-                             broker='control0',
-                             sim_data_dir='samples/DEV-03 sample 1A  NORMAL-  NORMAL RHYTHM + GOOD NORMOXIC PLETH   (5min NSR + 100% SpO2)')
-                             # sim_data_dir='samples/DEV-03 sample 1E  FALSE POSITIVE-  VFIB + GOOD NORMOXIC PLETH   (5min VF + 98% SpO2)')
-    listener0.run()
+    #
+    # listener0 = ListenerNode(pn_id='listener0',
+    #                          broker='control0',
+    #                          sim_data_dir='samples/DEV-03 sample 1A  NORMAL-  NORMAL RHYTHM + GOOD NORMOXIC PLETH   (5min NSR + 100% SpO2)')
+    #                          # sim_data_dir='samples/DEV-03 sample 1E  FALSE POSITIVE-  VFIB + GOOD NORMOXIC PLETH   (5min VF + 98% SpO2)')
+    # listener0.run()
 
     # listener1 = ListenerNode(pn_id='listener1',
     #                          broker='control0',
@@ -187,6 +204,33 @@ def test_perseus():
     PyroNode.daemon.requestLoop()
 
 
+def parse_args():
+
+    parser = argparse.ArgumentParser(description='PERSEUS Core')
+    parser.add_argument('pn_id',
+                        nargs='+',
+                        metavar='node id')
+    parser.add_argument('--config',
+                        default='config2.yaml')
+
+    p = parser.parse_args()
+
+    with open(p.config, 'r') as f:
+        topology, rules, zones = yaml.load_all(f)
+
+    return p, topology, rules, zones
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    test_perseus()
+
+    p, topology, rules, zones = parse_args()
+
+    for item in p.pn_id:
+        node = PERSEUSNode(item, **topology[item])
+        node.run()
+
+    logging.debug("Threads running.")
+    PyroNode.daemon.requestLoop()
+
+#    test_perseus()
