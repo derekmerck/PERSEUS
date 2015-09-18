@@ -154,11 +154,11 @@ class ListenerNode(PyroNode):
             fns = os.listdir(sim_data_dir)
 
             for fn in fns:
-                if fn.find('PLETH')>0:
+                if fn.find('PLETH') > 0:
                     self.add_waveform_channel('pleth', fn=os.path.join(sim_data_dir, fn))
-                elif fn.find('ECG')>0:
+                elif fn.find('ECG') > 0:
                    self.add_waveform_channel('ecg', fn=os.path.join(sim_data_dir, fn))
-                elif fn.find('numerics')>0:
+                elif fn.find('numerics') > 0:
                     self.add_numeric_channel('numerics', fn=os.path.join(sim_data_dir, fn))
 
 
@@ -211,7 +211,7 @@ def parse_args():
                         nargs='+',
                         metavar='node id')
     parser.add_argument('--config',
-                        default='config2.yaml')
+                        default='config.yaml')
 
     p = parser.parse_args()
 
@@ -233,4 +233,3 @@ if __name__ == "__main__":
     logging.debug("Threads running.")
     PyroNode.daemon.requestLoop()
 
-#    test_perseus()

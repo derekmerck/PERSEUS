@@ -1,173 +1,36 @@
-# SAMPLE PERSEUS CONFIG FILE
-
-# Any settings that should be kept private can be put in a local "shadow.yaml"
-# file that follows the same 3-part format as this document.  Adding the key with
-# the value "shadow" in this file is optional, but can be useful for readability.
-
-
-# PERSEUS SYSTEM SETTINGS
-
-LOGGING_LEVEL: DEBUG
-
-CTRL_STREAM_LEN: 300   # Seconds
-UPDATE_FREQ: 10        # Per second
-
-SMS_ENABLED: False
-SMS_NAME: PERSEUS Alert
-SMS_EMAIL: shadow
-SMS_RELAY_PASSWORD: shadow
-
----
-
-# PERSEUS NETWORK TOPOLOGY
-#
-# Each node is a separate instance of PERSEUS.py
-#
-# {$pnode_id}:
-#   type: {control|listener|display enum}
-#   location: {$loc_string}
-#   controller: {$controller_pid}*
-#   alert_device: {$device_id}
-#
-# * If type is control, no controller is required
-#   If no controller is listed, the _first_ controller listed is default
+# Network Topology
 
 control0:
   type: control
-  location: Main station
-  nameserver: ns0
+  description: Data hub
 
 listener0:
   type: listener
-  location: Main station
-  controller: control0
-  alert_device: dereks_phone
+  description: Patient room 0
+  broker: control0
+  sim_data_dir: 'samples/DEV-03 sample 1A  NORMAL-  NORMAL RHYTHM + GOOD NORMOXIC PLETH   (5min NSR + 100% SpO2)'
 
 listener1:
   type: listener
-  location: Remote patient monitor station
-  controller: control0
-  alert_device: phone001
+  description: Patient room 1
+  broker: control0
+  sim_data_dir: 'samples/DEV-03 sample 1D  TRUE POSITIVE-  VTACH + GOOD NORMOXIC PLETH   (5min VT + 98% SpO2 [last half of tracing])'
 
 display0:
   type: display
-  controller: control0
-  location: Main station
-
-display1:
-  type: display
-  controller: control0
-  location: Remote data review station
-
+  broker: control0
+  node: listener1
 
 ---
 
-# PERSEUS REGISTERED DEVICES
-#
-# {$device_id}:
-#   number: {10-digit str}
-#   carrier: {verizon|sprint|etc..}
+# Rules
 
-dereks_phone:
+---
+
+# Alert Zones
+
+zone0:
+  nodes: [listener0]
+  priorities: [HIGH, MAX]
   number: shadow
   carrier: shadow
-
-lisas_phone:
-  number: shadow
-  carrier: shadow
-
-leos_phone:
-  number: shadow
-  carrier: shadow
-
-# Assignable devices
-
-phone001:
-  number: 5555555555
-  carrier: att
-
-
-#---
-
-# PERSEUS ALERT RULES
-#
-# Rules are matched in given order.
-#
-# {$rule_name}:
-#   priority: {SEVERE|MODERATE|LOW|VERY_LOW}
-#   conditions:
-#     {$var0}: [{$op0}, {$value0}]
-#     {$var1}: [{$op1}, {$value1}]
-#
-# where $var   is in [ekg, hr, spo2, bp] and
-#       $op    is in [<,<=,..<,==,!=,>,>=,..>] and
-#       $value is an integer
-#
-# The ..> and ..< symbols are for "trending above" and "trending below" respectively.
-
-#probably_no_trouble:    # Want to try to match this _before_ calling a "trouble" alert
-#  priority: VERY_LOW
-#  conditions:
-#    <<: *trouble        # Based on 'trouble', but,
-#    ekg:  ['==',  OK]   # Normal status
-#
-#trouble:
-#  priority: SEVERE
-#  conditions:    &trouble
-#    ekg:  ['!=',  OK]   # Abnormal status
-#    hr:   ['..>', 10]   # Trending above 10
-#    sp02: ['<',  100]   # Below 100
-#
-## Match anything else
-#all_ok:
-#  priority: VERY_LOW
-#
-
-
-#---
-
-# Topology #2
-
-# hostname:
-#   node_id:
-#     node config...
-#   node_id:
-#
-# docker_id@host_id:
-#   node_id:
-#     node config...
-#
-#localhost:
-#  control0:
-#    type: control
-#    location: Main station
-#    nameserver: ns0
-#
-#  display0:
-#    type: display
-#    controller: control0
-#    location: Main station
-#
-#  listener0:
-#    type: listener
-#    location: Main station
-#    controller: control0
-#    alert_device: dereks_phone
-
-#
-#localhost/perseus01:
-#  type: docker
-#  listener1:
-#    type: listener
-#    location: Remote patient monitor station
-#    controller: control0
-#    alert_device: phone001
-#
-#
-#localhost/perseus02:
-#  type: docker
-#  display1:
-#    type: display
-#    controller: control0
-#    location: Remote data review station
-#
