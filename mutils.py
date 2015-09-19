@@ -92,8 +92,8 @@ def read_numerics(fn):
             T.append(t)
             N.append(n)
 
-    logging.debug(T)
-    logging.debug(N)
+    # logging.debug(T)
+    # logging.debug(N)
 
     return T, N
 
@@ -125,7 +125,7 @@ def parse_alarm_message(m):
 
 
     if not alert_src.startswith('ERROR!'):
-        logging.debug('{0}:({1}, {2})'.format(t, alert_src, alert_code))
+        # logging.debug('{0}:({1}, {2})'.format(t, alert_src, alert_code))
         return t, (alert_src, alert_code)
     else:
         return t, ("", "ALL_OK")
@@ -150,8 +150,8 @@ def read_alarms(fn):
             T.append(t)
             N.append(n)
 
-    logging.debug(T)
-    logging.debug(N)
+    # logging.debug(T)
+    # logging.debug(N)
 
     return T, N
 

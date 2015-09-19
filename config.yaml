@@ -8,6 +8,7 @@ listener0:
   type: listener
   description: Patient room 0
   broker: control0
+  # If "sim_data_dir" key exists, the listener will try to read cached data channels from files
   sim_data_dir: 'samples/DEV-03 sample 1A  NORMAL-  NORMAL RHYTHM + GOOD NORMOXIC PLETH   (5min NSR + 100% SpO2)'
 
 listener1:
@@ -19,11 +20,40 @@ listener1:
 display0:
   type: display
   broker: control0
-  node: listener0
+  node: listener1
 
 ---
 
 # Rules
+
+# Device state is matched one by one against rules in the given order.  The _first_ matched rule is returned.
+
+# Example format:
+#- priority: {max|high|low|none}
+#  conditions:
+#    alarm:  [HAS, ASYSTOLE|V_TACHY|...?]             # HAS = Can find this substring in alarm code
+#    bmp:    [GT|GTE|LT|LTE|EQ|NEQ|TLT|TGT, value]    # TLT = "trending less than", TGT = "trending greater than"
+#    sp02:   [GT|GTE|LT|LTE|EQ|NEQ|TLT|TGT, value]    # TLT = "trending less than", TGT = "trending greater than"
+#    ecg:    _not testable yet_                       # Should be reducable to "good" or "bad" at least
+#    pleth:  _not testable yet_                       # Should be reducable to "good" or "bad" at least
+
+
+# IGNORE VFIB WITH BAD SPO2 (DISCONNECT)
+- priority: none
+  conditions:
+    alarm: [HAS, ASYSTOLE]
+    spo2:  [LTE, 89]
+
+# VFIB ALERT
+- priority: max
+  conditions:
+    alarm: [HAS, ASYSTOLE]  # VFIB
+
+# VTACH ALERT WITH HIGH HEART RATE
+- priority: max
+  conditions:
+    alarm: [EQ, V_TACHY]    # VTACH
+    bpm:   [GTE, 100]
 
 ---
 
