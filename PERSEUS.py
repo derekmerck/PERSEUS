@@ -8,7 +8,7 @@ Spring 2015
 
 <https://github.com/derekmerck/PERSEUS>
 
-Dependencies: Pyro4, Numpy, matplotlib
+Dependencies: Pyro4, Numpy, matplotlib, PyYAML
 
 See README.md for usage, notes, and license info.
 """
@@ -19,16 +19,13 @@ sys.path.append('duppy')
 import logging
 from SimpleDisplay import Stripchart
 from PyroNode import PyroNode
-from mutils import read_waveform, read_numerics
+from mutils import read_waveform, read_numerics, read_alarms
 from SMSMessenger import SMSMessenger
 import time
 import os
 import argparse
 import yaml
-
-# import Pyro4
-# Pyro4.config.USE_MSG_WAITALL = False
-# Pyro4.config.NS_HOST = "10.229.156.225"
+import numpy as np
 
 __package__ = "PERSEUS"
 __description__ = "Push Electronic Relay for Smart Alarms for End User Situational Awareness"
@@ -51,6 +48,7 @@ def PERSEUSNode(pn_id, **kwargs):
     else:
         raise NotImplementedError
 
+
 class ControlNode(PyroNode):
     # Acts as data broker and rule evaluator
 
@@ -65,12 +63,15 @@ class ControlNode(PyroNode):
 
 class ListenerNode(PyroNode):
 
-    def next_numeric_value(self, *args):
+    def next_value(self, *args):
 
         channel = args[0]
 
         t = float(self.times[channel][self.counters[channel]])
-        n = self.values[channel][self.counters[channel]]
+        v = self.values[channel][self.counters[channel]]
+
+        if type(v) == np.float64:
+            v = float(v)
 
         # Don't yield faster than the clock
         if self.start_times[channel] < 0 or t < self.last_t[channel] - 1:
@@ -83,29 +84,7 @@ class ListenerNode(PyroNode):
         self.counters[channel] = self.counters[channel] + 1
         self.last_t[channel] = t
         # self.logger.debug("{0}:{1}".format(t,n))
-        return t, n
-
-    def next_waveform_value(self, *args):
-        channel = args[0]
-
-        t = float(self.times[channel][self.counters[channel]])
-        y = float(self.values[channel][self.counters[channel]])
-
-        # Don't yield faster than the clock
-        if self.start_times[channel] < 0 or t < self.last_t[channel] - 1:
-            self.start_times[channel] = time.time()
-            self.t_offsets[channel] = t
-
-        #self.logger.debug("{0}+{1}<{2}+{3}".format(time.time(), self.t_offsets[channel], self.start_times[channel], t))
-
-        if (time.time() - self.start_times[channel]) < (t - self.t_offsets[channel]):
-            #self.logger.debug('FAILED: {0}<{1}'.format((time.time() - self.start_times[channel]), (t - self.t_offsets[channel])))
-            return
-
-        #self.logger.debug('PASSED: {0}<{1}'.format((time.time() - self.start_times[channel]), (t - self.t_offsets[channel])))
-        self.counters[channel] = self.counters[channel] + 1
-        self.last_t[channel] = t
-        return t, y
+        return t, v
 
     def add_waveform_channel(self, channel, **kwargs):
         fn = kwargs.get('fn')
@@ -121,7 +100,7 @@ class ListenerNode(PyroNode):
             self.t_offsets[channel] = -1
             self.counters[channel] = 0
             self.last_t[channel] = -1
-            self.add_update_func(PyroNode.put_in_channel, self.next_waveform_value, channel, channel=(self.pn_id, channel))
+            self.add_update_func(PyroNode.put_in_channel, self.next_value, channel, channel=(self.pn_id, channel))
         else:
             raise NotImplementedError
 
@@ -134,7 +113,20 @@ class ListenerNode(PyroNode):
             self.t_offsets[channel] = -1
             self.counters[channel] = 0
             self.last_t[channel] = -1
-            self.add_update_func(PyroNode.put_in_channel, self.next_numeric_value, channel, channel=(self.pn_id, channel))
+            self.add_update_func(PyroNode.put_in_channel, self.next_value, channel, channel=(self.pn_id, channel))
+        else:
+            raise NotImplementedError
+
+    def add_alarm_channel(self, channel, **kwargs):
+        fn = kwargs.get('fn')
+        if fn:
+            self.logger.debug('Setting up fake alarms from file')
+            self.times[channel], self.values[channel] = read_alarms(fn)
+            self.start_times[channel] = -1
+            self.t_offsets[channel] = -1
+            self.counters[channel] = 0
+            self.last_t[channel] = -1
+            self.add_update_func(PyroNode.put_in_channel, self.next_value, channel, channel=(self.pn_id, channel))
         else:
             raise NotImplementedError
 
@@ -160,6 +152,8 @@ class ListenerNode(PyroNode):
                    self.add_waveform_channel('ecg', fn=os.path.join(sim_data_dir, fn))
                 elif fn.find('numerics') > 0:
                     self.add_numeric_channel('numerics', fn=os.path.join(sim_data_dir, fn))
+                elif fn.find('alarm') > 0:
+                    self.add_alarm_channel('alarms', fn=os.path.join(sim_data_dir, fn))
 
 
 class DisplayNode(PyroNode):
@@ -176,32 +170,7 @@ class DisplayNode(PyroNode):
             self.add_channel(node, 'pleth')
             self.add_channel(node, 'ecg')
             self.add_channel(node, 'numerics')
-
-
-def test_perseus():
-    control0 = ControlNode(pn_id='control0')
-    control0.run()
-    #
-    # listener0 = ListenerNode(pn_id='listener0',
-    #                          broker='control0',
-    #                          sim_data_dir='samples/DEV-03 sample 1A  NORMAL-  NORMAL RHYTHM + GOOD NORMOXIC PLETH   (5min NSR + 100% SpO2)')
-    #                          # sim_data_dir='samples/DEV-03 sample 1E  FALSE POSITIVE-  VFIB + GOOD NORMOXIC PLETH   (5min VF + 98% SpO2)')
-    # listener0.run()
-
-    # listener1 = ListenerNode(pn_id='listener1',
-    #                          broker='control0',
-    #                          sim_data_dir='samples/DEV-03 sample 1D  TRUE POSITIVE-  VTACH + GOOD NORMOXIC PLETH   (5min VT + 98% SpO2 [last half of tracing])')
-    # listener1.run()
-
-    display0 = DisplayNode(pn_id='display0', broker='control0', node='listener0')
-    display0.run()
-
-    # display1 = DisplayNode(pn_id='display1', broker='control0', node='listener1')
-    # display1.run()
-
-    logging.debug("Threads running.")
-
-    PyroNode.daemon.requestLoop()
+            self.add_channel(node, 'alarms')
 
 
 def parse_args():

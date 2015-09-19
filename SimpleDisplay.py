@@ -67,7 +67,12 @@ class Stripchart(object):
 
     def update_numeric(self, value):
         if not value: return
-        self.text.set_text("bpm:  {0}\nspo2: {1}".format(value[0], value[1]))
+        self.numerics.set_text("bpm:  {0}\nspo2: {1}".format(value[0], value[1]))
+
+    def update_alarms(self, value):
+        if not value: return
+        self.alarms.set_text("source:  {0}\ncode: {1}".format(value[0], value[1]))
+
 
     def __init__(self):
 
@@ -85,15 +90,23 @@ class Stripchart(object):
         self.tic = time.time()
         self.interval = 0.08
 
-        self.text = self.fig.text(0.79, 0.95,
+        self.numerics = self.fig.text(0.79, 0.95,
                          'bpm:  \nspo2: ',
+                         horizontalalignment='left',
+                         verticalalignment='center',
+                         transform=self.fig.transFigure)
+
+        self.alarms = self.fig.text(0.13, 0.95,
+                         'source:  \ncode: ',
                          horizontalalignment='left',
                          verticalalignment='center',
                          transform=self.fig.transFigure)
 
 
     def update(self, *args):
-        if not args[0]: return
+        if not args[0]:
+            # Tried to update before the next t is valid
+            return
 
         channel = args[1]
 
@@ -103,6 +116,8 @@ class Stripchart(object):
             self.ecg.update_wave(args[0])
         elif channel == "numerics":
             self.update_numeric(args[0][1])
+        elif channel == "alarms":
+            self.update_alarms(args[0][1])
 
         self.toc = time.time()
         if (self.toc - self.tic) > self.interval:

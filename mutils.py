@@ -30,18 +30,6 @@ def test_read_waveform():
     pl.show()
 
 
-class NumericsSample(object):
-
-    def __init__(self, t):
-        self.numerics = []
-        self.t = t
-
-    def add_numeric(self, n):
-        self.numerics.append(n)
-
-# This does not serialize nicely with Pyro4
-#Numeric = namedtuple('Numeric', ['id', 'state', 'units', 'value'])
-
 def parse_numerics_message( m ):
 
     def get_time_from_header( h ):
@@ -116,8 +104,68 @@ def test_read_numerics():
     read_numerics(fn)
 
 
+def parse_alarm_message(m):
+
+    data = {}
+    for line in m.split('\n'):
+        n = line.find(':')
+        key = line[:n]
+        value = line[n+1:].strip()
+        if key:
+            data[key] = value
+
+    if not data.get('Time'):
+        return None, None
+
+    # Figure out what to return from the message dict
+    ts = time.strptime(data['Time']+'-'+data['Date'], '%H:%M:%S:%f-%m/%d/%Y')
+    t = time.mktime(ts)
+    alert_src = data['Alert_source']
+    alert_code = data['Alert_code']
+
+
+    if not alert_src.startswith('ERROR!'):
+        logging.debug('{0}:({1}, {2})'.format(t, alert_src, alert_code))
+        return t, (alert_src, alert_code)
+    else:
+        return t, ("", "ALL_OK")
+
+    # return None, None
+
+
+def read_alarms(fn):
+    f = open(fn, 'rU')
+    message_str = f.read()
+
+    # Split the messages by ^-+\n
+    h = re.compile(r'^-+$', re.M)
+    messages = h.split(message_str)
+
+    T = []
+    N = []
+
+    for m in messages:
+        t, n = parse_alarm_message(m)
+        if t:
+            T.append(t)
+            N.append(n)
+
+    logging.debug(T)
+    logging.debug(N)
+
+    return T, N
+
+
+def test_read_alarms():
+
+    # fn = '/Users/derek/dev/PERSEUS/samples/DEV-03 sample 1E  FALSE POSITIVE-  VFIB + GOOD NORMOXIC PLETH   (5min VF + 98% SpO2)/RIHEDUrg CDev-03MP90_alarm_20150907_132121.txt'
+    # fn = '/Users/derek/dev/PERSEUS/samples/DEV-03 sample 1B  TRUE POSITIVE-  NORMAL RHYTHM + GOOD HYPOXIC PLETH   (5min NSR + 85% SpO2)/RIHEDUrg CDev-03MP90_alarm_20150907_130802.txt'
+    fn = '/Users/derek/dev/PERSEUS/samples/DEV-03 sample 1A  NORMAL-  NORMAL RHYTHM + GOOD NORMOXIC PLETH   (5min NSR + 100% SpO2)/RIHEDUrg CDev-03MP90_alarm_20150907_125701.txt'
+    read_alarms(fn)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    test_read_waveform()
+    test_read_alarms()
 
 

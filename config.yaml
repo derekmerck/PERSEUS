@@ -19,7 +19,7 @@ listener1:
 display0:
   type: display
   broker: control0
-  node: listener1
+  node: listener0
 
 ---
 
