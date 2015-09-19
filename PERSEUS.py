@@ -236,9 +236,9 @@ if __name__ == "__main__":
         node = PERSEUSNode(item, **topology[item])
         node.run()
 
-    # Grab a pointer for control to do some testing
-    control0 = registry['control0']
-    control0.add_rule( {'ecg': ('EQ', 8350)})
+    # # Grab a pointer for control to do some testing
+    # control0 = registry['control0']
+    # control0.add_rule( {'ecg': ('EQ', 8350)})
 
     logging.debug("Threads running.")
     PyroNode.daemon.requestLoop()
