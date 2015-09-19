@@ -49,7 +49,7 @@ setup(
     long_description=long_desc,
     url=PERSEUS.__url__,
     license=PERSEUS.__license__,
-    py_modules=["PERSEUS", "SimpleDisplay", "fabfile", "PyroNode", "SMSMessenger"],
+    py_modules=["PERSEUS"],
     include_package_data=True,
     zip_safe=True,
     install_requires=['Pyro4', 'PyYAML', 'Numpy', 'Fabric', 'matplotlib'],
