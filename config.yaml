@@ -4,6 +4,10 @@ control0:
   type: control
   description: Data hub
 
+control1:
+  type: control
+  description: Backup data hub
+
 listener0:
   type: listener
   description: Patient room 0
@@ -18,6 +22,11 @@ listener1:
   sim_data_dir: 'samples/DEV-03 sample 1D  TRUE POSITIVE-  VTACH + GOOD NORMOXIC PLETH   (5min VT + 98% SpO2 [last half of tracing])'
 
 display0:
+  type: display
+  broker: control0
+  node: listener0
+
+display1:
   type: display
   broker: control0
   node: listener1
