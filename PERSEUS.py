@@ -115,6 +115,14 @@ class ListenerNode(PyroNode):
             return
 
         self.counters[channel] += 1
+
+        if self.counters[channel] > len(self.times[channel]):
+            # Reset the loop
+            self.start_times[channel] = -1
+            self.t_offsets[channel] = -1
+            self.counters[channel] = 0
+            self.last_t[channel] = -1
+
         self.last_t[channel] = t
         # self.logger.debug("{0}:{1}".format(t,n))
         return t, v
