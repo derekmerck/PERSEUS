@@ -27,7 +27,7 @@ import os
 
 from setuptools import setup
 
-import PERSEUS
+from PERSEUS import __url__, __package__, __license__, __description__, __author__, __email__, __version__
 
 def read(*paths):
     """Build a file path from *paths* and return the contents."""
@@ -41,14 +41,14 @@ if os.path.exists('README.rst'):
     long_desc = read('README.rst')
 
 setup(
-    name=PERSEUS.__package__,
-    description=PERSEUS.__description__,
-    author=PERSEUS.__author__,
-    author_email=PERSEUS.__email__,
-    version=PERSEUS.__version__,
+    name=__package__,
+    description=__description__,
+    author=__author__,
+    author_email=__email__,
+    version=__version__,
     long_description=long_desc,
-    url=PERSEUS.__url__,
-    license=PERSEUS.__license__,
+    url=__url__,
+    license=__license__,
     py_modules=["PERSEUS"],
     include_package_data=True,
     zip_safe=True,
