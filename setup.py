@@ -1,6 +1,6 @@
 """
 PERSEUS Setup
-Merck, Spring 2015
+Merck, Summer 2015
 
 [Derek Merck](derek_merck@brown.edu)
 [Leo Kobayashi](lkobayashi@lifespan.org)
@@ -8,7 +8,7 @@ Spring 2015
 
 <https://github.com/derekmerck/PERSEUS>
 
-Dependencies: Numpy, matplotlib
+Dependencies: Numpy, matplotlib, duppy
 
 See README.md for usage, notes, and license info.
 
