@@ -74,19 +74,27 @@ def parse_numerics_message( m ):
     return t, (bpm, spo2)
 
 
-def read_numerics(fn):
+def read_numerics(fn, offset=0, maxlen=-1):
 
-    f = open(fn, 'rU')
-    message_str = f.read()
+    with open(fn, 'rU') as f:
+        if offset:
+            #logging.debug(offset)
+            #logging.debug(maxlen-offset)
+            f.seek(offset)
+            message_str = f.read(maxlen-offset)
+        else:
+            message_str = f.read()
+        eof = f.tell()
 
     # Split the messages by ^Year ... \n =====...===\n
     h = re.compile(r'^Year.*\n=+$', re.M)
     messages = h.split(message_str)
+    #logging.debug(messages)
 
     T = []
     N = []
 
-    for m in messages:
+    for m in messages[1:-2]:
         t, n = parse_numerics_message(m)
         if t:
             T.append(t)
@@ -95,12 +103,16 @@ def read_numerics(fn):
     # logging.debug(T)
     # logging.debug(N)
 
-    return T, N
+    return T, N, eof
 
 
 def test_read_numerics():
 
-    fn = 'samples/RIHEDUrg CDev-03MP90_numerics_20150907_125701.txt'
+    fn = 'samples/DEV-03 sample 1A  NORMAL-  NORMAL RHYTHM + GOOD NORMOXIC PLETH   (5min NSR + 100% SpO2)/RIHEDUrg CDev-03MP90_numerics_20150907_125701.txt'
+    # eof = 1000
+    # for l in range(10000,350000,10000):
+    #     T, N, eof = read_numerics(fn, eof, l)
+
     read_numerics(fn)
 
 
@@ -166,6 +178,6 @@ def test_read_alarms():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    test_read_alarms()
+    test_read_numerics()
 
 

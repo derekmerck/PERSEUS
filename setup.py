@@ -24,9 +24,7 @@ $ python setup.py sdist upload  [-r https://testpypi.python.org/pypi]
 """
 
 import os
-
 from setuptools import setup
-
 from PERSEUS import __url__, __package__, __license__, __description__, __author__, __email__, __version__
 
 def read(*paths):
