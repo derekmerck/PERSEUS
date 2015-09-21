@@ -94,6 +94,10 @@ class ControlNode(PyroNode):
 
         return alerts
 
+    def available_nodes(self):
+        # Return a list of available nodes for remote monitors to select from
+        pass
+
 
 class ListenerNode(PyroNode):
 
@@ -116,7 +120,7 @@ class ListenerNode(PyroNode):
 
         self.counters[channel] += 1
 
-        if self.counters[channel] > len(self.times[channel]):
+        if self.counters[channel] >= len(self.times[channel]):
             # Reset the loop
             self.start_times[channel] = -1
             self.t_offsets[channel] = -1

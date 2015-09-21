@@ -10,6 +10,7 @@ import re
 # Read a waveform data set
 def read_waveform(fn):
 
+    # For an incremental read, we will have consume 6 bytes at a time until we run out of file.
     data = np.fromfile(fn, 'uint16')
     data = np.reshape(data, (3, -1), 'F')
 
@@ -103,7 +104,7 @@ def read_numerics(fn, offset=0, maxlen=-1):
     # logging.debug(T)
     # logging.debug(N)
 
-    return T, N, eof
+    return T, N
 
 
 def test_read_numerics():

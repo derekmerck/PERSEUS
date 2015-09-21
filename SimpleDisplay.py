@@ -52,6 +52,11 @@ class Stripchart(object):
             t = args[0][0]
             y = args[0][1]
 
+            # Reset if we loop
+            if t < self.tdata[-1]:
+                self.tdata = np.array([0])
+                self.ydata = np.array([0])
+
             self.tdata = np.append(self.tdata, t)
             self.ydata = np.append(self.ydata, y)
 
