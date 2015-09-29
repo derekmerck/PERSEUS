@@ -33,36 +33,172 @@ display1:
 
 ---
 
-# Rules
-
+# PERSEUS Rule Descriptions
+# September 2015
+# v0.1
+#
 # Device state is matched one by one against rules in the given order.  The _first_ matched rule is returned.
-
+#
 # Example format:
 #- priority: {max|high|low|none}
 #  conditions:
-#    alarm:  [HAS, ASYSTOLE|V_TACHY|...?]             # HAS = Can find this substring in alarm code
-#    bmp:    [GT|GTE|LT|LTE|EQ|NEQ|TLT|TGT, value]    # TLT = "trending less than", TGT = "trending greater than"
-#    sp02:   [GT|GTE|LT|LTE|EQ|NEQ|TLT|TGT, value]    # TLT = "trending less than", TGT = "trending greater than"
-#    ecg:    _not testable yet_                       # Should be reducable to "good" or "bad" at least
-#    pleth:  _not testable yet_                       # Should be reducable to "good" or "bad" at least
+#    source: [EQ, NOM_ECG_CARD_BEAT_RATE, etc...]       # EQ for strings is a regex
+#    alarm:  [EQ, NOM_EVT_ECG_ASYSTOLE, etc...]
+#    bpm:    [GT|GTE|LT|LTE|EQ|NEQ|TLT|TGT, value]      # TLT = "trending less than", TGT = "trending greater than"
+#    spo2:   [GT|GTE|LT|LTE|EQ|NEQ|TLT|TGT, value]      # TLT = "trending less than", TGT = "trending greater than"
+#    ecg:    _waveform not qualitatively testable yet_
+#    pleth:  _waveform not qualitatively testable yet_
+#  message:  {none, #various other strings depending on alarm}   # PERSEUS smart alert component of message (160 char for SMS; 240 char for alphatext page)
+#                                                                #   e.g., "MAX.ALERT: Room C-1; Alert# 2;  VTach | HR 122 | No current SpO2 reading"
+#
+# LK general notes:  need to specify *source(s)* of alert, i.e., alert_source, as origin of alert_code as a condition
+#                    full alert_code names to avoid potential similar alarms from other sources in Philips system
 
+### MAXIMUM PRIORITY
 
-# IGNORE VFIB WITH BAD SPO2 (DISCONNECT)
+#1 [VFIB ALERT]   WITH PULSATILE, SPO2 PLETH   (FALSE POSITIVE)
 - priority: none
   conditions:
-    alarm: [HAS, ASYSTOLE]
-    spo2:  [LTE, 89]
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE]
+    alarm:  [EQ, NOM_EVT_ECG_ASYSTOLE, NOM_ECG_V_FIB_TACHY]             # Philips system seems to think simulated VFib is VFib *or* asystole->  >>Philips alarm<<
+#    pleth:  [EQ, _qualitatively good signal, pulsatile_]
+  message:  none                                                        # ignoring false positive
 
-# VFIB ALERT
+
+#2 VFIB ALERT   WITHOUT PULSATILE SPO2 PLETH
 - priority: max
   conditions:
-    alarm: [HAS, ASYSTOLE]  # VFIB
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE]
+    alarm:  [EQ, NOM_EVT_ECG_ASYSTOLE, NOM_ECG_V_FIB_TACHY]              # VFib, unknown if true or false alarm->  PERSEUS ALERT
+#    pleth:  [EQ, _qualitatively bad signal_]                                 # Philips system seems to think simulated VFib is VFib *or* asystole->
+  message: "V.FIB"
 
-# VTACH ALERT WITH HIGH HEART RATE
+
+#4 VTACH ALERT   WITH HIGH HEART RATE   WITH PULSATILE SPO2 PLETH (SPO2 VALUE <= 89%)
 - priority: max
   conditions:
-    alarm: [EQ, V_TACHY]    # VTACH
-    bpm:   [GTE, 100]
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE, NOM_ECG_V_P_C_CNT]
+    alarm:  [EQ, NOM_EVT_ECG_V_TACHY]                                                         # VTach with pulsatile flow, likely true alarm->  PERSEUS ALERT
+    bpm:    [GT, 100]
+#    pleth:  [EQ, _qualitatively good signal, pulsatile_]
+    spo2:   [LTE, 89]
+  message:  "V.TACH | Current HR {bpm} bpm | Current SpO2 {spo2} % | Latest BP {BP} mmHg ({BP_dt} min ago)"
+
+
+#3 VTACH ALERT   WITH HIGH HEART RATE   WITHOUT PULSATILE PLETH
+- priority: max
+  conditions:
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE, NOM_ECG_V_P_C_CNT]
+    alarm:  [EQ, NOM_EVT_ECG_V_TACHY]                                                         # VTach, unknown if true or false alarm->  PERSEUS ALERT
+    bpm:    [GT, 100]
+#    pleth:  [EQ, _qualitatively bad signal_]
+  message: "V.TACH | Current HR {bpm} bpm | No current SpO2 reading"
+
+
+### HIGH PRIORITY
+
+#5 VTACH ALERT   WITH HIGH HEART RATE   WITH PULSATILE SPO2 PLETH (SpO2 VALUE >=90%)
+- priority: high
+  conditions:
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE, NOM_ECG_V_P_C_CNT]
+    alarm:  [EQ, NOM_EVT_ECG_V_TACHY]                                                         # VTach with pulsatile flow, likely true alarm->  PERSEUS ALERT
+    bpm:    [GT, 100]
+#    pleth:  [EQ, _qualitatively good signal, pulsatile_]
+    spo2:   [GTE, 90]
+  message:  "V.TACH | Current HR {bpm} bpm | Current SpO2 {spo2} % | Latest BP {BP} mmHg ({BP_dt} min ago)"
+
+
+#6 BRADYCARDIA ALERT   WITH PULSATILE PLETH
+- priority: high
+  conditions:
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE, NOM_PULS_OXIM_SAT_O2]
+    alarm:  [EQ, NOM_EVT_ECG_BRADY_EXTREME, NOM_EVT_LO*, NOM_EVT_BRADY]            # Bradycardic rhythm with pulsatile flow, likely true alarm->  PERSEUS ALERT
+    bpm:    [LTE, 30]                                                               # *** only if from alert_source NOM_ECG_CARD_BEAT_RATE
+#    pleth:  [EQ, _qualitatively good signal, pulsatile_]
+  message:  "BRADYCARDIA | Current HR {bpm} bpm | Current SpO2 {spo2} % | Latest BP {BP} mmHg ({BP_dt} min ago)"
+
+
+#7 BRADYCARDIA ALERT   WITHOUT PULSATILE PLETH
+- priority: high
+  conditions:
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE, NOM_PULS_OXIM_SAT_O2]
+    alarm:  [EQ, NOM_EVT_ECG_BRADY_EXTREME, NOM_EVT_LO*, NOM_EVT_BRADY]            # Bradycardic rhythm without pulsatile flow, unknown if true or false alarm ->  >>Philips alarm<<
+    bpm:    [LTE, 30]                                                                # *** only if from alert_source NOM_ECG_CARD_BEAT_RATE
+#    pleth:  [EQ, _qualitatively bad signal_]
+  message:  none                                                                              # defer to Philips system
+
+
+#8 TACHYCARDIA ALERT   WITH PULSATILE PLETH
+- priority: high
+  conditions:
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE, NOM_PULS_OXIM_SAT_O2]
+    alarm:  [EQ, NOM_EVT_ECG_TACHY_EXTREME, NOM_EVT_HI*, NOM_EVT_TACHY]            # Tachycardic rhythm with pulsatile flow, likely true alarm->  PERSEUS ALERT
+    bpm:    [GTE, 140]                                                               # *** only if from alert_source NOM_ECG_CARD_BEAT_RATE
+#    pleth:  [EQ, _qualitatively good signal, pulsatile_]
+  message:  "TACHYCARDIA | Current HR {bpm} bpm | Current SpO2 {spo2} % | Latest BP {BP} mmHg ({BP_dt} min ago)"
+
+
+#9 TACHYCARDIA ALERT   WITHOUT PULSATILE PLETH
+- priority: high
+  conditions:
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE, NOM_PULS_OXIM_SAT_O2]
+    alarm:  [EQ, NOM_EVT_ECG_TACHY_EXTREME, NOM_EVT_HI*, NOM_EVT_TACHY]            # Tachycardic rhythm without pulsatile flow, unknown if true or false alarm ->  >>Philips alarm<<
+    bpm:    [GTE, 140]                                                               # *** only if from alert_source NOM_ECG_CARD_BEAT_RATE
+#    pleth:  [EQ, _qualitatively bad signal_]
+  message:  none                                                                              # defer to Philips system
+
+
+#10 BRADYCARDIA TREND ALERT
+- priority: high
+  conditions:
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE]                                                    # 5-min trend towards bradycardia, current HR =< 60  ->  PERSEUS ALERT
+    bpm:    [TLT, 60]
+  message:  "HR RAPIDLY TRENDING DOWN | Current HR {bpm} bpm | Current SpO2 {spo2} % | Latest BP {BP} mmHg ({BP_dt} min ago)"
+
+
+#11 TACHYCARDIA TREND ALERT
+- priority: high
+  conditions:
+    source: [EQ, NOM_ECG_CARD_BEAT_RATE]                                                    # 5-min trend towards tachycardia, current HR >= 110  ->  PERSEUS ALERT
+    bpm:    [TGT, 110]
+  message:  "HR RAPIDLY TRENDING UP | Current HR {bpm} bpm | Current SpO2 {spo2} % | Latest BP {BP} mmHg ({BP_dt} min ago)"
+
+
+#12 SPO2 HYPOXIA ALERT   WITH PULSATILE PLETH
+- priority: high
+  conditions:
+    source: [EQ, NOM_PULS_OXIM_SAT_O2]                                                      # Hypoxic SpO2 with pulsatile flow, likely true alarm->  PERSEUS ALERT
+    alarm:  [EQ, NOM_EVT_LO*, NOM_EVT_DESAT]
+#    pleth:  [EQ, _qualitatively good signal, pulsatile_]
+    spo2:   [LTE, 89]
+  message:  "HYPOXIA | Current SpO2 {spo2}"
+
+
+### MEDIUM PRIORITY
+
+#13 SPO2 TREND ALERT
+- priority: medium
+  conditions:
+    source: [EQ, NOM_PULS_OXIM_SAT_O2]                                                      # 5-min trend towards hypoxia, current SpO2 =< 91  ->  PERSEUS ALERT
+    spo2:   [TLT, 91]
+  message:  "SpO2 RAPIDLY TRENDING DOWN | Current SpO2 {spo2}"
+
+
+#14 HYPOTENSION TREND ALERT
+- priority: medium
+  conditions:
+    source: [EQ, NOM_PRESS_BLD_NONINV_SYS]                                                  # 5-min trend towards hypotension, current SBP =< 110  ->  PERSEUS ALERT
+    spo2:   [TLT, 100]
+  message:  "BP RAPIDLY TRENDING DOWN | Latest BP {BP} mmHg ({BP_dt} min ago)"
+
+
+#15 HYPERTENSION TREND ALERT
+- priority: medium
+  conditions:
+    source: [EQ, NOM_PRESS_BLD_NONINV_SYS]                                                  # 5-min trend towards hypertension, current SBP >= 180  ->  PERSEUS ALERT
+    spo2:   [TGT, 180]
+  message:  "BP RAPIDLY TRENDING UP | Latest BP {BP} mmHg ({BP_dt} min ago)"
+
 
 ---
 
@@ -70,6 +206,6 @@ display1:
 
 zone0:
   nodes: [listener0]
-  priorities: [HIGH, MAX]
+  priorities: [high, max]
   number: shadow
   carrier: shadow

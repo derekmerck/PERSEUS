@@ -6,9 +6,31 @@ import pylab as pl
 import logging
 import time
 import re
+import os
+import itertools
 
 # Read a waveform data set
-def read_waveform(fn):
+def read_waveform_message(data):
+    # First 2 bytes are milliseconds
+    # Note that ^ is NOT ** in numpy-notation
+
+    for i,j,k in data.take(3):
+        times = i.astype('uint32') + j.astype('uint32')*(2**16)
+        times = times.astype('float')/1000.0
+        values = k.astype('float')
+
+    return times, values
+
+def read_waveform(fn, bof=-1, eof=-1):
+
+    # with open(fn, 'rU') as f:
+    #     if bof>=0:
+    #         f.seek(bof)
+    #         message_str = f.read(eof-bof)
+    #     else:
+    #         message_str = f.read()
+    #
+    # times, values = read_waveform_message(message_str)
 
     # For an incremental read, we will have consume 6 bytes at a time until we run out of file.
     data = np.fromfile(fn, 'uint16')
@@ -22,9 +44,16 @@ def read_waveform(fn):
 
     return times, values
 
+def test_read_waveform_incremental():
+    fn = 'samples/RIHEDUrg CDev-03MP90_PLETH_20150907_125701.txt'
+    times, values = read_waveform(fn)
+
+    pl.plot(times, values)
+    pl.show()
+
 
 def test_read_waveform():
-    fn = 'samples/RIHEDUrg CDev-03MP90_PLETH_20150907_125701.txt'
+    fn = 'samples/DEV-03 sample 1A  NORMAL-  NORMAL RHYTHM + GOOD NORMOXIC PLETH   (5min NSR + 100% SpO2)/RIHEDUrg CDev-03MP90_PLETH_20150907_125701.txt'
     times, values = read_waveform(fn)
 
     pl.plot(times, values)
@@ -75,17 +104,14 @@ def parse_numerics_message( m ):
     return t, (bpm, spo2)
 
 
-def read_numerics(fn, offset=0, maxlen=-1):
+def read_numerics(fn, bof=-1, eof=-1):
 
     with open(fn, 'rU') as f:
-        if offset:
-            #logging.debug(offset)
-            #logging.debug(maxlen-offset)
-            f.seek(offset)
-            message_str = f.read(maxlen-offset)
+        if bof>=0:
+            f.seek(bof)
+            message_str = f.read(eof-bof)
         else:
             message_str = f.read()
-        eof = f.tell()
 
     # Split the messages by ^Year ... \n =====...===\n
     h = re.compile(r'^Year.*\n=+$', re.M)
@@ -105,6 +131,24 @@ def read_numerics(fn, offset=0, maxlen=-1):
     # logging.debug(N)
 
     return T, N
+
+def test_read_numerics_incremental():
+    # Reads a file as if it is regenerated 1/10secs.
+
+    fn = 'samples/DEV-03 sample 1A  NORMAL-  NORMAL RHYTHM + GOOD NORMOXIC PLETH   (5min NSR + 100% SpO2)/RIHEDUrg CDev-03MP90_numerics_20150907_125701.txt'
+
+    flen = os.path.getsize(fn)
+    print flen
+
+    eofs = range(0,flen,flen/30)
+    print eofs
+
+    bof = 0
+    for eof in eofs[1:]:
+        T, N = read_numerics(fn, bof, eof)
+        bof = eof
+        print T,N
+
 
 
 def test_read_numerics():
@@ -179,6 +223,6 @@ def test_read_alarms():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    test_read_numerics()
+    test_read_waveform()
 
 
