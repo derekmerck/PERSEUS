@@ -4,6 +4,7 @@ from SatisfiableSet import TypedConditionSet, TypedValueSet
 from enum import Enum
 import logging
 import yaml
+import time
 
 
 class Priority(Enum):
@@ -13,24 +14,41 @@ class Priority(Enum):
     low = 1
     none = 0
 
+
 class PERSEUSAlert(object):
 
     def __init__(self, rule, v, source):
-        self._msg = rule._msg
-        self.priority = rule.priority
+
+        self.rule = rule
         self.source = source
+        self.t = time.time()
+
+        if isinstance(v, dict):
+            v = TypedValueSet(v)
         self.v = v
+
+    def __eq__(self, other):
+        #logging.debug("{0}=={1}&{2}=={3}".format(self.rule, other.rule, self.source, other.source))
+        if self.rule == other.rule and self.source == other.source:
+            return True
+        else:
+            return False
 
     @property
     def msg(self):
         # logging.debug(self.v.as_dict())
-        m = "{priority}.ALERT".format(priority=self.priority.name.upper())
+        m = "{priority}.ALERT".format(priority=self.rule.priority.name.upper())
         if self.source:
             m = "{0} | Room: {source}".format(m, source=self.source)
-        if self._msg:
-            s = self._msg.format(BP=-1, BP_dt=-1, **self.v.as_dict())
+        if self.rule._msg:
+            # We are not capturing some variables yet, so we'll update v with dummies
+            s = self.rule._msg.format(BP=-1, BP_dt=-1, **self.v.as_dict())
             m = "{0} | {1}".format(m, s)
         return m
+
+    @property
+    def priority(self):
+        return self.rule.priority
 
 
 class PERSEUSRule(object):
@@ -81,12 +99,13 @@ def test_alert_rules():
     if alert:
         logging.debug(alert.msg)
 
-    v2 = TypedValueSet({'source': 'NOM_ECG_V_P_C_CNT',
+    v2d = {'source': 'NOM_ECG_V_P_C_CNT',
                         'alarm' : 'NOM_EVT_ECG_V_TACHY',
                         'bpm':    120,
-                        'spo2':   70 })
+                        'spo2':   70 }
+    v2 = TypedValueSet(v2d)
 
-    alert = TestRules(rules, v2, 'monitor1')
+    alert = TestRules(rules, v2d, 'monitor1')
     if alert:
         logging.debug(alert.msg)
 

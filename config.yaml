@@ -1,3 +1,7 @@
+# If PERSEUS can find a file 'shadow_{my_config.yaml}', it will attempt to update these
+# values against information in that file.  Keeping a shadow file can be useful for
+# not exposing your private config to the version control system.
+
 # Network Topology
 
 control0:
@@ -55,6 +59,12 @@ display1:
 #                    full alert_code names to avoid potential similar alarms from other sources in Philips system
 
 ### MAXIMUM PRIORITY
+
+#0 TESTING
+- priority: high
+  conditions:
+    ecg: ['GT', 8275]
+  message:  "TESTING PEAK ECG | ecg: {ecg}"
 
 #1 [VFIB ALERT]   WITH PULSATILE, SPO2 PLETH   (FALSE POSITIVE)
 - priority: none
@@ -204,8 +214,18 @@ display1:
 
 # Alert Zones
 
-zone0:
-  nodes: [listener0]
-  priorities: [high, max]
-  number: shadow
-  carrier: shadow
+sms_relay:
+  name: PERSEUS.Alert
+  user: shadow
+  pword: shadow
+
+zones:
+  zone0:
+    sources: [listener0]
+    priorities: [high, max]
+    devices: [dereks_phone, leos_phone]
+
+devices:
+  dereks_phone:
+    number: shadow
+    carrier: shadow

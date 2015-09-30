@@ -1,5 +1,5 @@
 # Anything that shouldn't be put in version control
-shadow.yaml
+shadow*
 README.rst
 *.pyc
 old/*
