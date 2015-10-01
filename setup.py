@@ -47,7 +47,7 @@ setup(
     long_description=long_desc,
     url=__url__,
     license=__license__,
-    py_modules=["PERSEUS", "SimpleDisplay", "mutils"],
+    py_modules=["PERSEUS", "PERSEUSNode", "PERSEUSRule", "SimpleDisplay", "mutils"],
     include_package_data=True,
     zip_safe=True,
     install_requires=['Pyro4', 'PyYAML', 'Numpy', 'Fabric', 'matplotlib'],

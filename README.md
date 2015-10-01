@@ -24,12 +24,14 @@ Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.
 - Python 2.7
 - [numpy](http://www.numpy.org) for calculations
 - [matplotlib](http://matplotlib.org) for simple plotting
-- [Pyro4](https://pythonhosted.org/Pyro4/) for python-to-python communication
 - [PyYAML](http://pyyaml.org) for configuration info
+- [Pyro4](https://pythonhosted.org/Pyro4/) for python-to-python communication
+- [duppy](https://github.com/derekmerck/duppy) for set logic and wrapper utilities
 - [Fabric](http://www.fabfile.org) for remote network administration
-- [duppy](https://github.com/derekmerck/duppy) for logic and wrapper utilities
 
-The [Anaconda](http://continuum.io/downloads) scientific python distribution includes numpy, matplotlib and pyyaml, and it works well for PERSEUS (the reference fab file uses it as a base distribution).  Pyro4 can be installed onto anaconda with `pip`.
+The [Anaconda](http://continuum.io/downloads) scientific python distribution includes numpy, matplotlib and pyyaml, and it works well for PERSEUS (the reference fab file uses it as a base distribution).  Pyro4 and duppy can be installed onto anaconda with `pip`.
+
+`$ pip install Pyro4 git+https://github.com/derekmerck/duppy`
 
 
 ## Usage
