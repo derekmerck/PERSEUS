@@ -75,7 +75,7 @@ Future plans include using [fabric](http://www.fabfile.org) or Docker to configu
 
 ## Configuration
 
-`config.yaml` includes three document sections:  _topology_, _rules_, and _alert devices_.  See the example.
+`config.yaml` includes three document sections:  _topology_, _rules_, and _alert zones_.  See the example.
 
 Also note that any confidential information (SMS credentials, phone numbers) can be referenced with a value "shadow" and included in a corresponding `shadow.yaml` file that follows the same format.  `shadow.yaml` is `.gitignored` by default.
 
@@ -84,7 +84,9 @@ Also note that any confidential information (SMS credentials, phone numbers) can
 Pyro4 is somewhat picky about working outside of `localhost`.  See Pyro4's [tips-and-tricks](https://pythonhosted.org/Pyro4/tipstricks.html#failed-to-locate-the-nameserver-connection-refused-what-now) for more details.
 
 1. Boot the nameserver and other daemons with a hostname that resolves to the IP address that the other nodes will use (_not_ `localhost`)
-2. Make sure that you have the same version of Pyro4 on all machines, and that Python is allowed through any firewalls
+2. Make sure that you have the same version of Pyro4 on all machines, and that Python is allowed through any firewalls[^firewalls]
+
+[^firewalls]:  It appears that just allowing 9090 through (the default Pyro4 nameserver) is not enough.  The Pyro4 objects each use a different port number in the >50k range.  This makes it problematic to use it inside Docker with only a few statically assigned ports exposed.
 
 ## Security
 
@@ -99,7 +101,7 @@ Using gmail as the SMS relay requires either turning off app security in gmail, 
 
 ## Code Organization Overview
 
-![Network organization](perseus_overview.png)
+![Network organization](perseus_overview2.png)
 
 
 ## Acknowledgements

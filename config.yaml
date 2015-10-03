@@ -223,7 +223,7 @@ zones:
   zone0:
     sources: [listener0]
     priorities: [high, max]
-    devices: [dereks_phone, leos_phone]
+    devices: [dereks_phone]
 
 devices:
   dereks_phone:
