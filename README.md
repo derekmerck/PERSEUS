@@ -117,4 +117,4 @@ Using gmail as the SMS relay requires either turning off app security in gmail, 
 
 ---
 
-<b id="f1>1</b>:  It appears that just allowing 9090 through (the default Pyro4 nameserver) is not enough.  The Pyro4 objects each use a different port number in the >50k range.  This makes it problematic to use it inside Docker with only a few statically assigned ports exposed.[↩](#a1)
+<b id="f1>1</b>:  It appears that just allowing 9090 through (the default Pyro4 nameserver) is not enough.  The Pyro4 objects each use a different port number in the \>50k range.  This makes it problematic to use it inside Docker with only a few statically assigned ports exposed.[↩](#a1)
