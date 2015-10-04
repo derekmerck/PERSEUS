@@ -84,9 +84,8 @@ Also note that any confidential information (SMS credentials, phone numbers) can
 Pyro4 is somewhat picky about working outside of `localhost`.  See Pyro4's [tips-and-tricks](https://pythonhosted.org/Pyro4/tipstricks.html#failed-to-locate-the-nameserver-connection-refused-what-now) for more details.
 
 1. Boot the nameserver and other daemons with a hostname that resolves to the IP address that the other nodes will use (_not_ `localhost`)
-2. Make sure that you have the same version of Pyro4 on all machines, and that Python is allowed through any firewalls[^firewalls]
+2. Make sure that you have the same version of Pyro4 on all machines, and that Python is allowed through any firewalls<sup id="a1">[1](#f1)</sup>
 
-[^firewalls]:  It appears that just allowing 9090 through (the default Pyro4 nameserver) is not enough.  The Pyro4 objects each use a different port number in the >50k range.  This makes it problematic to use it inside Docker with only a few statically assigned ports exposed.
 
 ## Security
 
@@ -116,3 +115,6 @@ Using gmail as the SMS relay requires either turning off app security in gmail, 
 
 [MIT](http://opensource.org/licenses/mit-license.html)
 
+---
+
+<b id="f1>1</b>:  It appears that just allowing 9090 through (the default Pyro4 nameserver) is not enough.  The Pyro4 objects each use a different port number in the >50k range.  This makes it problematic to use it inside Docker with only a few statically assigned ports exposed.[↩](#a1)
