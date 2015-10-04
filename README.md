@@ -70,6 +70,9 @@ The same 3-node configuration could be run entirely on a single host (or any com
 local$ python -m Pyro4.naming -n local
 local$ python -m PERSEUS control0 listener0 display0
 ```
+
+However, because of Python's global interpreter lock (the "[GIL](https://wiki.python.org/moin/GlobalInterpreterLock)", running all 3 nodes in a single thread is much less efficient than running each (or at least the display) in its own process.
+
 Future plans include using [fabric](http://www.fabfile.org) or Docker to configure the entire network remotely.
 
 
