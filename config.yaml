@@ -7,10 +7,12 @@
 control0:
   type: control
   description: Data hub
+  host: localhost  # Or overwrite in shadow
 
 control1:
   type: control
   description: Backup data hub
+  host: localhost  # Or overwrite in shadow
 
 listener0:
   type: listener
@@ -18,22 +20,26 @@ listener0:
   broker: control0
   # If "sim_data_dir" key exists, the listener will try to read cached data channels from files
   sim_data_dir: 'samples/DEV-03 sample 1A  NORMAL-  NORMAL RHYTHM + GOOD NORMOXIC PLETH   (5min NSR + 100% SpO2)'
+  host: localhost  # Or overwrite in shadow
 
 listener1:
   type: listener
   description: Patient room 1
   broker: control0
   sim_data_dir: 'samples/DEV-03 sample 1D  TRUE POSITIVE-  VTACH + GOOD NORMOXIC PLETH   (5min VT + 98% SpO2 [last half of tracing])'
+  host: localhost  # Or overwrite in shadow
 
 display0:
   type: display
   broker: control0
   node: listener0
+  host: localhost  # Or overwrite in shadow
 
 display1:
   type: display
   broker: control0
   node: listener1
+  host: localhost  # Or overwrite in shadow
 
 ---
 

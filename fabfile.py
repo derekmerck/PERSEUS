@@ -18,7 +18,6 @@ See README.md for usage, notes, and license info.
 ```
 $ fab --set config=config.yaml configure deploy start          # Stand up network
 $ fab --set use_docker=true configure deploy start             # Stand up network inside of Docker containers
-$ fab host1 start:pid=listener0,type=listener,controller=control0 # Startup a single pre-deployed host w/o config
 ```
 
 """
@@ -29,7 +28,9 @@ from fabric.api import *
 
 # TODO: Build this automagically from addresses
 env.hosts = ['host1', 'host2', 'host3']
-pid_by_host = ['control0', 'listener0', 'display0']
+node_map = {'host1': 'control0',
+            'host2': 'listener0',
+            'host3': 'display0'}
 
 code_dir = '/PERSEUS'
 shadow_config = 'shadow.yaml'
