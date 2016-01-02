@@ -19,6 +19,7 @@ os.environ.update(shadow_env)
 
 
 class AlertGenerator(object):
+    # Hard coded to work with a SplunkEventStore for now
 
     def __init__(self):
         self.rules = {}
@@ -53,22 +54,37 @@ class AlertGenerator(object):
 
 class AlertRouter(object):
 
-    def __init__(self):
-        self.zones = {}
+    def __init__(self, zones, roles):
+        self.zones = zones
+        self.roles = roles
         self.bridges = {'slack': SlackMessenger(),
-                        'twilio': TwilioMessenger(),
+                        'twilio-sms': TwilioMessenger(),
                         'email-sms': EmailSMSMessenger()}
 
     def alert(self, host, rule, values):
 
-        # Figure out host -> zone
-        # Figure out zone -> sink mapping
+        alerted_zones = []
+        for zone, hosts in self.zones.iteritems():
+            if host in hosts:
+                alerted_zones.append(zone)
 
-        devices = self.zones[host].devices
+        # logging.debug(alerted_zones)
 
-        for device in devices:
-            message = rule.message(host, events)
-            self.bridges[device.bridge].send(device.recipient, message)
+        alerted_roles = []
+        for role, role_dict in self.roles.iteritems():
+            for zone, priorities in role_dict['zones'].iteritems():
+
+                # logging.debug(zone)
+                # logging.debug(priorities)
+                if zone in alerted_zones and rule['priority'] in priorities:
+                    alerted_roles.append(role)
+
+        # logging.debug(alerted_roles)
+        #
+        for role in alerted_roles:
+            for relay, relay_args in self.roles[role]['relays'].iteritems():
+                self.bridges[relay].message('ABC', **relay_args)
+
 
 
 def test_alert_generator():
@@ -80,12 +96,38 @@ def test_alert_generator():
 
 def test_alert_router():
 
-    router = AlertRouter()
+    with file('config2.yaml') as f:
+        config = yaml.load(f)
 
-    pass
+    zones = config['zones']
+    roles = config['roles']
+
+    router = AlertRouter(zones, roles)
+
+    host = 'sample1A'
+
+    rule = {'name': 'dummy_rule',
+            'priority': 'HIGH',
+            'conditions': {}}
+
+    values = {'bmp': -1,
+              'spo2': -1,
+              'alert_source': 'DUMMY_SRC',
+              'alert_code': 'DUMMY_CODE',
+              'ecg_quality': 'GOOD',
+              'pleth_quality': 'GOOD'}
+
+    # router.alert(host, rule, values)
+    # # Should alert everyone
+
+    host = 'dummy_host'
+    router.alert(host, rule, values)
+    # Should not alert anyone
+
 
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
+    test_alert_router()
 

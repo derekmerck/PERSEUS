@@ -1,4 +1,8 @@
-
+"""
+Should support a range of event storage types.  Splunk is easy to setup, so we focused on that.
+Could also easily support an ELK stack or a custom python shipper/indexer (as I wrote in the
+previous Perseus v0.2).
+"""
 
 import logging
 import yaml
