@@ -10,6 +10,8 @@ import splunklib.client as client
 import splunklib.results as results
 import yaml
 
+f = file("shadow.yaml")
+shadow = yaml.load(f)
 
 class SplunkEventStore(object):
 
@@ -48,17 +50,14 @@ class SplunkEventStore(object):
 
     def __init__(self):
 
-        HOST = "192.168.1.94"
-        PORT = 8089
-        USERNAME = "admin"
-        PASSWORD = "L(j4Kfha2qFXdTW["
+
 
         # Create a Service instance and log in
         self.service = client.connect(
-            host=HOST,
-            port=PORT,
-            username=USERNAME,
-            password=PASSWORD)
+            host=shadow['credentials']['splunk']['host'],
+            port=shadow['credentials']['splunk']['port'],
+            username=shadow['credentials']['splunk']['user'],
+            password=shadow['credentials']['splunk']['pword'])
 
         # Verify login
         if not self.service.apps:
@@ -137,13 +136,12 @@ def test_eventstore():
     """
     rule = yaml.load(rule_str)
 
-    kwargs = {}
     kwargs = {"earliest_time": "1441618949.544",
               "latest_time":   "1441618954.544"}
 
     response = S.test_rule(rule, **kwargs)
     logging.debug(response)
-    #assert response == [{'host': 'sample1D', 'alarm_code': 'NOM_EVT_ECG_V_TACHY', 'bpm': '140.000000', 'alarm_source': 'NOM_ECG_V_P_C_CNT', 'spo2': '98.850000'}]
+    assert response == [{'host': 'sample1D', 'alarm_code': 'NOM_EVT_ECG_V_TACHY', 'bpm': '140.000000', 'alarm_source': 'NOM_ECG_V_P_C_CNT', 'spo2': '98.850000'}]
 
     rule_str = """
     alarms:
@@ -156,12 +154,12 @@ def test_eventstore():
     """
     rule = yaml.load(rule_str)
 
-    # kwargs = {"earliest_time": "1441617114.568",
-    #           "latest_time":   "1441617124.568"}
+    kwargs = {"earliest_time": "1441617114.568",
+              "latest_time":   "1441617124.568"}
 
     response = S.test_rule(rule, **kwargs)
     logging.debug(response)
-    #assert response == [{'host': 'sample1B', 'alarm_code': 'NOM_EVT_LO', 'bpm': '80.000000', 'alarm_source': 'NOM_PULS_OXIM_SAT_O2', 'spo2': '86.537500'}]
+    assert response == [{'host': 'sample1B', 'alarm_code': 'NOM_EVT_LO', 'bpm': '80.000000', 'alarm_source': 'NOM_PULS_OXIM_SAT_O2', 'spo2': '86.537500'}]
 
     rule_str = """
     alarms:
@@ -174,11 +172,12 @@ def test_eventstore():
     """
     rule = yaml.load(rule_str)
 
-    # kwargs = {"earliest_time": "1441617114.568",
-    #           "latest_time":   "1441617124.568"}
+    kwargs = {"earliest_time": "1441618275.64",
+              "latest_time":   "1441618285.64"}
 
     response = S.test_rule(rule, **kwargs)
     logging.debug(response)
+    assert response == [{'host': 'sample1F', 'alarm_code': 'NOM_EVT_ECG_ASYSTOLE', 'bpm': '0.000000', 'alarm_source': 'NOM_ECG_CARD_BEAT_RATE', 'spo2': '8388607.000000'}]
 
 
 if __name__ == "__main__":
