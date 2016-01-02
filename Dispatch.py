@@ -6,12 +6,17 @@ There are 2 parts to Dispatch:
 
 import logging
 import time
-import splunklib.client as client
-import splunklib.results as results
 import yaml
+import os
+import splunklib.client as SplunkClient
+import splunklib.results as SplunkResults
 
-f = file("shadow.yaml")
-shadow = yaml.load(f)
+from Messengers import EmailSMSMessenger, SlackMessenger, TwilioMessenger
+
+shadow = None
+with file("shadow.yaml") as f:
+    shadow = yaml.load(f)
+
 
 class SplunkEventStore(object):
 
@@ -50,10 +55,8 @@ class SplunkEventStore(object):
 
     def __init__(self):
 
-
-
         # Create a Service instance and log in
-        self.service = client.connect(
+        self.service = SplunkClient.connect(
             host=shadow['credentials']['splunk']['host'],
             port=shadow['credentials']['splunk']['port'],
             username=shadow['credentials']['splunk']['user'],
@@ -62,7 +65,6 @@ class SplunkEventStore(object):
         # Verify login
         if not self.service.apps:
             raise IOError
-
 
     def test_rule(self, rule, **kwargs):
 
@@ -74,9 +76,10 @@ class SplunkEventStore(object):
         response = self.service.jobs.oneshot(searchquery, **kwargs)
 
         # Get the results and display them using the ResultsReader
-        reader = results.ResultsReader(response)
+        reader = SplunkResults.ResultsReader(response)
         r = []
         for item in reader:
+            # Remove anything that doesn't have all 4 variables (in particular, the relevant alerts)
             if len(item) < 5: continue
             r.append(dict(item))
             logging.debug(item)
@@ -107,6 +110,9 @@ class AlertRouter(object):
     def __init__(self):
         self.zones = {}
         self.bridges = {}
+        self.bridges['slack'] = SlackMessenger()
+        self.bridges['twilio'] = TwilioMessenger()
+        self.bridges['email-sms'] = EmailSMSMessenger()
 
     def dispatch(self, host, rule, events):
 
@@ -120,8 +126,7 @@ class AlertRouter(object):
             self.bridges[device.bridge].send(device.recipient, message)
 
 
-
-def test_eventstore():
+def test_splunk_eventstore():
     S = SplunkEventStore()
 
     rule_str = """
@@ -179,10 +184,17 @@ def test_eventstore():
     logging.debug(response)
     assert response == [{'host': 'sample1F', 'alarm_code': 'NOM_EVT_ECG_ASYSTOLE', 'bpm': '0.000000', 'alarm_source': 'NOM_ECG_CARD_BEAT_RATE', 'spo2': '8388607.000000'}]
 
+    kwargs = {"earliest_time": "2015-09-07T13:31:20.640+04:00",
+              "latest_time":   "2015-09-07T13:32:20.640+04:00"}
+
+    response = S.test_rule(rule, **kwargs)
+    logging.debug(response)
+
+
+
 
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    test_eventstore()
 
