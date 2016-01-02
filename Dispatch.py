@@ -1,37 +1,47 @@
-"""
-There are 2 parts to Dispatch:
-- Alert generation (submit queries against Splunk or other APIs)
-- Alert routing (route and submit messages to communication bridges such as email->SMS, Twilio, and Slack
-"""
-
 import logging
 import time
 import yaml
-import os
 from Messenger import EmailSMSMessenger, SlackMessenger, TwilioMessenger
 from EventStore import SplunkEventStore
 
-# Lookup credentials from either os.env or shadow.yaml
-shadow = None
-with file("shadow.yaml") as f:
-    shadow_env = yaml.load(f)
-os.environ.update(shadow_env)
+
+class Dispatch(object):
+
+    def __init__(self, rules, zones, roles, update_interval=30):
+        self.event_store = SplunkEventStore()
+        self.alert_router = AlertRouter(zones, roles)
+        self.alert_generator = AlertGenerator(rules, self.event_store, self.alert_router, update_interval)
+
+    def run(self):
+        self.alert_generator.run()
 
 
 class AlertGenerator(object):
     # Hard coded to work with a SplunkEventStore for now
 
-    def __init__(self):
-        self.rules = {}
-        self.event_store = SplunkEventStore()
-        self.router = None
-        self.hosts = None
+    def __init__(self, rules=None, event_store=None, alert_router=None, update_interval=30):
+        self.rules = []
+        # Convert rule dictionaries into Rule objects
+        if rules:
+            for rule_args in rules:
+                self.rules.append(Rule(**rule_args))
+
+        # If this is None, create a SplunkEventStore()
+        if not event_store:
+            self.event_store = SplunkEventStore()
+        else:
+            self.event_store = event_store
+
+        # Okay if this is None for testing
+        self.router = alert_router
+        self.update_interval = update_interval
 
     def get_summary_for_rule(self, rule, query_args=None):
 
+        # Use last 30 seconds if no query args were passed in
         if not query_args:
             query_args = {"earliest_time": "now",
-                          "latest_time":   "-30s"}
+                          "latest_time":   "-{0}s".format(self.update_interval)}
 
         query_str = SplunkEventStore.perseus_rule_to_query_str(rule)
         logging.debug(query_str)
@@ -48,7 +58,8 @@ class AlertGenerator(object):
                 results = self.get_summary_for_rule(rule)
                 if not results: break
                 for host, values in results.iteritems():
-                    self.router.alert(host, rule, values)
+                    if self.router:
+                        self.router.alert(host, rule, values)
             time.sleep(15)
 
 
@@ -62,36 +73,52 @@ class AlertRouter(object):
                         'email-sms': EmailSMSMessenger()}
 
     def alert(self, host, rule, values):
-
         alerted_zones = []
         for zone, hosts in self.zones.iteritems():
             if host in hosts:
                 alerted_zones.append(zone)
-
-        # logging.debug(alerted_zones)
-
         alerted_roles = []
         for role, role_dict in self.roles.iteritems():
             for zone, priorities in role_dict['zones'].iteritems():
-
-                # logging.debug(zone)
-                # logging.debug(priorities)
-                if zone in alerted_zones and rule['priority'] in priorities:
+                if zone in alerted_zones and rule.priority in priorities:
                     alerted_roles.append(role)
-
-        # logging.debug(alerted_roles)
-        #
         for role in alerted_roles:
             for relay, relay_args in self.roles[role]['relays'].iteritems():
-                self.bridges[relay].message('ABC', **relay_args)
+                self.bridges[relay].message(rule.alert_msg(host, values), **relay_args)
 
+
+
+class Rule(object):
+
+    def __init__(self, **kwargs):
+        self.name = kwargs.get('name')
+        self.priority = kwargs.get('priority')
+        self.conditions = kwargs.get('conditions')
+        self.alert_str = kwargs.get('alert_str')
+
+    def condition_string(self):
+        # Could move SplunkEventStore Perseus specific code here
+        pass
+
+    def alert_msg(self, host, values):
+        s = self.alert_str.format(priority=self.priority,
+                                  host=host,
+                                  bpm=values['bpm'],
+                                  spo2=values['spo2'])
+        return s
 
 
 def test_alert_generator():
 
     generator = AlertGenerator()
 
-    pass
+    rule_args = {'name': 'dummy_rule',
+                 'priority': 'LOW',
+                 'conditions': {},
+                 'alert_str': "{priority} alert at {host} | bmp: {bpm}"}
+    rule = Rule(**rule_args)
+    query_args = None
+    response = generator.get_summary_for_rule(rule, query_args=query_args)
 
 
 def test_alert_router():
@@ -99,35 +126,33 @@ def test_alert_router():
     with file('config2.yaml') as f:
         config = yaml.load(f)
 
-    zones = config['zones']
-    roles = config['roles']
+    zones = config.get('zones')
+    roles = config.get('roles')
 
     router = AlertRouter(zones, roles)
 
     host = 'sample1A'
 
-    rule = {'name': 'dummy_rule',
-            'priority': 'HIGH',
-            'conditions': {}}
+    rule_args = {'name': 'dummy_rule',
+                 'priority': 'LOW',
+                 'conditions': {},
+                 'alert_str': "{priority} alert at {host} | bmp: {bpm}"}
+    rule = Rule(**rule_args)
 
-    values = {'bmp': -1,
+    values = {'bpm': -1,
               'spo2': -1,
               'alert_source': 'DUMMY_SRC',
               'alert_code': 'DUMMY_CODE',
               'ecg_quality': 'GOOD',
               'pleth_quality': 'GOOD'}
 
-    # router.alert(host, rule, values)
-    # # Should alert everyone
-
-    host = 'dummy_host'
     router.alert(host, rule, values)
-    # Should not alert anyone
 
 
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    test_alert_router()
+    # test_alert_generator()
+    # test_alert_router()
 

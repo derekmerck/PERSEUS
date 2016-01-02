@@ -8,7 +8,7 @@ Spring 2015
 
 <https://github.com/derekmerck/PERSEUS>
 
-Dependencies: Numpy, matplotlib, duppy
+Dependencies: PyYAML, splunk-sdk, Twilio
 
 See README.md for usage, notes, and license info.
 
@@ -47,10 +47,10 @@ setup(
     long_description=long_desc,
     url=__url__,
     license=__license__,
-    py_modules=["PERSEUS", "PERSEUSNode", "PERSEUSRule", "SimpleDisplay", "mutils"],
+    py_modules=["PERSEUS", "Dispatch", "Messenger", "EventStore"],
     include_package_data=True,
     zip_safe=True,
-    install_requires=['Pyro4', 'PyYAML', 'Numpy', 'Fabric', 'matplotlib'],
+    install_requires=['PyYAML', 'Twilio', 'splunk-sdk'],
     classifiers=[
         'Development Status :: 1 - Planning',
         'Intended Audience :: Healthcare Industry',

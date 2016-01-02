@@ -1,2 +1,2 @@
-include config.yaml README.md perseus_overview.png
+include config.yaml README.md perseus3-overview.png
 exclude README.rst
