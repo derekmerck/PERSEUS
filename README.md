@@ -1,5 +1,4 @@
-![PERSEUS logo](images/perseus_logo.png)
-# PERSEUS
+# ![PERSEUS logo](images/perseus_logo.png) PERSEUS
 Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
 [Derek Merck](email:derek_merck@brown.edu)  
