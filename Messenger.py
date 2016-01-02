@@ -133,4 +133,4 @@ def test_email_sms_messenger():
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
-    test_twilio_messenger()
+    test_email_sms_messenger()
