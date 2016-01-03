@@ -1,7 +1,7 @@
 """
-Should support a range of event storage types.  Splunk is easy to setup, so we focused on that.
-Could also easily support an ELK stack or a custom python shipper/indexer (as I wrote in the
-previous Perseus v0.2).
+Should support a range of event storage types.  Splunk is free for small workloads and easy
+to setup, so we focused on that.  We could also easily support an ELK stack or a custom python
+shipper/indexer (as I wrote in the previous Perseus v0.2).
 """
 
 import logging
@@ -59,7 +59,7 @@ class SplunkEventStore(object):
                     elif op_str == "LT": return "<"
                     elif op_str == "LTE": return "<="
                     elif op_str == "EQ": return "="
-                    elif op_str == "NE": return "!="
+                    elif op_str == "NEQ": return "!="
                     raise NotImplementedError
 
                 return "{cond}{op}{val}".format(cond=condition, op=get_op(value[0]), val=value[1])

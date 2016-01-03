@@ -3,6 +3,13 @@ import time
 import yaml
 from Messenger import EmailSMSMessenger, SlackMessenger, TwilioMessenger
 from EventStore import SplunkEventStore
+import os
+
+# Lookup credentials from either os.env or shadow.yaml
+shadow = None
+with file("shadow.yaml") as f:
+    shadow_env = yaml.load(f)
+os.environ.update(shadow_env)
 
 
 class Dispatch(object):
@@ -87,7 +94,6 @@ class AlertRouter(object):
                 self.bridges[relay].message(rule.alert_msg(host, values), **relay_args)
 
 
-
 class Rule(object):
 
     def __init__(self, **kwargs):
@@ -123,7 +129,7 @@ def test_alert_generator():
 
 def test_alert_router():
 
-    with file('config2.yaml') as f:
+    with file('config.yaml') as f:
         config = yaml.load(f)
 
     zones = config.get('zones')
@@ -153,6 +159,6 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    # test_alert_generator()
-    # test_alert_router()
+    #test_alert_generator()
+    test_alert_router()
 
