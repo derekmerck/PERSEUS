@@ -1,9 +1,9 @@
 import logging
 import time
 import yaml
+import os
 from Messenger import EmailSMSMessenger, SlackMessenger, TwilioMessenger
 from EventStore import SplunkEventStore
-import os
 
 # Lookup credentials from either os.env or shadow.yaml
 shadow = None

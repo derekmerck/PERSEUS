@@ -10,7 +10,6 @@ import os
 import splunklib.client as SplunkClient
 import splunklib.results as SplunkResults
 
-
 # Lookup credentials from either os.env or shadow.yaml
 shadow = None
 with file("shadow.yaml") as f:
@@ -20,7 +19,12 @@ os.environ.update(shadow_env)
 
 class EventStore(object):
 
-    def get_events(self, query_str, query_args):
+    # Returns a table of fields from matching events ordered by host name
+    def get_event_summary_by_host_for_rule_and_time(self, rule, time):
+        raise NotImplementedError
+
+    # Returns a list of all events matching a rule
+    def get_events_for_rule_and_time(self, rule, time):
         raise NotImplementedError
 
 
