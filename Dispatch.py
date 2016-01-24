@@ -33,7 +33,7 @@ class AlertGenerator(object):
             for rule_args in rules:
                 self.rules.append(Rule(**rule_args))
 
-        # If this is None, create a SplunkEventStore()
+        # If event_store is not given, create a SplunkEventStore()
         if not event_store:
             self.event_store = SplunkEventStore()
         else:
@@ -159,6 +159,6 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    #test_alert_generator()
-    test_alert_router()
+    test_alert_generator()
+    # test_alert_router()
 

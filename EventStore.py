@@ -1,6 +1,6 @@
 """
 Should support a range of event storage types.  Splunk is free for small workloads and easy
-to setup, so we focused on that.  We could also easily support an ELK stack or a custom python
+to setup, so we focused on that.  We could also easily support an ELK stack or a custom Python
 shipper/indexer (as I wrote in the previous Perseus v0.2).
 """
 
@@ -20,15 +20,13 @@ os.environ.update(shadow_env)
 class EventStore(object):
 
     # Returns a table of fields from matching events ordered by host name
-    def get_event_summary_by_host_for_rule_and_time(self, rule, time):
+    # time_span refers to the duration of each row of the table
+    # Start and stop time for the entire table should be set in the query_args dictionary
+    def get_summary(self, host, rule, time_span, query_args):
         raise NotImplementedError
 
-    # Returns a list of all events matching a rule
-    def get_events_for_rule_and_time(self, rule, time):
-        raise NotImplementedError
 
-
-class SplunkEventStore(object):
+class SplunkEventStore(EventStore):
 
     def __init__(self):
 
@@ -45,67 +43,64 @@ class SplunkEventStore(object):
 
     # This is particular to the PERSEUS application, could be peeled out and put in perseus rule
     @classmethod
-    def perseus_rule_to_query_str(cls, rule):
-        # Accept a rule, return a disjunctive query string
-        # (alarm conditions) OR (numeric conditions) OR (wave_quality conditions)
+    def perseus_rule_to_query_str(cls, host, rule, time_span = "30s"):
+        # Accept a rule, return a conjunctive query string
 
-        def log_to_query_element(log):
-            # Accept a subset of a rule for a single log type and return a conjunctive query string
-            # (bpm>100 AND spo2<90)
+        def item_to_query_element(condition, value):
+            # Accept a condition within a log and return its query string
+            # bpm: [GT,100] -> bpm>100
+            # alert_code: [MATCH, ERROR*, MY_CODE] -> match(alert_code, "ERROR*|MY_CODE")
 
-            def item_to_query_element(condition, value):
-                # Accept a condition within a log and return its query string
-                # bpm: [GT,100] -> bpm>100
+            def get_op(op_str):
+                if op_str == "GT": return ">"
+                elif op_str == "GTE": return ">="
+                elif op_str == "LT": return "<"
+                elif op_str == "LTE": return "<="
+                elif op_str == "EQ": return "="
+                elif op_str == "NEQ": return "!="
+                elif op_str == "MATCH": return "match"
+                raise NotImplementedError
 
-                def get_op(op_str):
-                    if op_str == "GT": return ">"
-                    elif op_str == "GTE": return ">="
-                    elif op_str == "LT": return "<"
-                    elif op_str == "LTE": return "<="
-                    elif op_str == "EQ": return "="
-                    elif op_str == "NEQ": return "!="
-                    raise NotImplementedError
+            def get_regex(values):
+                if type(values) is list:
+                    return "|".join(values)
+                else:
+                    return values
 
-                return "{cond}{op}{val}".format(cond=condition, op=get_op(value[0]), val=value[1])
+            op=get_op(value[0])
+            if op=="match":
+                qe = "{op}({cond}, \"{regex}\")".format(op=op, cond=condition, regex=get_regex(value[1:]))
+            else:
+                qe = "{cond}{op}{val}".format(cond=condition, op=op, val=value[1])
 
-            qq = []
-            for key, value in log.iteritems():
-                qq.append(item_to_query_element(key, value))
-            return "(" + " ".join(qq) + ")"
+            return qe
 
-        q = []
+        qitems = []
         for key, value in rule.iteritems():
-            q.append(log_to_query_element(value))
-        return "search index=perseus " + " OR ".join(q) + \
-               "| stats values(alert_source) as alarm_source " + \
-               "values(alert_code) as alarm_code " + \
-               "avg(bpm_1) as bpm avg(spo2) as spo2 by host"
+            qitems.append(item_to_query_element(key, value))
 
-    def get_summary(self, query_str, query_args, nitems=5):
+        # Complicated, but the idea here is to create a timechart over the time window being considered
+        # complete with predicted values for bpm and spo2, then filter it down with a "where" clause.
+        # fillnull is used so predict doesn't fail (filling after timechart is very slow for some reason).
+        # max(variable) is used so that the -1 fill doesn't affect the predicted values.
+        q = "search index=perseus host={host} | " \
+            "fillnull value=-1 bpm_1, spo2 | " \
+            "timechart span={time_span} max(bpm_1) as bpm, max(spo2) as spo2, values(alert_source) as alarm_source, values(alert_code) as alarm_code | " \
+            "predict bpm as pred_bpm | predict spo2 as pred_spo2 | " \
+            "where {filter}".format(host=host, time_span=time_span, filter=" AND ".join(qitems))
 
+        return q
+
+    def get_summary(self, host, rule, time_span="30s", query_args={}):
+
+        query_str = self.perseus_rule_to_query_str(host, rule, time_span)
         response = self.service.jobs.oneshot(query_str, **query_args)
-        # Get the results and iterate through them using the ResultsReader
-        reader = SplunkResults.ResultsReader(response)
-        r = []
-        for item in reader:
-            # Remove anything that doesn't have all items
-            if len(item) < nitems: continue
-            r.append(dict(item))
-            logging.debug(item)
-
-        return r
-
-
-    def get_events(self, query_str, query_args):
-
-        response = self.service.jobs.oneshot(query_str, **query_args)
-        # Get the results and iterate through them using the ResultsReader
+        # Get the results and convert to array of dictionaries using the ResultsReader
         reader = SplunkResults.ResultsReader(response)
         r = []
         for item in reader:
             r.append(dict(item))
-            logging.debug(item)
-
+            # logging.debug(dict(item))
         return r
 
 
@@ -113,50 +108,44 @@ def test_splunk_event_store():
 
     splunk = SplunkEventStore()
 
+    # TEST COMPLEX QUERY
+
+    host = "sample1A"
     rule_str = """
-    alarms:
-        alert_source: [EQ, NOM_ECG_V_P_C_CNT]
-        alert_code:   [EQ, NOM_EVT_ECG_V_TACHY]
-    numerics:
-        bpm_1:  [GT, 100]
-        spo2:   [GT, 90]
-    wave_quality:
-        pleth:  [EQ, GOOD]
+    alarm_source: [MATCH, NOM_ECG_V_P_C_CNT, ERROR.*]
+    alarm_code:   [MATCH, NOM_EVT_ECG_V_TACHY]
+    bpm:          [GT, 100]
+    spo2:         [GT, 90]
     """
     rule = yaml.load(rule_str)
-    query_str = SplunkEventStore.perseus_rule_to_query_str(rule)
+    query_str = SplunkEventStore.perseus_rule_to_query_str(host, rule)
     logging.debug(query_str)
 
-    query_args = {"earliest_time": "1441618949.544",
-                  "latest_time":   "1441618954.544"}
+    assert query_str == "search index=perseus host=sample1A | fillnull value=-1 bpm_1, spo2 | timechart span=30s max(bpm_1) as bpm, max(spo2) as spo2, values(alert_source) as alarm_source, values(alert_code) as alarm_code | predict bpm as pred_bpm | predict spo2 as pred_spo2 | where spo2>90 AND match(alarm_code, \"NOM_EVT_ECG_V_TACHY\") AND bpm>100 AND match(alarm_source, \"NOM_ECG_V_P_C_CNT|ERROR.*\")"
 
-    response = splunk.get_summary(query_str, query_args, 5 )
-    assert response == [{'host': 'sample1D', 'alarm_code': 'NOM_EVT_ECG_V_TACHY', 'bpm': '140.000000', 'alarm_source': 'NOM_ECG_V_P_C_CNT', 'spo2': '98.850000'}]
+    # TEST THAT VALID QUERY RETURNS ALL LINES
 
+    host = "sample1F"
     rule_str = """
-    alarms:
-        alert_source: [EQ, NOM_ECG_CARD_BEAT_RATE]
-        alert_code:   [EQ, NOM_EVT_ECG_ASYSTOLE]
-    numerics:
-        bpm_1:   [GT, -1]
-    wave_quality:
-        pleth:  [EQ, POOR]
+    alarm_source: [MATCH, NOM_ECG_CARD_BEAT_RATE]
+    alarm_code:   [MATCH, NOM_EVT_ECG_ASYSTOLE]
     """
     rule = yaml.load(rule_str)
-    query_str = SplunkEventStore.perseus_rule_to_query_str(rule)
+    query_str = SplunkEventStore.perseus_rule_to_query_str(host, rule)
     logging.debug(query_str)
 
-    query_args = {"earliest_time": "1441618275.64",
-                  "latest_time":   "1441618285.64"}
+    response = splunk.get_summary(host, rule)
+    logging.debug(response)
+    assert len(response) == 9  # 9 entries at 30s over all time
 
-    response = splunk.get_summary(query_str, query_args, 5 )
-    assert response == [{'host': 'sample1F', 'alarm_code': 'NOM_EVT_ECG_ASYSTOLE', 'bpm': '0.000000', 'alarm_source': 'NOM_ECG_CARD_BEAT_RATE', 'spo2': '8388607.000000'}]
+    # TEST THAT TIME RESTRICTED QUERY RETURNS VALID LINES
 
-    query_args = {"earliest_time": "2015-09-07T13:31:20.640+04:00",
-                  "latest_time":   "2015-09-07T13:32:20.640+04:00"}
+    query_args = {"earliest_time": "2015-09-07T13:27:30.000+04:00",
+                  "latest_time":   "2015-09-07T13:30:30.000+04:00"}
 
-    response = splunk.get_summary(query_str, query_args, 5 )
-    assert response == [{'host': 'sample1F', 'alarm_code': 'NOM_EVT_ECG_ASYSTOLE', 'bpm': '0.000000', 'alarm_source': 'NOM_ECG_CARD_BEAT_RATE', 'spo2': '8388607.000000'}]
+    response = splunk.get_summary(host, rule, "10s", query_args)
+    logging.debug(response)
+    assert len(response) == 18  # 18 entries at 10s over 3mins
 
 
 if __name__ == "__main__":
