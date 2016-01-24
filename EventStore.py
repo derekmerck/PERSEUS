@@ -28,6 +28,13 @@ class EventStore(object):
 
 class SplunkEventStore(EventStore):
 
+    # Mapping between cardinal field names (keys), and splunk instance field names (values)
+    # in case the fields aren't assigned properly in a test environment
+    field_names = { 'bpm': "bpm_1",
+                    'spo2': "spo2",
+                    'alarm_code': "alert_code",
+                    'alarm_source': "alert_source"}
+
     def __init__(self):
 
         # Create a Service instance and log in
@@ -41,9 +48,8 @@ class SplunkEventStore(EventStore):
         if not self.service.apps:
             raise IOError
 
-    # This is particular to the PERSEUS application, could be peeled out and put in perseus rule
     @classmethod
-    def perseus_rule_to_query_str(cls, host, rule, time_span = "30s"):
+    def perseus_rule_to_query_str(cls, host, rule, time_span="30s"):
         # Accept a rule, return a conjunctive query string
 
         def item_to_query_element(condition, value):
@@ -84,10 +90,16 @@ class SplunkEventStore(EventStore):
         # fillnull is used so predict doesn't fail (filling after timechart is very slow for some reason).
         # max(variable) is used so that the -1 fill doesn't affect the predicted values.
         q = "search index=perseus host={host} | " \
-            "fillnull value=-1 bpm_1, spo2 | " \
-            "timechart span={time_span} max(bpm_1) as bpm, max(spo2) as spo2, values(alert_source) as alarm_source, values(alert_code) as alarm_code | " \
+            "fillnull value=-1 {bpm_fn}, {spo2_fn} | " \
+            "timechart span={time_span} max({bpm_fn}) as bpm, max({spo2_fn}) as spo2, values({as_fn}) as alarm_source, values({ac_fn}) as alarm_code | " \
             "predict bpm as pred_bpm | predict spo2 as pred_spo2 | " \
-            "where {filter}".format(host=host, time_span=time_span, filter=" AND ".join(qitems))
+            "where {filter}".format(host=host,
+                                    bpm_fn=cls.field_names['bpm'],
+                                    spo2_fn=cls.field_names['spo2'],
+                                    ac_fn=cls.field_names['alarm_code'],
+                                    as_fn=cls.field_names['alarm_source'],
+                                    time_span=time_span,
+                                    filter=" AND ".join(qitems))
 
         return q
 
