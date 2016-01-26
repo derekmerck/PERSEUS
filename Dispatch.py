@@ -4,6 +4,8 @@ import yaml
 import os
 from Messenger import EmailSMSMessenger, SlackMessenger, TwilioMessenger
 from EventStore import SplunkEventStore
+import datetime
+import dateutil.parser
 
 # Lookup credentials from either os.env or shadow.yaml
 shadow = None
@@ -17,7 +19,7 @@ class Dispatch(object):
     def __init__(self, rules, zones, roles, update_interval=30):
         self.event_store = SplunkEventStore()
         self.alert_router = AlertRouter(zones, roles)
-        self.alert_generator = AlertGenerator(rules, self.event_store, self.alert_router, update_interval)
+        self.alert_generator = AlertGenerator(rules, self.event_store, self.alert_router)
 
     def run(self):
         self.alert_generator.run()
@@ -26,7 +28,7 @@ class Dispatch(object):
 class AlertGenerator(object):
     # Hard coded to work with a SplunkEventStore for now
 
-    def __init__(self, rules=None, event_store=None, alert_router=None, update_interval=30):
+    def __init__(self, rules=None, event_store=None, alert_router=None):
         self.rules = []
         # Convert rule dictionaries into Rule objects
         if rules:
@@ -39,47 +41,82 @@ class AlertGenerator(object):
         else:
             self.event_store = event_store
 
-        # Okay if this is None for testing
         self.router = alert_router
-        self.update_interval = update_interval
+        if not self.router:
+            # Create a log alert only for testing
+            self.router = AlertRouter()
 
-    def get_summary_for_rule(self, rule, query_args=None):
+        # Some default timings (in secs)
+        self.update_interval = 30
+        self.history_interval = 120    # query earliest time offset (seconds)
+        self.entry_interval = 10       # timechart time span
 
-        # Use last 30 seconds if no query args were passed in
-        if not query_args:
-            query_args = {"earliest_time": "now",
-                          "latest_time":   "-{0}s".format(self.update_interval)}
+    def review(self, host, rule, start_time, end_time):
+        # Assess historical data against a particular rule and return the number of violations
+        # Useful for testing
 
-        query_str = SplunkEventStore.perseus_rule_to_query_str(rule)
-        logging.debug(query_str)
-        response = self.event_store.get_summary(query_str, query_args, 5 )
+        number_of_alerts = 0
 
-        # Should format response to return a dictionary of violations for a rule
-        # { host0: {summary_values},
-        #   host1: {summary_values} ... }
-        return response
+        this_time = start_time
+        while this_time < end_time:
+            tic = time.clock()
+            query_args = {"latest_time": this_time.isoformat(),
+                          "earliest_time": (this_time - datetime.timedelta(seconds=self.history_interval)).isoformat()}
+
+            logging.debug(query_args)
+
+            results = self.event_store.get_summary(host, rule.conditions, self.entry_interval, query_args)
+            logging.debug(results)
+
+            if results:
+                self.router.alert(host, rule, results[0])
+                number_of_alerts += 1
+
+            toc = time.clock()
+            logging.debug("Update time: " + str(toc - tic))
+            this_time += datetime.timedelta(seconds=self.update_interval)
+
+        return number_of_alerts
 
     def run(self):
         while 1:
-            for rule in self.rules:
-                results = self.get_summary_for_rule(rule)
-                if not results: break
-                for host, values in results.iteritems():
-                    if self.router:
-                        self.router.alert(host, rule, values)
-            time.sleep(15)
+            tic = time.clock()
+
+            query_args = {"latest_time": "now",
+                          "earliest_time": "-{0}s".format(self.history_interval)}
+
+            for host in self.router.hosts:
+                for rule in self.rules:
+                    results = self.event_store.get_summary(host, rule.conditions, self.entry_interval, query_args)
+                    if results:
+                        self.router.alert(host, rule, results[0])
+            toc = time.clock()
+            logging.debug("Update time: " + str(toc - tic))
+            time.sleep(self.update_interval - (toc - tic))
 
 
 class AlertRouter(object):
 
-    def __init__(self, zones, roles):
+    def __init__(self, zones=None, roles=None):
         self.zones = zones
         self.roles = roles
         self.bridges = {'slack': SlackMessenger(),
                         'twilio-sms': TwilioMessenger(),
                         'email-sms': EmailSMSMessenger()}
 
+        hosts = []
+        if self.zones:
+            for zone in self.zones.values():
+                hosts = hosts + zone
+        self.hosts = set(hosts)
+
     def alert(self, host, rule, values):
+
+        logging.info(rule.alert_msg(host, values))
+        if not self.zones or not self.roles:
+            # Just log all alerts
+            return
+
         alerted_zones = []
         for zone, hosts in self.zones.iteritems():
             if host in hosts:
@@ -102,15 +139,12 @@ class Rule(object):
         self.conditions = kwargs.get('conditions')
         self.alert_str = kwargs.get('alert_str')
 
-    def condition_string(self):
-        # Could move SplunkEventStore Perseus specific code here
-        pass
-
     def alert_msg(self, host, values):
+        logging.debug(values)
+
         s = self.alert_str.format(priority=self.priority,
                                   host=host,
-                                  bpm=values['bpm'],
-                                  spo2=values['spo2'])
+                                  **values)
         return s
 
 
@@ -120,11 +154,16 @@ def test_alert_generator():
 
     rule_args = {'name': 'dummy_rule',
                  'priority': 'LOW',
-                 'conditions': {},
+                 'conditions': {'bpm': ['GT', 50]},
                  'alert_str': "{priority} alert at {host} | bmp: {bpm}"}
     rule = Rule(**rule_args)
-    query_args = None
-    response = generator.get_summary_for_rule(rule, query_args=query_args)
+    host = "sample1A"
+    start_time = dateutil.parser.parse('2015-09-07T12:59:00.000')
+    end_time = start_time + datetime.timedelta(minutes=10)
+    number_of_alerts = generator.review(host, rule, start_time, end_time)
+
+    logging.debug(number_of_alerts)
+    assert number_of_alerts == 8
 
 
 def test_alert_router():
@@ -137,6 +176,8 @@ def test_alert_router():
 
     router = AlertRouter(zones, roles)
 
+    assert router.hosts == {'sample1A', 'sample1C', 'sample1B', 'sample1E', 'sample1D', 'sample1F'}
+
     host = 'sample1A'
 
     rule_args = {'name': 'dummy_rule',
@@ -147,10 +188,12 @@ def test_alert_router():
 
     values = {'bpm': -1,
               'spo2': -1,
-              'alert_source': 'DUMMY_SRC',
-              'alert_code': 'DUMMY_CODE',
-              'ecg_quality': 'GOOD',
-              'pleth_quality': 'GOOD'}
+              'alarm_source': 'DUMMY_SRC',
+              'alarm_code': 'DUMMY_CODE',
+              'pleth_quality': 'DUMMY_VAL'}
+
+    msg = rule.alert_msg(host, values)
+    assert msg == "LOW alert at sample1A | bmp: -1"
 
     router.alert(host, rule, values)
 
@@ -160,5 +203,5 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     test_alert_generator()
-    # test_alert_router()
+    #test_alert_router()
 

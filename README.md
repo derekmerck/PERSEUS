@@ -56,6 +56,7 @@ This adds the following stanzas to `C:\Program Files\SplunkFowarder\etc\apps\sea
 disabled = false
 sourcetype = PERSEUS-Alarms
 index = perseus
+initCrcLength = 1024
 
 [monitor://C:\Patients\*numerics*.txt]
 disabled = false
@@ -75,11 +76,13 @@ Restart the SplunkForwarder service
 
 Install and configure a central log server.  Splunk is free for up to 500MB/day, which is probably enough for central telemetry on about 25 beds.  
 
+Configure settings -> forwarding and receiving -> configure receiving -> add port 9997
+
 Templates for Splunk data types for alarm, numeric, and waveform logs are provided.
 
 Add source types for PERSEUS-Alarms, PERSEUS-Numerics.  You can do this through the web UI or directly by editing `/opt/splunk/etc/apps/search/local/props.conf`.
  
-```
+```ini
 [PERSEUS-Alarms]
 DATETIME_CONFIG = 
 NO_BINARY_CHECK = true
@@ -118,6 +121,8 @@ The same regular expressions should work with other log forwarders, such as [Log
 Add `splunkd` to in and out firewalls (or ports 8000, 8089, 9997, 8080 and 514)
 
 If you want to be able to run Dispatch's event server unit tests, manually import the sample data sets as flat files using the appropriate data type templates.
+
+The Intel iCLS install can wreck havoc with the Splunk startup process.  If you get `python.exe` errors, try removing it from the system `%PATH%` variable.
 
 
 ### PERSEUS Dispatch Setup
