@@ -41,7 +41,7 @@ Install an appropriate log forwarder for your choice of log server.  The log for
 
 For Splunk:
 
-```
+```bash
 $ splunk add monitor C:\Patient\*numeric*.txt -sourcetype PERSEUS-Numerics -index perseus
 $ splunk add monitor C:\Patient\*alarm*.txt -sourcetype PERSEUS-Alarms -index perseus
 $ splunk list monitor
@@ -51,7 +51,7 @@ $ splunk list monitor
 
 This adds the following stanzas to `C:\Program Files\SplunkFowarder\etc\apps\search\local\inputs.conf`.  This can also be edited in directly.
 
-```
+```ini
 [monitor://C:\Patients\*alarms*.txt]
 disabled = false
 sourcetype = PERSEUS-Alarms
@@ -108,7 +108,7 @@ pulldown_type = true
 
 Add field extractions (reg-exs) for PERSEUS-Alarms, PERSEUS-Numerics.  You can do this through the UI or directly, by editing `/opt/splunk/users/admin/search/local/props.conf`:
  
- ```
+ ```ini
 [PERSEUS-Alarms]
 EXTRACT-time,date,alert_src,alert_code,alert_type,alert_state,alert_flags,alert_msg = Time: (?P<time>.*)\nDate: (?P<date>.*)\nAlert_source: (?P<alert_src>.*)\nAlert_code: (?P<alert_code>.*)\nAlert_type: (?P<alert_type>.*)\nAlert_state: (?P<alert_state>.*)\nAlert_flags: (?P<alert_flags>.*)\nAlert_message: (?P<alert_msg>.*)
 
@@ -129,7 +129,9 @@ The Intel iCLS install can wreck havoc with the Splunk startup process.  If you 
 
 Install PERSEUS Dispatch and dependencies on the central server.
 
-`$ pip install git+https://github.com/derekmerck/PERSEUS`
+```bash
+$ pip install git+https://github.com/derekmerck/PERSEUS
+```
 
 Modify the config.yaml file to represent the local rules, zone topology, and alert roles.
 
