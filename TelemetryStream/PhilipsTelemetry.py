@@ -1,7 +1,7 @@
 # Outline for a telemetry stream library and wrapper functions with structured event
 # logging to text files and to Splunk
 #
-# Dependencies: PyYAML, splunk-sdk
+# Dependencies: PyYAML, splunk-sdk, matplotlib
 #
 # Merck, Spring 2016
 
@@ -16,9 +16,11 @@ import os
 import hashlib
 import base64
 import yaml
+import math
+from SimpleStripchart import Stripchart
 
 
-__version_info__ = ('0', '0', '2')
+__version_info__ = ('0', '0', '3')
 __version__ = '.'.join(__version_info__)
 
 # Lookup credentials from either os.env or shadow.yaml
@@ -28,24 +30,28 @@ with file("shadow.yaml") as f:
     shadow_env = yaml.load(f)
 os.environ.update(shadow_env)
 
-
 class TelemetryGUI(object):
     # Use a class like this to wrap your GUI, be it in QT or MatPlotLib or whatever
 
-    def __init__(self, telemetry_stream):
-        self.telemetry_stream = telemetry_stream
+    def __init__(self, tstream):
+        self.tstream = tstream
+        self.display = None
 
     def update(self):
-        return self.telemetry_stream.read()
+        self.display.update(_(self.tstream.read(1)))
 
     def start(self):
         # Make some QT or matplot lib widgets, may want to base which widgets on what
         # vars are defined in the telemetry stream
+        self.display = Stripchart()
 
-        self.telemetry_stream.open()  # May not always want to do this when the object is created
+        # Start listening
+        self.tstream.open()
+
         # Start the polling loop
         while 1:
             self.update()
+            time.sleep(0.05)
 
 
 class TelemetryStream(object):
@@ -132,6 +138,7 @@ class PhilipsTelemetryStream(TelemetryStream):
     def __init__(self, *args, **kwargs):
         super(PhilipsTelemetryStream, self).__init__(args, kwargs)
         self.logger.name = 'PhilipsTelemetry'
+        self.logger_format = "philips_telemetry_v2"
 
     def open(self):
         # Do some handshake stuff
@@ -143,7 +150,24 @@ class PhilipsTelemetryStream(TelemetryStream):
 
     def read(self, size):
         # data = self.stream.read(size)
-        data = {'a': 1, 'b': 2, 'c': 3}
+
+        def fake_read1():
+            # Return a some arbitrary data values
+            x = time.time()
+            ecg = math.cos(x)
+            pleth = math.sin(x)
+            bpm = 80
+            spo2 = 95
+            alarm_type = None
+            alarm_source = None
+            return {'ecg': ecg,
+                    'pleth': pleth,
+                    'bpm': bpm,
+                    'spo2': spo2,
+                    'alarm_type': alarm_type,
+                    'alarm_source': alarm_source}
+
+        data = fake_read1()
 
         # Call any update functions in the order they were added
         for f in self.update_funcs:
@@ -179,8 +203,9 @@ if __name__ == "__main__":
     opts = parse_args()
 
     # Test file output, as if this were given on the command line
-    opts.file = 'test.log'
-    opts.splunk = 'perseus'
+    # opts.file = 'test.log'
+    # opts.splunk = 'perseus'
+    opts.gui = 'simple_strip'
 
     # Let's assume that we always only want to open a single stream
     tstream = PhilipsTelemetryStream()
@@ -194,7 +219,7 @@ if __name__ == "__main__":
 
     if opts.splunk:
         # Add a splunk API structured log handler
-        sh = SplunkLogHandler(opts.splunk, 'philips_telemetry_v2')
+        sh = SplunkLogHandler(opts.splunk, tstream.logger_format)
         sh.setLevel(logging.INFO)
         tstream.logger.addHandler(sh)
 
@@ -205,7 +230,7 @@ if __name__ == "__main__":
 
     # Let's say we have some different quality of signal functions that we might want to compute
     def qos(*args, **kwargs):
-        val = kwargs.get('a') * 2
+        val = kwargs.get('pleth') > 0
         return {'qos': val}
 
     # Attach any post-processing functions
