@@ -39,7 +39,7 @@ Install the monitor parser and waveform analyzer on each client machine.
 
 Install an appropriate log forwarder for your choice of log server.  The log forwarder should ship alarms, numerics, and waveform quality logs to the log server.  Setup each client with a separate host name that will be used in the zone descriptions.
 
-For Splunk:
+### Configuring a Splunk Forwarder
 
 ```bash
 $ splunk add monitor C:\Patient\*numeric*.txt -sourcetype PERSEUS-Numerics -index perseus
@@ -49,7 +49,7 @@ $ splunk list monitor
 
 (Run `cmd.exe` as Admin on Windows)
 
-This adds the following stanzas to `C:\Program Files\SplunkFowarder\etc\apps\search\local\inputs.conf`.  This can also be edited in directly.
+This adds the following stanzas to `$SPLUNK_HOME\etc\apps\search\local\inputs.conf`.  The `InitCrcLength` key needs to be edited in directly to improve recognition for log rotation.
 
 ```ini
 [monitor://C:\Patients\*alarms*.txt]
@@ -70,17 +70,19 @@ This seems to work with the Splunk6+, but if pattern matching gives you a hard t
 Add `splunkd` to in and out firewalls (or ports 8000, 8089, 9997, 8080 and 514)
 Restart the SplunkForwarder service
 
-
-
 ### Log Server Setup
 
-Install and configure a central log server.  Splunk is free for up to 500MB/day, which is probably enough for central telemetry on about 25 beds.  
+Install and configure a central log server.  
+
+### Configuring a Splunk Server
+
+Splunk is free for up to 500MB/day, which is probably enough for central telemetry on about 25 beds.  
+
+Configure settings -> indexes -> add index -> add `perseus`
 
 Configure settings -> forwarding and receiving -> configure receiving -> add port 9997
 
-Templates for Splunk data types for alarm, numeric, and waveform logs are provided.
-
-Add source types for PERSEUS-Alarms, PERSEUS-Numerics.  You can do this through the web UI or directly by editing `/opt/splunk/etc/apps/search/local/props.conf`.
+Add source types for PERSEUS-Alarms, PERSEUS-Numerics.  You can do this through the web UI or directly by editing `$SPLUNK_HOME/etc/apps/search/local/props.conf`.
  
 ```ini
 [PERSEUS-Alarms]
@@ -106,23 +108,23 @@ disabled = false
 pulldown_type = true
 ```
 
-Add field extractions (reg-exs) for PERSEUS-Alarms, PERSEUS-Numerics.  You can do this through the UI or directly, by editing `/opt/splunk/users/admin/search/local/props.conf`:
+Add field extractions (reg-exs) for PERSEUS-Alarms, PERSEUS-Numerics.  You can do this through the UI or directly, by editing `$SPLUNK_HOME/users/admin/search/local/props.conf`:
  
  ```ini
 [PERSEUS-Alarms]
-EXTRACT-time,date,alert_src,alert_code,alert_type,alert_state,alert_flags,alert_msg = Time: (?P<time>.*)\nDate: (?P<date>.*)\nAlert_source: (?P<alert_src>.*)\nAlert_code: (?P<alert_code>.*)\nAlert_type: (?P<alert_type>.*)\nAlert_state: (?P<alert_state>.*)\nAlert_flags: (?P<alert_flags>.*)\nAlert_message: (?P<alert_msg>.*)
+EXTRACT-perseus_alarms = Time: (?P<time>.*)\nDate: (?P<date>.*)\nAlert_source: (?P<alert_src>.*)\nAlert_code: (?P<alert_code>.*)\nAlert_type: (?P<alert_type>.*)\nAlert_state: (?P<alert_state>.*)\nAlert_flags: (?P<alert_flags>.*)\nAlert_message: (?P<alert_msg>.*)
 
 [PERSEUS-Numerics]
 EXTRACT-perseus_numerics = NOM_PULS_OXIM_PERF_REL.*?(?P<o2p_1>\d+\.\d+)\nNOM_PULS_OXIM_PERF_REL.*?(?P<o2p_2>\d+\.\d+)\nNOM_PULS_OXIM_PERF_REL.*?(?P<o2p_3>\d+\.\d+)\nNOM_ECG_CARD_BEAT_RATE.*?(?P<bpm_1>\d+\.\d+)\nNOM_ECG_CARD_BEAT_RATE.*?(?P<bpm_2>\d+\.\d+)\nNOM_ECG_V_P_C_CNT.*?(?P<ecgvpc>\d+\.\d+)\nNOM_PULS_OXIM_SAT_O2.*?(?P<spo2>\d+\.\d+)\nNOM_PULS_OXIM_PERF_REL.*?(?P<o2p_4>\d+\.\d+)
 ```
 
-The same regular expressions should work with other log forwarders, such as [Logstash][] or [fluentd][], as well.
+Similar regular expressions should work with other log forwarders, such as [Logstash][] or [fluentd][], as well.
 
 Add `splunkd` to in and out firewalls (or ports 8000, 8089, 9997, 8080 and 514)
 
 If you want to be able to run Dispatch's event server unit tests, manually import the sample data sets as flat files using the appropriate data type templates.
 
-The Intel iCLS install can wreck havoc with the Splunk startup process.  If you get `python.exe` errors, try removing it from the system `%PATH%` variable.
+The Intel iCLS install can wreck havoc with the Splunk startup process.  If you get `python.exe` errors, try removing it from the system `%PATH%` variable.  See <http://stackoverflow.com/questions/14552348/runtime-error-r6034-in-embedded-python-application>
 
 
 ### PERSEUS Dispatch Setup
@@ -133,10 +135,10 @@ Install PERSEUS Dispatch and dependencies on the central server.
 $ pip install git+https://github.com/derekmerck/PERSEUS
 ```
 
-Modify the config.yaml file to represent the local rules, zone topology, and alert roles.
+Modify the `config.yaml` file to represent the local rules, zone topology, and alert roles.
 
 
-### PERSEUS Dispatch Configuration
+### Configuring PERSEUS Dispatch
 
 `config.yaml` includes three required keys:  _rules_, _zones_, and _roles_.  See the example provided.
 
@@ -176,7 +178,7 @@ Using gmail as an SMS relay requires either turning off app security in gmail, o
 - EmailSMSMessenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
 - Splunk generously provided a _gratis_ academic license for their product
 - Indebted to discussion of pip at <https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/>
-- SimpleDisplay based on matplotlib's [strip_chart example](http://matplotlib.org/1.4.0/examples/animation/strip_chart_demo.html)
+- SimpleDisplay in version 0.2 based on matplotlib's [strip_chart example](http://matplotlib.org/1.4.0/examples/animation/strip_chart_demo.html)
 
 
 ## License

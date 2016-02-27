@@ -174,7 +174,7 @@ rules:
   alert_str:  "BP RAPIDLY TRENDING UP | Latest BP {BP} mmHg ({BP_dt} min ago)"
 
 
-# Assign all hosts to a zone, any host not in a zone will not be assigned to a role
+# Assign all hosts to a zone, any host not in a zone will be ignored
 # A host may appear in more than one zone
 zones:
 
