@@ -30,6 +30,7 @@ with file("shadow.yaml") as f:
     shadow_env = yaml.load(f)
 os.environ.update(shadow_env)
 
+
 class TelemetryGUI(object):
     # Use a class like this to wrap your GUI, be it in QT or MatPlotLib or whatever
 
@@ -202,7 +203,7 @@ if __name__ == "__main__":
 
     opts = parse_args()
 
-    # Test file output, as if this were given on the command line
+    # Test output types, as if this were given on the command line
     # opts.file = 'test.log'
     # opts.splunk = 'perseus'
     opts.gui = 'simple_strip'

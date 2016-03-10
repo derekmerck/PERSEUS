@@ -49,7 +49,7 @@ $ splunk list monitor
 
 (Run `cmd.exe` as Admin on Windows)
 
-This adds the following stanzas to `$SPLUNK_HOME\etc\apps\search\local\inputs.conf`.  The `InitCrcLength` key needs to be edited in directly to improve recognition for log rotation.
+This adds the following stanzas to `$SPLUNK_HOME\etc\apps\search\local\inputs.conf`.  The `InitCrcLength` key needs to be edited in directly (and possibly the `crcSalt` key) to improve recognition for log rotation.
 
 ```ini
 [monitor://C:\Patients\*alarms*.txt]
@@ -57,12 +57,14 @@ disabled = false
 sourcetype = PERSEUS-Alarms
 index = perseus
 initCrcLength = 1024
+crcSalt = <SOURCE>
 
 [monitor://C:\Patients\*numerics*.txt]
 disabled = false
 sourcetype = PERSEUS-Numerics
 index = perseus
 initCrcLength = 1024
+crcSalt = <SOURCE>
 ```
 
 This seems to work with the Splunk6+, but if pattern matching gives you a hard time, see <https://answers.splunk.com/answers/58665/inputs-conf-with-wildcards.html> and <https://answers.splunk.com/answers/2775/regexs-and-windows-paths-in-inputs-conf-and-props-conf.html>
