@@ -1,3 +1,4 @@
+#! /usr/bin/python
 """
 PERSEUS Core
 Push Electronic Relay for Smart Alarms for End User Situational Awareness (PERSEUS)
@@ -46,11 +47,10 @@ def parse_args():
                         action='version',
                         version='%(prog)s (version ' + __version__ + ')')
 
-    subparsers = parser.add_subparsers(help='sub-command help')
+    subparsers = parser.add_subparsers(help='sub-command help', dest='subparser_name')
 
     # create the parser for the "dispatch" command
     parser_dispatch = subparsers.add_parser('dispatch',
-                                            dest='dispatch',
                                             description=Dispatch.__description__,
                                             help='Start an instance of a PERSEUS Dispatch server')
     parser_dispatch.add_argument('--config',
@@ -59,8 +59,6 @@ def parse_args():
 
     # create the parser for the "listen" command
     parser_listen = subparsers.add_parser('listen',
-                                           alias=['monitor'],
-                                           dest='listen',
                                            description=PhilipsTelemetryStream.__description__,
                                            help='Start an instance of a PERSEUS Listener node')
     parser_listen.add_argument('-b', '--binary', help="Name of an hdf5 file for binary logging (UNIMPLEMENTED)")
@@ -80,7 +78,7 @@ if __name__ == "__main__":
 
     opts = parse_args()
 
-    if opts.dest == 'dispatch':
+    if opts.destination == 'dispatch':
         logging.debug('PERSEUS Dispatch v{0}'.format(Dispatch.__version__))
 
         with open(opts.config, 'rU') as f:
@@ -90,7 +88,7 @@ if __name__ == "__main__":
         dispatch = Dispatch.Dispatch(rules=rules, zones=zones, roles=roles)
         dispatch.run()
 
-    elif opts.dest == 'listen':
+    elif opts.destination == 'listen':
 
         logging.debug('PERSEUS Listener v{0}'.format(PhilipsTelemetryStream.__version__))
         logging.debug('Forked from the NeuroLogic Philips Vitals Monitor Decoder')
