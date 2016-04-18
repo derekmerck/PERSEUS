@@ -7,6 +7,8 @@ from EventStore import SplunkEventStore
 import datetime
 import dateutil.parser
 
+__description__ = "PERSEUS Dispatch server with EventStore and Messenger"
+
 # Lookup credentials from either os.env or shadow.yaml
 shadow = None
 with file("shadow.yaml") as f:

@@ -11,75 +11,86 @@ Dependencies: Numpy, matplotlib
 See README.md for usage, notes, and license info.
 """
 
+
+from __future__ import division
+
+import matplotlib
+matplotlib.use('tkagg')  # Better for Mac
+
 import logging
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import time
-import numpy as np
 import datetime
-import dateutil.parser
+
 
 class Stripchart(object):
 
     class Datastrip(object):
-        def __init__(self, name, ylim, ax, striplen=7):
+        def __init__(self, name, ylim, ax):
 
             self.name = name
             self.ylim = ylim
             self.ax = ax
-            self.striplen = striplen
 
             self.ax.set_ylabel(self.name)
             self.ax.set_ylim(self.ylim)
 
-            self.tdata = np.array([0])
-            self.ydata = np.array([0])
-
-            self.line = Line2D(self.tdata, self.ydata)
+            self.line = Line2D([0], [0])
             self.ax.add_line(self.line)
+            self.t = None
 
-            self.start_time = datetime.datetime.now()
+        def update(self, sampled_data):
 
-        def update(self, data):
+            channel = sampled_data.get(self.name)
+            if not channel:
+                logging.debug('Missing channel: {0}'.format(self.name))
+                return
+            samples = channel.get('samples')
 
-            # Convert t into seconds since start
-            t = (dateutil.parser.parse(data['timestamp']) - self.start_time).total_seconds()
-            y = data[self.name]
+            logging.debug('Updating channel: {0} over range [{1},{2}] ({3} secs)'\
+                          .format(self.name, samples.t.min(), samples.t.max(),
+                                  samples.t.max() - samples.t.min()))
+            # logging.debug(samples.y)
+            # logging.debug(samples.t)
 
-            self.tdata = np.append(self.tdata, t)
-            self.ydata = np.append(self.ydata, y)
+            self.t = samples.t
+            self.line.set_data(samples.t, samples.y)
 
-            # Truncate out old values that are off the strip
-            for i in range(len(self.tdata)):
-                if (self.tdata[-1] - self.tdata[i]) < self.striplen:
-                    break
-            self.tdata = self.tdata[i:]
-            self.ydata = self.ydata[i:]
+    def __init__(self, tstream, dur=7, redraw_interval=0.1):
 
-            self.line.set_data(self.tdata, self.ydata)
-
-
-    def __init__(self):
-
-        self.logger = logging.getLogger(__name__)
+        self.redraw_interval = redraw_interval
+        self.dur = dur
+        self.start_time = datetime.datetime.now()
 
         plt.ion()
 
         # Create two regions
         self.fig, self.ax = plt.subplots(2, 1, sharex=True)
 
-        self.pleth = Stripchart.Datastrip('pleth', (-1.2, 1.2), self.ax[0])
-        self.ecg   = Stripchart.Datastrip('ecg',   (-1.2, 1.2), self.ax[1])
+        if len(tstream.sampled_data.keys())>0:
+            self.name0 = tstream.sampled_data.keys()[0]
+        else:
+            self.name0 = None
 
-        plt.show()
+        if len(tstream.sampled_data.keys())>1:
+            self.name1 = tstream.sampled_data.keys()[1]
+        else:
+            self.name1 = None
 
-        self.tic = time.time()
-        self.animation_interval = 0.1
+        self.strip0 = Stripchart.Datastrip(self.name0, (1000, 3000), self.ax[0])
+        self.strip1 = Stripchart.Datastrip(self.name1, (-1.2, 1.2), self.ax[1])
 
         self.numerics = self.fig.text(0.79, 0.95,
                          'bpm:  \nspo2: ',
                          horizontalalignment='left',
                          verticalalignment='center',
+                         transform=self.fig.transFigure)
+
+        self.qos = self.fig.text(0.90, 0.95,
+                         'qos:  \n: ',
+                         horizontalalignment='left',
+                         verticalalignment='top',
                          transform=self.fig.transFigure)
 
         self.alarms = self.fig.text(0.13, 0.95,
@@ -88,26 +99,42 @@ class Stripchart(object):
                          verticalalignment='center',
                          transform=self.fig.transFigure)
 
-    def update(self, data):
+        plt.show()
 
-        self.logger.info(data)
+        self.tic = time.time()
+        self.toc = self.tic
 
-        # Update numerics
-        self.numerics.set_text("bpm:  {0}\nspo2: {1}".format(data['bpm'], data['spo2']))
-
-        # Update alarms
-        self.alarms.set_text("source:  {0}\ncode: {1}".format(data['alarm_source'], data['alarm_type']))
+    def update_data(self, data, sampled_data):
 
         # Update waveform time and data samples
-        self.pleth.update(data)
-        self.ecg.update(data)
+        self.strip0.update(sampled_data)
+        self.strip1.update(sampled_data)
 
-        # Animation update rate can be different than polling rate
+        bpm = data.get('bpm')
+        spo2 = data.get('spo2')
+        qos = data.get('qos')
+
+        alarms = data.get('alarms')
+        alarm_source = None
+        alarm_type = None
+        if alarms:
+            alarm_source = data.get('alarms').values()[0]['source']
+            alarm_type = data.get('alarms').values()[0]['type']
+
+        if bpm:
+            self.numerics.set_text("bpm:  {0}\nspo2: {1}".format(bpm, spo2))
+        if qos:
+            self.qos.set_text("qos: {0}".format(qos))
+        if alarm_source:
+            self.alarms.set_text("source:  {0}\ncode: {1}".format(alarm_source, alarm_type))
+
+    def redraw(self):
         self.toc = time.time()
-        if (self.toc - self.tic) > self.animation_interval:
-            self.ax[0].set_xlim(self.pleth.tdata[-1] - self.pleth.striplen, self.pleth.tdata[-1] - 0.1)
+        if (self.toc - self.tic) > self.redraw_interval:
+            current_time = datetime.datetime.now()
+            current_secs = (current_time - self.start_time).total_seconds()
+            # self.ax[0].set_xlim(self.strip0.t[0] + 1, self.strip0.t[-1] - 1)
+            self.ax[0].set_xlim(current_secs - self.dur + 1 - 4, current_secs - 1 - 4)
             self.fig.canvas.draw()
             self.tic = self.toc
-
-        return
 

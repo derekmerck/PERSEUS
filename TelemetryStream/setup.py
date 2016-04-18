@@ -1,14 +1,14 @@
 """
-PERSEUS Setup
+PERSEUS Listener Setup
 Merck, Summer 2015
 
 [Derek Merck](derek_merck@brown.edu)
 [Leo Kobayashi](lkobayashi@lifespan.org)
-Spring 2015
+Spring 2016
 
-<https://github.com/derekmerck/PERSEUS>
+<https://github.com/rih3d/NeuroLogic/perseus>
 
-Dependencies: PyYAML, splunk-sdk, Twilio
+Dependencies: PyYAML, splunk-sdk, numpy, pyserial, matplotlib
 
 See README.md for usage, notes, and license info.
 
@@ -25,7 +25,7 @@ $ python setup.py sdist upload  [-r https://testpypi.python.org/pypi]
 
 import os
 from setuptools import setup
-from PERSEUS import __url__, __package__, __license__, __description__, __author__, __email__, __version__
+from TelemetryStream import __url__, __package__, __license__, __description__, __author__, __email__, __version__
 
 def read(*paths):
     """Build a file path from *paths* and return the contents."""
@@ -47,10 +47,10 @@ setup(
     long_description=long_desc,
     url=__url__,
     license=__license__,
-    py_modules=["PERSEUS", "Dispatch", "Messenger", "EventStore", "TelemetryStream"],
+    py_modules=["TelemetryStream", "PhilipsTelemetryStream", "InteliviewDecoder", "IntllivueDistiller"],
     include_package_data=True,
     zip_safe=True,
-    install_requires=['PyYAML', 'Twilio', 'splunk-sdk'],
+    install_requires=['PyYAML', 'numpy', 'splunk-sdk', 'pyserial', 'matplotlib'],
     classifiers=[
         'Development Status :: 1 - Planning',
         'Intended Audience :: Healthcare Industry',

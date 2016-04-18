@@ -13,10 +13,13 @@ Dependencies: PyYAML, splunk-sdk, Twilio
 See README.md for usage, notes, and license info.
 """
 
-import logging
 import argparse
+import logging
+
 import yaml
+
 from Dispatch import Dispatch
+from TelemetryStream import PhilipsTelemetryStream
 
 __package__ = "PERSEUS"
 __description__ = "Push Electronic Relay for Smart Alarms for End User Situational Awareness"
@@ -30,27 +33,56 @@ __version__ = '.'.join(__version_info__)
 
 def parse_args():
 
-    parser = argparse.ArgumentParser(description='PERSEUS Core')
-    parser.add_argument('--config',
-                        default='config.yaml',
-                        help='YAML description of the alert rules, zones, and roles (default: config.yaml)')
+    parser = argparse.ArgumentParser(prog='PERSEUS', description=__description__)
+
     parser.add_argument('-V', '--version',
                         action='version',
                         version='%(prog)s (version ' + __version__ + ')')
 
-    p = parser.parse_args()
+    subparsers = parser.add_subparsers(help='sub-command help')
 
-    with open(p.config, 'rU') as f:
-        config = yaml.load(f)
+    # create the parser for the "dispatch" command
+    parser_dispatch = subparsers.add_parser('dispatch',
+                                            dest='dispatch',
+                                            description=Dispatch.__description__,
+                                            help='Start an instance of a PERSEUS Dispatch server')
+    parser_dispatch.add_argument('--config',
+                        default='config.yaml',
+                        help='YAML description of the alert rules, zones, and roles (default: config.yaml)')
 
-    return config.get('rules'), config.get('zones'), config.get('roles')
+    # create the parser for the "listen" command
+    parser_listen = subparsers.add_parser('listen',
+                                           alias=['monitor'],
+                                           dest='listen',
+                                           description=PhilipsTelemetryStream.__description__,
+                                           help='Start an instance of a PERSEUS Listener node')
+    parser_listen.add_argument('-b', '--binary', help="Name of an hdf5 file for binary logging (UNIMPLEMENTED)")
+    parser_listen.add_argument('-f', '--file', help="Name of a text file for event logging")
+    parser_listen.add_argument('-s', '--splunk', help="Name of a Splunk index for event logging")
+    parser_listen.add_argument('-g', '--gui', help="Display a graphic user interface, e.g., 'SimpleStripchart'")
+    # Default for PL203 usb to serial device
+    parser_listen.add_argument('-p', '--port', help="Device port", default="/dev/cu.usbserial")
+    parser_listen.add_argument('--values', nargs="+",
+                        help="List of paired value names and frequencies to monitor, e.g. 'ecg, 100, pleth, 64'")
 
+    _opts = parser.parse_args()
+    return _opts
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
-    rules, zones, roles = parse_args()
+    opts = parse_args()
 
-    dispatch = Dispatch(rules, zones, roles)
-    dispatch.run()
+    if opts.dest == 'dispatch':
+        with open(p.config, 'rU') as f:
+            config = yaml.load(f)
+            rules, zones, roles = config.get('rules'), config.get('zones'), config.get('roles')
 
+        dispatch = Dispatch.Dispatch(rules=rules, zones=zones, roles=roles)
+        dispatch.run()
+
+    elif opts.dest == 'listen':
+
+        tstream = PhilipsTelemetryStream.PhilipsTelemetryStream(**opts)
+        tstream.add_update_func(PhilipsTelemetryStream.qos)
+        tstream.run()
