@@ -41,20 +41,28 @@ PERSEUS Dispatch has three components:
 
 In testing, the event and dispatch server are separate components running on the same central machine.
 
+### General Setup
+
+[Anaconda]() simplifies cross-platform installation of the Python binary library dependencies.  Pip can be used for any pure-Python packages.
+
+```bash
+$ conda update conda
+$ conda install numpy scipy matplotlib
+$ pip install pyserial pyyaml splunk-sdk
+```
 
 ### Client Setup
 
 Setup each client with a separate host name that will be used in the zone descriptions.
 
-PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup quickly by installing Anaconda and using git to clone the latest PERSEUS scripts.
+PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup quickly by installing the Anaconda Python distribution as above, and using pip to install the latest PERSEUS scripts.
 
 ```bash
-$ conda install pyserial numpy scipy matplotlib
 $ pip install git+https://github.com/derekmerck/PERSEUS
-$ python perseus.py listener --values ecg 500 pleth 60 --device /dev/cu.usbserial --splunk perseus
+$ python -m perseus listener --values Pleth 128 ECG 256 --port /dev/cu.usbserial --splunk perseus
 ```
 
-See the [TelemetryStream/README.md][] for more details on how to setup a PERSEUS Listener client with a simple GUI and using Raspberry Pi hardware.
+See the [TelemetryStream README](TelemetryStream/README.md) for more details on how to setup a PERSEUS Listener client with a simple GUI and using Raspberry Pi hardware.
 
 See the [TelemetryLogs/README.md][] for details on how to setup a client with a stand alone decoder and a log shipper.
 
@@ -95,7 +103,8 @@ Using gmail as an SMS relay requires either turning off app security in gmail, o
 ## Acknowledgements
 
 - Initial development funded through a healthcare quality improvement award from the AHRQ
-The Intellivue Decoder portion of this package was forked from the RIH NeuroLogic package developed by [Agrawal](mailto:uagrawal61@gmail.com), [Oyalowo](mailto:adewole_oyalowo@brown.edu), Asaad, and others.  See <https://bitbucket.org/uagrawal61/neurologic> for documentation of the NeuroLogic project.
+- The Intellivue Decoder portion of this package was forked from the RIH NeuroLogic package developed by [Agrawal](mailto:uagrawal61@gmail.com), [Oyalowo](mailto:adewole_oyalowo@brown.edu), Asaad, and others.  See <https://bitbucket.org/uagrawal61/neurologic> for documentation of the NeuroLogic project.
+- The default QoS code was adapted from Xiao Hu, PhD's MATLAB code for waveform quality checks (see [TelemetryStream/README.md][] for reference).
 - EmailSMSMessenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
 - Splunk generously provided a _gratis_ academic license for their product
 - Indebted to discussion of pip at <https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/>
@@ -105,7 +114,6 @@ The Intellivue Decoder portion of this package was forked from the RIH NeuroLogi
 ## License
 
 [MIT](http://opensource.org/licenses/mit-license.html)
-
 
 
 [Splunk]: http://www.splunk.com

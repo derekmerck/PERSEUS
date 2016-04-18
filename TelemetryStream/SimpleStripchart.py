@@ -44,7 +44,7 @@ class Stripchart(object):
 
             channel = sampled_data.get(self.name)
             if not channel:
-                logging.debug('Missing channel: {0}'.format(self.name))
+                logging.warn('Missing channel: {0}'.format(self.name))
                 return
             samples = channel.get('samples')
 
@@ -78,8 +78,15 @@ class Stripchart(object):
         else:
             self.name1 = None
 
-        self.strip0 = Stripchart.Datastrip(self.name0, (1000, 3000), self.ax[0])
-        self.strip1 = Stripchart.Datastrip(self.name1, (-1.2, 1.2), self.ax[1])
+        def range_of(name):
+            if name.lower() == 'ecg': return (1000, 3000)
+            elif name.lower() == 'pleth': return (-1.2, 1.2)
+            else:
+                logging.warn('Missing range for {0}'.format(name))
+                return (-1,1)
+
+        self.strip0 = Stripchart.Datastrip(self.name0, range_of(self.name0), self.ax[0])
+        self.strip1 = Stripchart.Datastrip(self.name1, range_of(self.name1), self.ax[1])
 
         self.numerics = self.fig.text(0.79, 0.95,
                          'bpm:  \nspo2: ',
@@ -110,8 +117,8 @@ class Stripchart(object):
         self.strip0.update(sampled_data)
         self.strip1.update(sampled_data)
 
-        bpm = data.get('bpm')
-        spo2 = data.get('spo2')
+        hr = data.get('Heart Rate')
+        spo2 = data.get('SpO2')
         qos = data.get('qos')
 
         alarms = data.get('alarms')
@@ -121,8 +128,8 @@ class Stripchart(object):
             alarm_source = data.get('alarms').values()[0]['source']
             alarm_type = data.get('alarms').values()[0]['type']
 
-        if bpm:
-            self.numerics.set_text("bpm:  {0}\nspo2: {1}".format(bpm, spo2))
+        if hr:
+            self.numerics.set_text("bpm:  {0}\nspo2: {1}".format(hr, spo2))
         if qos:
             self.qos.set_text("qos: {0}".format(qos))
         if alarm_source:

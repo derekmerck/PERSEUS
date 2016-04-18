@@ -16,7 +16,6 @@ from IntellivueProtocol.IntellivueDecoder import IntellivueDecoder
 from IntellivueProtocol.RS232 import RS232
 from IntellivueProtocol.IntellivueDistiller import IntellivueDistiller
 from TelemetryStream import *
-
 from QualityOfSignal import QualityOfSignal as QoS
 
 __description__ = "PERSEUS telemetry stream listener for Philips Invellivue devices with serial connections"

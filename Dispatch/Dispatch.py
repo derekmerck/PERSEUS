@@ -8,8 +8,7 @@ import datetime
 import dateutil.parser
 
 __description__ = "PERSEUS Dispatch server with EventStore and Messenger"
-__version_info__ = ('0', '0', '9')
-__version__ = '.'.join(__version_info__)
+from PERSEUS import __version__
 
 # Lookup credentials from either os.env or shadow.yaml
 shadow = None
@@ -200,6 +199,12 @@ def test_alert_router():
     assert msg == "LOW alert at sample1A | bmp: -1"
 
     router.alert(host, rule, values)
+
+
+def configure_parser(parser):
+    parser.add_argument('--config',
+                         default='config.yaml',
+                         help='YAML description of the alert rules, zones, and roles (default: config.yaml)')
 
 
 if __name__ == "__main__":

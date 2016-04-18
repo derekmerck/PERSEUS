@@ -28,7 +28,8 @@ __url__ = "https://github.com/derekmerck/PERSEUS"
 __author__ = 'Derek Merck'
 __email__ = "derek_merck@brown.edu"
 __license__ = "MIT"
-__version__ = '-'.join([Dispatch.__version__, PhilipsTelemetryStream.__version__])
+__version_info__ = ('0', '5', '0')
+__version__ = '.'.join(__version_info__)
 
 try:
     with file("shadow.yaml") as f:
@@ -46,28 +47,19 @@ def parse_args():
                         action='version',
                         version='%(prog)s (version ' + __version__ + ')')
 
-    subparsers = parser.add_subparsers(dest='subparser_name')
+    subparsers = parser.add_subparsers(dest='command')
 
     # create the parser for the "dispatch" command
     parser_dispatch = subparsers.add_parser('dispatch',
                                             description=Dispatch.__description__,
                                             help='Start an instance of a PERSEUS Dispatch server')
-    parser_dispatch.add_argument('--config',
-                        default='config.yaml',
-                        help='YAML description of the alert rules, zones, and roles (default: config.yaml)')
+    parser_dispatch = Dispatch.configure_parser(parser_dispatch)
 
     # create the parser for the "listen" command
-    parser_listen = subparsers.add_parser('listen',
-                                           description=PhilipsTelemetryStream.__description__,
+    parser_listen = subparsers.add_parser('listener',
+                                           description=TelemetryStream.__description__,
                                            help='Start an instance of a PERSEUS Listener node')
-    parser_listen.add_argument('-b', '--binary', help="Name of an hdf5 file for binary logging (UNIMPLEMENTED)")
-    parser_listen.add_argument('-f', '--file', help="Name of a text file for event logging")
-    parser_listen.add_argument('-s', '--splunk', help="Name of a Splunk index for event logging")
-    parser_listen.add_argument('-g', '--gui', help="Display a graphic user interface, e.g., 'SimpleStripchart'")
-    # Default for PL203 usb to serial device
-    parser_listen.add_argument('-p', '--port', help="Device port", default="/dev/cu.usbserial")
-    parser_listen.add_argument('--values', nargs="+",
-                        help="List of paired value names and frequencies to monitor, e.g. 'ecg, 100, pleth, 64'")
+    parser_listen = TelemetryStream.configure_parser(parser_listen)
 
     _opts = parser.parse_args()
     return _opts
@@ -77,8 +69,8 @@ if __name__ == "__main__":
 
     opts = parse_args()
 
-    if opts.destination == 'dispatch':
-        logging.debug('PERSEUS Dispatch v{0}'.format(Dispatch.__version__))
+    if opts.command == 'dispatch':
+        logging.debug('PERSEUS Dispatch v{0}'.format(__version__))
 
         with open(opts.config, 'rU') as f:
             config = yaml.load(f)
@@ -87,19 +79,28 @@ if __name__ == "__main__":
         dispatch = Dispatch.Dispatch(rules=rules, zones=zones, roles=roles)
         dispatch.run()
 
-    elif opts.destination == 'listen':
+    elif opts.command == 'listener':
 
-        logging.debug('PERSEUS Listener v{0}'.format(PhilipsTelemetryStream.__version__))
-        logging.debug('Forked from the NeuroLogic Philips Vitals Monitor Decoder')
+        logging.debug('PERSEUS Listener v{0}'.format(__version__))
+        logging.debug('Forked from the NeuroLogic/PyMMND Philips Vitals Monitor Decoder')
 
-        tstream = PhilipsTelemetryStream.PhilipsTelemetryStream(**opts)
-        tstream.add_update_func(PhilipsTelemetryStream.qos)
-        TelemetryStream.attach_loggers(opts)
+        tstream, polling_interval, redraw_interval = None, None, None
+        if opts.port == "test":
+            tstream = TelemetryStream.SampleTelemetryStream(values=opts.values)
+            polling_interval = 0.25
+            redraw_interval = 0.1
+        else:
+            tstream = PhilipsTelemetryStream.PhilipsTelemetryStream(**opts)
+            tstream.add_update_func(PhilipsTelemetryStream.qos)
+            polling_interval = 0.05
+            redraw_interval = 0.05
+
+        TelemetryStream.attach_loggers(tstream, opts)
 
         if opts.gui:
             # Pass the to a gui for use in it's own polling function and main loop
-            gui = TelemetryStream.TelemetryGUI(tstream, type=opts.gui, polling_interval=0.05, redraw_interval=0.05)
+            gui = TelemetryStream.TelemetryGUI(tstream, type=opts.gui, polling_interval=polling_interval, redraw_interval=redraw_interval)
             gui.run(blocking=True)
 
         else:
-            tstream.run()
+            tstream.run(polling_interval=polling_interval)

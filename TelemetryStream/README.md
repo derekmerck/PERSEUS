@@ -1,7 +1,5 @@
 # PERSEUS Listener
 
-https://github.com/derekmerck/NeuroLogic/tree/derek/perseus
-
 Python interface for Philips Intellivue vital sign telemetry for use with PERSEUS
 
 ## Dependencies
@@ -24,7 +22,7 @@ This code has fairly minimal hardware requirements, and appears to be operating 
 
 Testing is underway using Raspberry Pi's as monitor boxes.  This would be an extremely inexpensive solution for retrofitting a large number of older, non-networked monitors with Listeners.
 
-Since the Pi is an ARM cpu, it is unclear that the same USB-to-serial drivers have been cross-compiled work with it.  Consequently, we are building RS232 connectors for the GPIO header using this [expansion card](http://www.amazon.com/dp/B0088SNIOQ).
+The standard usb-to-serial converters work with Raspberrian's default drivers.  It is also possible to build RS232 connectors for the GPIO header using this [expansion card](http://www.amazon.com/dp/B0088SNIOQ).
 
 
 ## Usage
@@ -32,13 +30,13 @@ Since the Pi is an ARM cpu, it is unclear that the same USB-to-serial drivers ha
 Generate a pair of test wave forms and display the result with matplotlib:
 
 ```bash
-$ python TelemetryStream.py --values ecg pleth --gui SimpleStripchart
+$ python TelemetryStream.py --values Pleth 32 ECG 128 --gui SimpleStripchart
 ```
 
 Connect to a Philips Intelliviue monitor via a USB-to-serial converter and route the output to a splunk index using splunk server credentials from the user environment.
 
 ```bash
-$ python PhilipsTelemetryStream.py --values ecg 500 pleth 60 --device /dev/cu.usbserial --splunk perseus
+$ python PhilipsTelemetryStream.py --values Pleth 128 ECG 256 --device /dev/cu.usbserial --splunk perseus
 ```
 
 ### Command line arguments

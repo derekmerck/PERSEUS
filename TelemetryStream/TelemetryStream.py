@@ -18,20 +18,14 @@ from splunklib import client as SplunkClient
 import os
 import yaml
 import numpy as np
+from PERSEUS import __version__
 
 try:
     from SimpleStripchart import Stripchart
 except ImportError:
     pass
 
-__package__ = "PERSEUS Listener"
 __description__ = "Monitor decoder for PERSEUS (Push Electronic Relay for Smart Alarms for End User Situational Awareness)"
-__url__ = "https://github.com/rih3d/NeuroLogic/perseus"
-__author__ = 'Derek Merck'
-__email__ = "derek_merck@brown.edu"
-__license__ = "MIT"
-__version_info__ = ('0', '1', '0')
-__version__ = '.'.join(__version_info__)
 
 # Lookup credentials from either os.env or shadow.yaml
 # This prevents a developer from inadvertently hardcoding and checking in confidential information
@@ -116,18 +110,19 @@ class SampledDataBuffer(object):
         t0 -= self.t1
 
         length = values.size or 1  # For scalar
-        logging.debug('len {0}'.format(length))
+        # logging.debug('len {0}'.format(length))
         if length == 1:
             times = t0
         else:
             sec_offset = length/self.freq
             times = np.linspace(t0, t0+sec_offset, length)
 
-        if t0 - self.t[-1] > 0:
-            self.dropped_packets += 1
-            logging.warn('>{0} dropped packets (t0={t0} != t[-1]={t1})'.format(self.dropped_packets, t0=t0, t1=self.t[-1]))
-            # Everytime this happens, it increases the total duration; if it's consistent, it
-            # will be a multiplier on the duration.
+        # TODO: Fix this if it's important; it needs to fix itself so it does't get into a loop
+        # if t0 - self.t[-1] > 0:
+        #     self.dropped_packets += 1
+        #     logging.warn('>{0} dropped packets (t0={t0} != t[-1]={t1})'.format(self.dropped_packets, t0=t0, t1=self.t[-1]))
+        #     # Everytime this happens, it increases the total duration; if it's consistent, it
+        #     # will be a multiplier on the duration.
 
         self.y = np.roll(self.y, -length)
         self.y[-length:] = values
@@ -153,7 +148,7 @@ class TelemetryStream(object):
         self.sampled_data = {}
 
         sampled_data_args = kwargs.get('values')
-        logging.debug(sampled_data_args)
+        # logging.debug(sampled_data_args)
         if sampled_data_args:
             for key, freq in zip(sampled_data_args[0::2], sampled_data_args[1::2]):
                 self.sampled_data[key] = {'freq': freq,
@@ -180,12 +175,12 @@ class TelemetryStream(object):
     def add_update_func(self, f):
         self.update_funcs.append(f)
 
-    def run(self, blocking=False, sleep=0.05):
+    def run(self, blocking=False, polling_interval=0.25):
         # Create a main loop that just echoes the results to the loggers
         self.open()
         while 1:
             self.read(1, blocking=blocking)
-            time.sleep(sleep)
+            time.sleep(polling_interval)
 
     def open(self, *args, **kwargs):
         raise NotImplementedError
@@ -232,7 +227,7 @@ class SampleTelemetryStream(TelemetryStream):
         super(SampleTelemetryStream, self).__init__(*args, **kwargs)
         self.logger.name = 'SampleTelemetry'
         self.polling_freq = 4  # Expected number of polls per second to simulate
-        self.drop_rate = 0.1   # Fraction of polls to drop
+        self.drop_rate = 0.01   # Fraction of polls to drop
 
     def open(self):
         # Do some handshake stuff
@@ -255,19 +250,19 @@ class SampleTelemetryStream(TelemetryStream):
 
             ret = {'timestamp': datetime.datetime.now() - datetime.timedelta(seconds=5)}
 
-            data0 = self.sampled_data.get('ecg')
-            data1 = self.sampled_data.get('pleth')
+            data0 = self.sampled_data.get('ECG')
+            data1 = self.sampled_data.get('Pleth')
             if data0:
                 x0 = np.linspace(now-1.0/self.polling_freq, now, data0['freq']/self.polling_freq)
                 y0 = np.cos(x0)
-                ret['ecg'] = (y0*900)+2000
+                ret['ECG'] = (y0*900)+2000
             if data1:
                 x1 = np.linspace(now-1.0/self.polling_freq, now, data1['freq']/self.polling_freq)
                 y1 = np.sin(x1)
-                ret['pleth'] = y1
+                ret['Pleth'] = y1
 
-            ret['bpm'] = 80
-            ret['spo2'] = 95
+            ret['Heart Rate'] = 80
+            ret['SpO2'] = 95
             ret['alarms'] = {'A0' : {'type': None,
                                      'source': None } }
             return ret
@@ -283,8 +278,21 @@ class SampleTelemetryStream(TelemetryStream):
                 new_data = f(sampled_data=self.sampled_data, **data)
                 data.update(new_data)
 
-        #self.logger.info(data)
+        self.logger.info(data)
         return data
+
+
+def configure_parser(parser):
+    parser.add_argument('-b', '--binary', help="Name of an hdf5 file for binary logging")
+    parser.add_argument('-f', '--file', help="Name of a text file for event logging")
+    parser.add_argument('-s', '--splunk', help="Name of a Splunk index for event logging")
+    parser.add_argument('-g', '--gui', help="Display a graphic user interface, e.g., 'SimpleStripchart'")
+    # Default for PL203 usb to serial device
+    parser.add_argument('-p', '--port', help="Device port (or 'test')", default="/dev/cu.usbserial")
+    parser.add_argument('--values', nargs="+",
+                        help="List of paired value names and frequencies to monitor, e.g. 'Pleth 128 ECG 256'",
+                        default=['Pleth', 128, 'ECG', 256])
+    return parser
 
 
 def parse_args():
@@ -294,14 +302,7 @@ def parse_args():
     parser.add_argument('-V', '--version',
                         action='version',
                         version='%(prog)s (version ' + __version__ + ')')
-    parser.add_argument('-b', '--binary', help="Name of an hdf5 file for binary logging")
-    parser.add_argument('-f', '--file', help="Name of a text file for event logging")
-    parser.add_argument('-s', '--splunk', help="Name of a Splunk index for event logging")
-    parser.add_argument('-g', '--gui', help="Display a graphic user interface, e.g., 'SimpleStripchart'")
-    # Default for PL203 usb to serial device
-    parser.add_argument('-p', '--port', help="Device port", default="/dev/cu.usbserial")
-    parser.add_argument('--values', nargs="+", help="List of paired value names and frequencies to monitor, e.g. 'ecg, 100, pleth, 64'")
-
+    parser = configure_parser(parser)
     _opts = parser.parse_args()
     return _opts
 
