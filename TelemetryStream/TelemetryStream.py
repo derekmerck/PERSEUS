@@ -18,7 +18,7 @@ from splunklib import client as SplunkClient
 import os
 import yaml
 import numpy as np
-from PERSEUS import __version__
+
 
 try:
     from SimpleStripchart import Stripchart
@@ -26,6 +26,8 @@ except ImportError:
     pass
 
 __description__ = "Monitor decoder for PERSEUS (Push Electronic Relay for Smart Alarms for End User Situational Awareness)"
+__version_info__ = ('0', '9', '1')
+__version__ = '.'.join(__version_info__)
 
 # Lookup credentials from either os.env or shadow.yaml
 # This prevents a developer from inadvertently hardcoding and checking in confidential information

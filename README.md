@@ -43,13 +43,8 @@ In testing, the event and dispatch server are separate components running on the
 
 ### General Setup
 
-[Anaconda]() simplifies cross-platform installation of the Python binary library dependencies.  Pip can be used for any pure-Python packages.
+[Anaconda]() simplifies cross-platform installation of the Python binary library dependencies required for the client systems.  Pip can be used for any pure-Python packages.
 
-```bash
-$ conda update conda
-$ conda install numpy scipy matplotlib
-$ pip install pyserial pyyaml splunk-sdk
-```
 
 ### Client Setup
 
@@ -58,13 +53,16 @@ Setup each client with a separate host name that will be used in the zone descri
 PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup quickly by installing the Anaconda Python distribution as above, and using pip to install the latest PERSEUS scripts.
 
 ```bash
+$ conda update conda
+$ conda install numpy scipy matplotlib
+$ pip install pyserial pyyaml splunk-sdk
 $ pip install git+https://github.com/derekmerck/PERSEUS
 $ python -m perseus listener --values Pleth 128 ECG 256 --port /dev/cu.usbserial --splunk perseus
 ```
 
 See the [TelemetryStream README](TelemetryStream/README.md) for more details on how to setup a PERSEUS Listener client with a simple GUI and using Raspberry Pi hardware.
 
-See the [TelemetryLogs/README.md][] for details on how to setup a client with a stand alone decoder and a log shipper.
+See the [TelemetryLogs README](TelemetryLogger/README.md) for details on how to setup a client system with CWRU's stand alone decoder and a log shipper.
 
 
 ### PERSEUS Dispatch Setup
@@ -72,17 +70,18 @@ See the [TelemetryLogs/README.md][] for details on how to setup a client with a 
 Install PERSEUS Dispatch and dependencies on the central server.
 
 ```bash
+$ pip install pyyaml splunk-sdk twilio
 $ pip install git+https://github.com/derekmerck/PERSEUS
 ```
 
-Modify the `config.yaml` file to represent the local rules, zone topology, and alert roles.  `config.yaml` includes three required keys:  _rules_, _zones_, and _roles_.  See the example provided.
+Modify the example `config.yaml` file to represent the local rules, zone topology, and alert roles.
 
-Credentials for the log server, any email relays, [Twilio][] auth tokens, and [Slack][] webhook urls can be provided as environment variables or using a `shadow.yaml` file.  Both Twilio and Slack provide free trial services.
+Credentials for the event store, any email relays, [Twilio][] auth tokens, and [Slack][] webhook urls can be provided as environment variables or using a `shadow.yaml` file.  Both Twilio and Slack provide free trial services.
 
 Once the event store (Splunk, for example) is setup and the clients are running, Dispatch can be started from the command line:
 
 ```bash
-$ ./PERSEUS.py dispatch --config my_config.yaml
+$ python -m perseus dispatch --config my_config.yaml
 ```
 
 Future work includes developing a fabric- or Ansible-based system to deploy and bring up the entire PERSEUS network automatically.

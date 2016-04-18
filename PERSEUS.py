@@ -5,11 +5,11 @@ Push Electronic Relay for Smart Alarms for End User Situational Awareness (PERSE
 
 [Derek Merck](derek_merck@brown.edu)
 [Leo Kobayashi](lkobayashi@lifespan.org)
-Spring 2015
+Spring 2016
 
 <https://github.com/derekmerck/PERSEUS>
 
-Dependencies: PyYAML, splunk-sdk, Twilio
+Dependencies: PyYAML, splunk-sdk, Twilio, numpy, scipy, pyserial, matplotlib
 
 See README.md for usage, notes, and license info.
 """
@@ -18,7 +18,6 @@ import argparse
 import logging
 import os
 import yaml
-
 from Dispatch import Dispatch
 from TelemetryStream import TelemetryStream, PhilipsTelemetryStream
 
@@ -28,8 +27,9 @@ __url__ = "https://github.com/derekmerck/PERSEUS"
 __author__ = 'Derek Merck'
 __email__ = "derek_merck@brown.edu"
 __license__ = "MIT"
-__version_info__ = ('0', '5', '0')
+__version_info__ = ('0', '9', '1')
 __version__ = '.'.join(__version_info__)
+
 
 try:
     with file("shadow.yaml") as f:
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     opts = parse_args()
 
     if opts.command == 'dispatch':
-        logging.debug('PERSEUS Dispatch v{0}'.format(__version__))
+        logging.debug('PERSEUS Dispatch v{0}'.format(Dispatch.__version__))
 
         with open(opts.config, 'rU') as f:
             config = yaml.load(f)
@@ -81,11 +81,11 @@ if __name__ == "__main__":
 
     elif opts.command == 'listener':
 
-        logging.debug('PERSEUS Listener v{0}'.format(__version__))
+        logging.debug('PERSEUS Listener v{0}'.format(TelemetryStream.__version__))
         logging.debug('Forked from the NeuroLogic/PyMMND Philips Vitals Monitor Decoder')
 
         tstream, polling_interval, redraw_interval = None, None, None
-        if opts.port == "test":
+        if opts.port == "sample":
             tstream = TelemetryStream.SampleTelemetryStream(values=opts.values)
             polling_interval = 0.25
             redraw_interval = 0.1

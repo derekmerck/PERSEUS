@@ -4,14 +4,13 @@ Merck, Summer 2015
 
 [Derek Merck](derek_merck@brown.edu)
 [Leo Kobayashi](lkobayashi@lifespan.org)
-Spring 2015
+Spring 2016
 
 <https://github.com/derekmerck/PERSEUS>
 
-Dependencies: PyYAML, splunk-sdk, Twilio
+Dependencies: PyYAML, splunk-sdk, Twilio, numpy, scipy, matplotlib, pyserial
 
 See README.md for usage, notes, and license info.
-
 
 ## Distribution to a pypi server:
 
@@ -47,10 +46,10 @@ setup(
     long_description=long_desc,
     url=__url__,
     license=__license__,
-    py_modules=["PERSEUS", "Dispatch", "Messenger", "EventStore", "TelemetryStream"],
+    py_modules=["PERSEUS", "Dispatch", "Messenger", "EventStore", "TelemetryStream", "PhilipsTelemetryStream", "InteliviewDecoder", "IntllivueDistiller"],
     include_package_data=True,
     zip_safe=True,
-    install_requires=['PyYAML', 'Twilio', 'splunk-sdk'],
+    install_requires=['PyYAML', 'Twilio', 'splunk-sdk', 'pyserial', 'numpy', 'scipy', 'matplotLib'],
     classifiers=[
         'Development Status :: 1 - Planning',
         'Intended Audience :: Healthcare Industry',
