@@ -96,14 +96,14 @@ Using gmail as an SMS relay requires either turning off app security in gmail, o
 
 ## Code Organization Overview
 
-![Network organization](images/perseus3_overview.png)
+![Network organization](images/perseus31_overview.png)
 
 
 ## Acknowledgements
 
 - Initial development funded through a healthcare quality improvement award from the AHRQ
 - The Intellivue Decoder portion of this package was forked from the RIH NeuroLogic package developed by [Agrawal](mailto:uagrawal61@gmail.com), [Oyalowo](mailto:adewole_oyalowo@brown.edu), Asaad, and others.  See <https://bitbucket.org/uagrawal61/neurologic> for documentation of the NeuroLogic project.
-- The default QoS code was adapted from Xiao Hu, PhD's MATLAB code for waveform quality checks (see [TelemetryStream/README.md][] for reference).
+- The default QoS code was adapted from Xiao Hu, PhD's MATLAB code for waveform quality checks (see [TelemetryStream README](TelemetryStream/README.md) for reference).
 - EmailSMSMessenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
 - Splunk generously provided a _gratis_ academic license for their product
 - Indebted to discussion of pip at <https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/>
