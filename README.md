@@ -16,117 +16,47 @@ Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.
 
 ### Dependencies
 
+General:
 - Python 2.7
 - [PyYAML](http://pyyaml.org) for configuration info
-- [Splunk API](http://dev.splunk.com/python) (optional for event routing)
+- [splunk-sdk](http://dev.splunk.com/python) (optional for event routing)
+
+For Dispatch:
 - [Twilio API](https://github.com/twilio/twilio-python) (optional for alert routing)
 
+For Listener:
+- pyserial for RS232 serial connection protocol
+- numpy for array math functions
+- scipy (optional for quality of signal function)
+- matplotlib (optional for simple GUI display)
 
-## Installation
 
-PERSEUS has three basic components:
- 
-1. A set of client systems equipped with decoders and waveform analyzers for bedside monitors and a log shipper.
-2. A central log server, such as such as [Splunk][] or an open-source "ELK" stack ([Elastic][], [Logstash][], and Kibana).
-3. A central server with the PERSEUS Dispatch daemon
+## Setup
 
-In testing, the log server and dispatch server are separate components running on the same central machine.
+PERSEUS Dispatch has three components:
+
+1. A set of **client** systems running the PERSEUS Listener or other decoder for bedside monitors.
+2. A central **event store**, such as [Splunk][] or an open-source "ELK" stack ([Elastic][], [Logstash][], and Kibana).
+3. A central **dispatch server** running the PERSEUS Dispatch daemon
+
+In testing, the event and dispatch server are separate components running on the same central machine.
 
 
 ### Client Setup
 
-Install the monitor parser and waveform analyzer on each client machine.  
+Setup each client with a separate host name that will be used in the zone descriptions.
 
-Install an appropriate log forwarder for your choice of log server.  The log forwarder should ship alarms, numerics, and waveform quality logs to the log server.  Setup each client with a separate host name that will be used in the zone descriptions.
-
-### Configuring a Splunk Forwarder
+PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup quickly by installing Anaconda and using git to clone the latest PERSEUS scripts.
 
 ```bash
-$ splunk add monitor C:\Patient\*numeric*.txt -sourcetype PERSEUS-Numerics -index perseus
-$ splunk add monitor C:\Patient\*alarm*.txt -sourcetype PERSEUS-Alarms -index perseus
-$ splunk list monitor
+$ conda install pyserial numpy scipy matplotlib
+$ pip install git+https://github.com/derekmerck/PERSEUS
+$ python perseus.py listener --values ecg 500 pleth 60 --device /dev/cu.usbserial --splunk perseus
 ```
 
-(Run `cmd.exe` as Admin on Windows)
+See the [TelemetryStream/README.md][] for more details on how to setup a PERSEUS Listener client with a simple GUI and using Raspberry Pi hardware.
 
-This adds the following stanzas to `$SPLUNK_HOME\etc\apps\search\local\inputs.conf`.  The `InitCrcLength` key needs to be edited in directly (and possibly the `crcSalt` key) to improve recognition for log rotation.
-
-```ini
-[monitor://C:\Patients\*alarms*.txt]
-disabled = false
-sourcetype = PERSEUS-Alarms
-index = perseus
-initCrcLength = 1024
-crcSalt = <SOURCE>
-
-[monitor://C:\Patients\*numerics*.txt]
-disabled = false
-sourcetype = PERSEUS-Numerics
-index = perseus
-initCrcLength = 1024
-crcSalt = <SOURCE>
-```
-
-This seems to work with the Splunk6+, but if pattern matching gives you a hard time, see <https://answers.splunk.com/answers/58665/inputs-conf-with-wildcards.html> and <https://answers.splunk.com/answers/2775/regexs-and-windows-paths-in-inputs-conf-and-props-conf.html>
-
-Add `splunkd` to in and out firewalls (or ports 8000, 8089, 9997, 8080 and 514)
-Restart the SplunkForwarder service
-
-### Log Server Setup
-
-Install and configure a central log server.  
-
-### Configuring a Splunk Server
-
-Splunk is free for up to 500MB/day, which is probably enough for central telemetry on about 25 beds.  
-
-Configure settings -> indexes -> add index -> add `perseus`
-
-Configure settings -> forwarding and receiving -> configure receiving -> add port 9997
-
-Add source types for PERSEUS-Alarms, PERSEUS-Numerics.  You can do this through the web UI or directly by editing `$SPLUNK_HOME/etc/apps/search/local/props.conf`.
- 
-```ini
-[PERSEUS-Alarms]
-DATETIME_CONFIG = 
-NO_BINARY_CHECK = true
-category = Application
-pulldown_type = 1
-BREAK_ONLY_BEFORE = ^-*$
-TIME_FORMAT = %H:%M:%S:%N
-TIME_PREFIX = Time:
-description = PERSEUS alarms log file
-disabled = false
-
-[PERSEUS-Numeric]
-BREAK_ONLY_BEFORE = ^Year
-DATETIME_CONFIG = 
-MAX_TIMESTAMP_LOOKAHEAD = 256
-NO_BINARY_CHECK = true
-TIME_FORMAT = %Y %m %d %H %M %S %q
-TIME_PREFIX = =+\n
-category = Application
-disabled = false
-pulldown_type = true
-```
-
-Add field extractions (reg-exs) for PERSEUS-Alarms, PERSEUS-Numerics.  You can do this through the UI or directly, by editing `$SPLUNK_HOME/users/admin/search/local/props.conf`:
- 
- ```ini
-[PERSEUS-Alarms]
-EXTRACT-perseus_alarms = Time: (?P<time>.*)\nDate: (?P<date>.*)\nAlert_source: (?P<alert_src>.*)\nAlert_code: (?P<alert_code>.*)\nAlert_type: (?P<alert_type>.*)\nAlert_state: (?P<alert_state>.*)\nAlert_flags: (?P<alert_flags>.*)\nAlert_message: (?P<alert_msg>.*)
-
-[PERSEUS-Numerics]
-EXTRACT-perseus_numerics = NOM_PULS_OXIM_PERF_REL.*?(?P<o2p_1>\d+\.\d+)\nNOM_PULS_OXIM_PERF_REL.*?(?P<o2p_2>\d+\.\d+)\nNOM_PULS_OXIM_PERF_REL.*?(?P<o2p_3>\d+\.\d+)\nNOM_ECG_CARD_BEAT_RATE.*?(?P<bpm_1>\d+\.\d+)\nNOM_ECG_CARD_BEAT_RATE.*?(?P<bpm_2>\d+\.\d+)\nNOM_ECG_V_P_C_CNT.*?(?P<ecgvpc>\d+\.\d+)\nNOM_PULS_OXIM_SAT_O2.*?(?P<spo2>\d+\.\d+)\nNOM_PULS_OXIM_PERF_REL.*?(?P<o2p_4>\d+\.\d+)
-```
-
-Similar regular expressions should work with other log forwarders, such as [Logstash][] or [fluentd][], as well.
-
-Add `splunkd` to in and out firewalls (or ports 8000, 8089, 9997, 8080 and 514)
-
-If you want to be able to run Dispatch's event server unit tests, manually import the sample data sets as flat files using the appropriate data type templates.
-
-The Intel iCLS install can wreck havoc with the Splunk startup process.  If you get `python.exe` errors, try removing it from the system `%PATH%` variable.  See <http://stackoverflow.com/questions/14552348/runtime-error-r6034-in-embedded-python-application>
+See the [TelemetryLogs/README.md][] for details on how to setup a client with a stand alone decoder and a log shipper.
 
 
 ### PERSEUS Dispatch Setup
@@ -137,26 +67,14 @@ Install PERSEUS Dispatch and dependencies on the central server.
 $ pip install git+https://github.com/derekmerck/PERSEUS
 ```
 
-Modify the `config.yaml` file to represent the local rules, zone topology, and alert roles.
+Modify the `config.yaml` file to represent the local rules, zone topology, and alert roles.  `config.yaml` includes three required keys:  _rules_, _zones_, and _roles_.  See the example provided.
 
+Credentials for the log server, any email relays, [Twilio][] auth tokens, and [Slack][] webhook urls can be provided as environment variables or using a `shadow.yaml` file.  Both Twilio and Slack provide free trial services.
 
-### Configuring PERSEUS Dispatch
-
-`config.yaml` includes three required keys:  _rules_, _zones_, and _roles_.  See the example provided.
-
-Credentials for the log server, any email relays, [Twilio][] auth tokens, and [Slack][] webhook urls must be provided as environment variables or using a `shadow.yaml` file.  Both Twilio and Slack provide free trial services.
-
-
-## Usage
-
-To bring up PERSEUS manually:
-
-1. Startup your log server
-2. Startup all client machine monitoring processes
-3. Startup PERSEUS Dispatch
+Once the event store (Splunk, for example) is setup and the clients are running, Dispatch can be started from the command line:
 
 ```bash
-$ ./PERSEUS.py start
+$ ./PERSEUS.py dispatch --config my_config.yaml
 ```
 
 Future work includes developing a fabric- or Ansible-based system to deploy and bring up the entire PERSEUS network automatically.
@@ -177,6 +95,7 @@ Using gmail as an SMS relay requires either turning off app security in gmail, o
 ## Acknowledgements
 
 - Initial development funded through a healthcare quality improvement award from the AHRQ
+- PERSEUS Listener forked from from NeuroLogic
 - EmailSMSMessenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
 - Splunk generously provided a _gratis_ academic license for their product
 - Indebted to discussion of pip at <https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/>

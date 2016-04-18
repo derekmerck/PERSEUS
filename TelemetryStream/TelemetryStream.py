@@ -65,7 +65,7 @@ class TelemetryGUI(object):
             self.display.redraw()
             self.last_redraw = now
 
-    def start(self, blocking=False):
+    def run(self, blocking=False):
 
         if self.display_type == 'SimpleStripchart':
             self.display = Stripchart(self.tstream)
@@ -178,18 +178,11 @@ class TelemetryStream(object):
         self.update_funcs.append(f)
 
     def run(self, blocking=False, sleep=0.05):
-
-        if self.gui:
-            # Pass the to a gui for use in it's own polling function and main loop
-            gui = TelemetryGUI(tstream, type=opts.gui, polling_interval=0.05, redraw_interval=0.05)
-            gui.start(blocking=True)
-
-        else:
-            # Create a main loop that just echoes the results to the loggers
-            self.open()
-            while 1:
-                self.read(1, blocking=blocking)
-                time.sleep(sleep)
+        # Create a main loop that just echoes the results to the loggers
+        self.open()
+        while 1:
+            self.read(1, blocking=blocking)
+            time.sleep(sleep)
 
     def open(self, *args, **kwargs):
         raise NotImplementedError

@@ -20,6 +20,8 @@ from TelemetryStream import *
 from QualityOfSignal import QualityOfSignal as QoS
 
 __description__ = "PERSEUS telemetry stream listener for Philips Invellivue devices with serial connections"
+__version_info__ = ('0', '7', '0')
+__version__ = '.'.join(__version_info__)
 
 # Wrapper for UCSF QoS code
 def qos(*args, **kwargs):
@@ -520,4 +522,4 @@ if __name__ == '__main__':
     else:
         # Pass the to a gui for use in it's own polling function and main loop
         gui = TelemetryGUI(tstream, type=opts.gui, polling_interval=0.05, redraw_interval=0.05)
-        gui.start(blocking=True)
+        gui.run(blocking=True)

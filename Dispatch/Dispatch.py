@@ -8,6 +8,8 @@ import datetime
 import dateutil.parser
 
 __description__ = "PERSEUS Dispatch server with EventStore and Messenger"
+__version_info__ = ('0', '0', '9')
+__version__ = '.'.join(__version_info__)
 
 # Lookup credentials from either os.env or shadow.yaml
 shadow = None

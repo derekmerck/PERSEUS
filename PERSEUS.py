@@ -15,11 +15,11 @@ See README.md for usage, notes, and license info.
 
 import argparse
 import logging
-
+import os
 import yaml
 
 from Dispatch import Dispatch
-from TelemetryStream import PhilipsTelemetryStream
+from TelemetryStream import TelemetryStream, PhilipsTelemetryStream
 
 __package__ = "PERSEUS"
 __description__ = "Push Electronic Relay for Smart Alarms for End User Situational Awareness"
@@ -27,8 +27,15 @@ __url__ = "https://github.com/derekmerck/PERSEUS"
 __author__ = 'Derek Merck'
 __email__ = "derek_merck@brown.edu"
 __license__ = "MIT"
-__version_info__ = ('0', '3', '0')
+__version_info__ = ('0', '7', '0')
 __version__ = '.'.join(__version_info__)
+
+try:
+    with file("shadow.yaml") as f:
+        shadow_env = yaml.load(f)
+    os.environ.update(shadow_env)
+except IOError as e:
+    print("Unable to open shadow.yaml file for additional environment vars") #Does not exist OR no read permissions
 
 
 def parse_args():
@@ -74,7 +81,9 @@ if __name__ == "__main__":
     opts = parse_args()
 
     if opts.dest == 'dispatch':
-        with open(p.config, 'rU') as f:
+        logging.debug('PERSEUS Dispatch v{0}'.format(Dispatch.__version__))
+
+        with open(opts.config, 'rU') as f:
             config = yaml.load(f)
             rules, zones, roles = config.get('rules'), config.get('zones'), config.get('roles')
 
@@ -83,6 +92,17 @@ if __name__ == "__main__":
 
     elif opts.dest == 'listen':
 
+        logging.debug('PERSEUS Listener v{0}'.format(PhilipsTelemetryStream.__version__))
+        logging.debug('Forked from the NeuroLogic Philips Vitals Monitor Decoder')
+
         tstream = PhilipsTelemetryStream.PhilipsTelemetryStream(**opts)
         tstream.add_update_func(PhilipsTelemetryStream.qos)
-        tstream.run()
+        TelemetryStream.attach_loggers(opts)
+
+        if opts.gui:
+            # Pass the to a gui for use in it's own polling function and main loop
+            gui = TelemetryStream.TelemetryGUI(tstream, type=opts.gui, polling_interval=0.05, redraw_interval=0.05)
+            gui.run(blocking=True)
+
+        else:
+            tstream.run()
