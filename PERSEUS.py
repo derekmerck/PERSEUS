@@ -28,8 +28,7 @@ __url__ = "https://github.com/derekmerck/PERSEUS"
 __author__ = 'Derek Merck'
 __email__ = "derek_merck@brown.edu"
 __license__ = "MIT"
-__version_info__ = ('0', '7', '0')
-__version__ = '.'.join(__version_info__)
+__version__ = '-'.join([Dispatch.__version__, PhilipsTelemetryStream.__version__])
 
 try:
     with file("shadow.yaml") as f:
@@ -47,7 +46,7 @@ def parse_args():
                         action='version',
                         version='%(prog)s (version ' + __version__ + ')')
 
-    subparsers = parser.add_subparsers(help='sub-command help', dest='subparser_name')
+    subparsers = parser.add_subparsers(dest='subparser_name')
 
     # create the parser for the "dispatch" command
     parser_dispatch = subparsers.add_parser('dispatch',

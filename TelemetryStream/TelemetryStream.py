@@ -18,7 +18,11 @@ from splunklib import client as SplunkClient
 import os
 import yaml
 import numpy as np
-from SimpleStripchart import Stripchart
+
+try:
+    from SimpleStripchart import Stripchart
+except ImportError:
+    pass
 
 __package__ = "PERSEUS Listener"
 __description__ = "Monitor decoder for PERSEUS (Push Electronic Relay for Smart Alarms for End User Situational Awareness)"
@@ -256,7 +260,7 @@ class SampleTelemetryStream(TelemetryStream):
             if data0:
                 x0 = np.linspace(now-1.0/self.polling_freq, now, data0['freq']/self.polling_freq)
                 y0 = np.cos(x0)
-                ret['ecg'] = y0
+                ret['ecg'] = (y0*900)+2000
             if data1:
                 x1 = np.linspace(now-1.0/self.polling_freq, now, data1['freq']/self.polling_freq)
                 y1 = np.sin(x1)
@@ -366,4 +370,4 @@ if __name__ == "__main__":
     else:
         # Pass the to a gui for use in it's own polling function and main loop
         gui = TelemetryGUI(tstream, type=opts.gui)
-        gui.start()
+        gui.run()
