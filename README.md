@@ -9,8 +9,7 @@ Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
 ## Overview
 
-> Everything old is new again.
-- Peter Allan, All That Jazz, 1974
+Everything old is new again.
 
 Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.org) Emergency Department.
 
