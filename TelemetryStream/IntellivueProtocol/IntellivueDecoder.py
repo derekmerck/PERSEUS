@@ -1555,7 +1555,6 @@ class IntellivueDecoder(object):
 
         current_message_dict['String']['value'] = current_message_dict['String']['value'].split(' ')[0]
 
-        # TODO: Fix this for STindx; there is at least one code that doesn't have a ws in front of it
         # if current_message_dict.get('String').get('value'):
         #     logging.debug(current_message_dict.get('String').get('value'))
 

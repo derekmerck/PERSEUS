@@ -6,7 +6,7 @@ Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
 <https://github.com/derekmerck/PERSEUS>
 
-<!-- TODO: Test installation of scipy -->
+<!-- TODO: Test installation of scipy on rpi -->
 
 
 ## Overview
@@ -17,11 +17,11 @@ Python interface for Philips Intellivue vital sign telemetry for use with PERSEU
 
 - Python 2.7.10+
 - [PyYAML](http://pyyaml.org) for configuration info
-- [splunk-sdk](http://dev.splunk.com/python) (optional for event routing)
-- pyserial for RS232 serial connection protocol
-- numpy for array math functions
-- scipy (optional for quality of signal function)
-- matplotlib (optional for simple GUI display)
+- [pyserial](https://github.com/pyserial/pyserial) for RS232 serial connection protocol
+- [numpy](http://www.numpy.org) for array math functions
+- [splunk-sdk](http://dev.splunk.com/python) (_optional for event routing_)
+- [scipy](http://www.scipy.org) (_optional for quality of signal post-processing_)
+- [matplotlib](http://www.matplotlib.org) (_optional for simple GUI display_)
 
 
 ## Setup
@@ -66,7 +66,7 @@ optional arguments:
   -p PORT, --port PORT  Device port
   --values VALUES [VALUES ...]
                         List of paired value names and frequencies to monitor,
-                        e.g. 'ecg, 100, pleth, 64'
+                        e.g. 'ecg 100 pleth 64'
 ```
 
 
@@ -138,7 +138,7 @@ The main interface to this package is the "TelemetryStream" class, which is sub-
 
 The PhilipsTelemetryStream module opens an RS232 connection, passes it to the IntellivueDecoder module, initiates an extended polling data transfer (required for wave data), and passes the decoded messages returned to the IntellivueDistiller module.
 
-Each update yields a timestamped dictionary of alarm, numerics, and wave data.  Wave data is returned at 0.25sec intervals, which determines the polling frequency.  The wave data is storaged in an internal sample buffer with a default duration of 7-9 seconds.  This buffer can be accessed for signal post-processing and annotation.
+Each update yields a timestamped dictionary of alarm, numerics, and wave data.  Wave data is returned at 0.25sec intervals, which determines the polling frequency.  The wave data is stored in an internal sample buffer with a default duration of 7-9 seconds.  This buffer can be accessed for signal post-processing and annotation.
 
 See the [Intellivue Programmers Guide](IntellivueProtocol/Philips Data Export Interface Programming Guide.pdf) for details of the protocol.
 
@@ -178,7 +178,7 @@ $ sudo apt-get install python-dev python-numpy python-matplotlib
 $ pip install pyyaml pyserial splunk-sdk numpy matplotlib
 $ mkdir perseus
 $ cd perseus/
-$ git clone https://github.com/rih3d/NeuroLogic.git
+$ git clone https://github.com/derekmerck/PERSEUS.git
 ``` 
 
 The standard usb-to-serial converters work with Raspberrian's default drivers.  It is also possible to build RS232 connectors for the GPIO header using this [expansion card](http://www.amazon.com/dp/B0088SNIOQ).  Using an rPi3 with a serial-to-usb dongle, connect to `--port /dev/ttyUSB0`, for a direct connection from the GPIO header, connect to `--port /dev/ttyS0`. 

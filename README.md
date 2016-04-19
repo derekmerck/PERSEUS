@@ -9,7 +9,7 @@ Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
 ## Overview
 
-Everything old is new again.
+Everything old is new again.  Convert unnetworked vitals monitors into connected smart alarms.
 
 Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.org) Emergency Department.
 
@@ -20,40 +20,40 @@ General:
 
 - Python 2.7.10+
 - [PyYAML](http://pyyaml.org) for configuration info
-- [splunk-sdk](http://dev.splunk.com/python) (optional for event routing)
+- [splunk-sdk](http://dev.splunk.com/python) (_optional for event routing_)
 
 For Dispatch:
 
-- [Twilio API](https://github.com/twilio/twilio-python) (optional for alert routing)
+- [Twilio API](https://github.com/twilio/twilio-python) (_optional for alert routing_)
 
 For Listener:
 
-- pyserial for RS232 serial connection protocol
-- numpy for array math functions
-- scipy (optional for quality of signal function)
-- matplotlib (optional for simple GUI display)
+- [pyserial](https://github.com/pyserial/pyserial) for RS232 serial connection protocol
+- [numpy](http://www.numpy.org) for array math functions
+- [scipy](http://www.scipy.org) (_optional for quality of signal post-processing_)
+- [matplotlib](http://www.matplotlib.org) (_optional for simple GUI display_)
 
 
 ## Setup
 
-PERSEUS Dispatch has three components:
+A PERSEUS system has three components:
 
-1. A set of **client** systems running the PERSEUS Listener or other decoder for bedside monitors.
+1. A set of **client** systems running the PERSEUS Listener daemon or other decoder for bedside monitors.
 2. A central **event store**, such as [Splunk][] or an open-source "ELK" stack ([Elastic][], [Logstash][], and Kibana).
-3. A central **dispatch server** running the PERSEUS Dispatch daemon
+3. A central **dispatch server** running the PERSEUS Dispatch daemon.
 
-In testing, the event and dispatch server are separate components running on the same central machine.
+In testing, the event and dispatch servers are separate components running on a single central machine.
 
 ### General Setup
 
-[Anaconda](http://www.anaconda.org) simplifies cross-platform installation of the Python binary library dependencies required for the client systems.  Pip can be used to install any pure-Python packages and for PERSEUS itself.
+[Anaconda](http://www.anaconda.org) is a package manager that simplifies cross-platform installation of the Python binary library dependencies required for the client systems.  `pip` can be used to install any pure-Python packages and for PERSEUS itself.
 
 
 ### Client Setup
 
 Setup each client with a separate host name that will be used in the zone descriptions.
 
-PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup quickly by installing the Anaconda Python distribution as above, and using pip to install the latest PERSEUS scripts.
+PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup quickly by installing the Anaconda Python distribution as above, manually installing the numpy, scipy, and matplotlib dependencies, and using pip to install the latest PERSEUS scripts.
 
 ```bash
 $ conda update conda
@@ -63,7 +63,9 @@ $ pip install git+https://github.com/derekmerck/PERSEUS
 $ python -m perseus listener --values Pleth 128 ECG 256 --port /dev/cu.usbserial --splunk perseus
 ```
 
-See the [TelemetryStream README](TelemetryStream/README.md) for more details on how to setup a PERSEUS Listener client with a simple GUI and using Raspberry Pi hardware.
+Setting the flags `--port sample --gui SimpleStripChart` will generate and display a pair of sinusoidal sample functions for testing.
+
+See the [TelemetryStream README](TelemetryStream/README.md) for more details on the Intelivue serial protocol and setup instructions for using PERSEUS Listener with Raspberry Pi hardware.
 
 See the [TelemetryLogs README](TelemetryLogger/README.md) for details on how to setup a client system with CWRU's stand alone decoder and a log shipper.
 
@@ -110,7 +112,7 @@ Using gmail as an SMS relay requires either turning off app security in gmail, o
 - EmailSMSMessenger class cribbed in part from <https://github.com/CrakeNotSnowman/Python_Message>
 - Splunk generously provided a _gratis_ academic license for their product
 - Indebted to discussion of pip at <https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/>
-- SimpleDisplay in version 0.2 based on matplotlib's [strip_chart example](http://matplotlib.org/1.4.0/examples/animation/strip_chart_demo.html)
+- SimpleStripChart based on matplotlib's [strip_chart example](http://matplotlib.org/1.4.0/examples/animation/strip_chart_demo.html)
 
 
 ## License
