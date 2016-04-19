@@ -1,28 +1,32 @@
-# PERSEUS Listener
+# ![logo](images/perseus_logo_sm.png) PERSEUS Listener
+Push Electronic Relay for Smart Alarms for End User Situational Awareness
+
+[Derek Merck](email:derek_merck@brown.edu)  
+[Leo Kobayashi](email:lkobayashi@lifespan.org)  
+
+<https://github.com/derekmerck/PERSEUS>
+
+<!-- TODO: Test installation of scipy -->
+
+
+## Overview
 
 Python interface for Philips Intellivue vital sign telemetry for use with PERSEUS
 
 ## Dependencies
 
-- Python 2.7 (Py3 for NeuroLogic QT interface)
-- PyYAML for configuration files
+- Python 2.7.10+
+- [PyYAML](http://pyyaml.org) for configuration info
+- [splunk-sdk](http://dev.splunk.com/python) (optional for event routing)
 - pyserial for RS232 serial connection protocol
-- splunk-sdk for logging directly to splunk
-- matplotlib for display
 - numpy for array math functions
-- scipy for quality of signal function
+- scipy (optional for quality of signal function)
+- matplotlib (optional for simple GUI display)
 
 
 ## Setup
 
 This code has fairly minimal hardware requirements, and appears to be operating system agnostic.  The RIH pilot setup used small form-factor Win10 boxes on wired ethernet connections, and it has also been tested on Mac laptops running OSX 10.11.  In both cases, the RS232 serial connections were mediated by a USB-to-serial dongle which required its own drivers.
-
-
-### Raspberry Pi
-
-Testing is underway using Raspberry Pi's as monitor boxes.  This would be an extremely inexpensive solution for retrofitting a large number of older, non-networked monitors with Listeners.
-
-The standard usb-to-serial converters work with Raspberrian's default drivers.  It is also possible to build RS232 connectors for the GPIO header using this [expansion card](http://www.amazon.com/dp/B0088SNIOQ).
 
 
 ## Usage
@@ -136,6 +140,8 @@ The PhilipsTelemetryStream module opens an RS232 connection, passes it to the In
 
 Each update yields a timestamped dictionary of alarm, numerics, and wave data.  Wave data is returned at 0.25sec intervals, which determines the polling frequency.  The wave data is storaged in an internal sample buffer with a default duration of 7-9 seconds.  This buffer can be accessed for signal post-processing and annotation.
 
+See the [Intellivue Programmers Guide](IntellivueProtocol/Philips Data Export Interface Programming Guide.pdf) for details of the protocol.
+
 
 ## Failure Recovery
 
@@ -155,9 +161,11 @@ The default QoS code was adapted from Xiao Hu, PhD's MATLAB code for waveform qu
 According to this paper, the same method is also implemented in the [PhysioToolkit](http://www.physionet.org)
 
 
-## Configuring a Raspberry Pi
+## Raspberry Pi
 
-The Raspberrian requires a little bit of work to get Python 2.7.11 and the dependencies installed.
+Testing is underway using Raspberry Pi's as monitor boxes.  This would be an extremely inexpensive solution for retrofitting a large number of older, non-networked monitors with Listeners.
+
+Raspberrian requires a little bit of work to get Python 2.7.11 and the dependencies installed.
 
 ```bash
 $ sudo apt-get update && sudo apt-get upgrade
@@ -173,7 +181,7 @@ $ cd perseus/
 $ git clone https://github.com/rih3d/NeuroLogic.git
 ``` 
 
-The Raspberry Pi can also be connected via a serial-to-usb dongle (use `--port /dev/ttyUSB0`) or directly from the serial header (use `--port /dev/ttyS0`). 
+The standard usb-to-serial converters work with Raspberrian's default drivers.  It is also possible to build RS232 connectors for the GPIO header using this [expansion card](http://www.amazon.com/dp/B0088SNIOQ).  Using an rPi3 with a serial-to-usb dongle, connect to `--port /dev/ttyUSB0`, for a direct connection from the GPIO header, connect to `--port /dev/ttyS0`. 
 
 
 ## Acknowledgements

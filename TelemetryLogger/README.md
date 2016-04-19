@@ -1,4 +1,13 @@
-### Stand Alone Decoder with a Splunk Log Shipper
+# ![logo](images/perseus_logo_sm.png) PERSEUS
+Push Electronic Relay for Smart Alarms for End User Situational Awareness
+
+[Derek Merck](email:derek_merck@brown.edu)  
+[Leo Kobayashi](email:lkobayashi@lifespan.org)  
+
+<https://github.com/derekmerck/PERSEUS>
+
+
+## Configuring a Stand Alone Decoder with a Splunk Log Shipper
 
 It is also possible to use any stand-alone monitor decoder, such as the one developed by CWRU.  The CWRU stack requires a separate install of a quality of signal post-processor and appropriate log forwarder for your choice of log server.  The log forwarder should ship alarms, numerics, and waveform quality logs to the log server.  
 
@@ -33,11 +42,9 @@ This seems to work with the Splunk6+, but if pattern matching gives you a hard t
 Add `splunkd` to in and out firewalls (or ports 8000, 8089, 9997, 8080 and 514)
 Restart the SplunkForwarder service
 
-### Log Server Setup
 
-Install and configure a central log server.  
 
-### Configuring a Splunk Server
+## Configuring a Splunk Event Server
 
 Splunk is free for up to 500MB/day, which is probably enough for central telemetry on about 25 beds.  
 
@@ -45,7 +52,7 @@ Configure settings -> indexes -> add index -> add `perseus`
 
 Configure settings -> forwarding and receiving -> configure receiving -> add port 9997
 
-Add source types for PERSEUS-Alarms, PERSEUS-Numerics.  You can do this through the web UI or directly by editing `$SPLUNK_HOME/etc/apps/search/local/props.conf`.
+To configure Splunk to ingest CWRU log files, you must add source types for PERSEUS-Alarms, PERSEUS-Numerics.  You can do this through the web UI or directly by editing `$SPLUNK_HOME/etc/apps/search/local/props.conf`.
  
 ```ini
 [PERSEUS-Alarms]
@@ -86,5 +93,7 @@ Similar regular expressions should work with other log forwarders, such as [Logs
 Add `splunkd` to in and out firewalls (or ports 8000, 8089, 9997, 8080 and 514)
 
 If you want to be able to run Dispatch's event server unit tests, manually import the sample data sets as flat files using the appropriate data type templates.
+
+## Troubleshooting
 
 The Intel iCLS install can wreck havoc with the Splunk startup process.  If you get `python.exe` errors, try removing it from the system `%PATH%` variable.  See <http://stackoverflow.com/questions/14552348/runtime-error-r6034-in-embedded-python-application>2

@@ -1,2 +1,7 @@
-include config.yaml README.md perseus3-overview.png
+include config.yaml
+global-include README.md
+include images/*.png
+include TelemetryStream/IntellivueProtocol/*.txt
+include TelemetryStream/IntellivueProtocol/*.pdf
 exclude README.rst
+global-exclude shadow.yaml

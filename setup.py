@@ -14,11 +14,11 @@ See README.md for usage, notes, and license info.
 
 ## Distribution to a pypi server:
 
-```
+```bash
 $ pandoc --from=markdown --to=rst --output=README.rst README.md
 $ python setup.py sdist
 $ python setup.py register [-r https://testpypi.python.org/pypi]
-$ python setup.py sdist upload  [-r https://testpypi.python.org/pypi]
+$ python setup.py sdist upload [-r https://testpypi.python.org/pypi]
 ```
 """
 
@@ -46,7 +46,16 @@ setup(
     long_description=long_desc,
     url=__url__,
     license=__license__,
-    py_modules=["PERSEUS", "Dispatch", "Messenger", "EventStore", "TelemetryStream", "PhilipsTelemetryStream", "InteliviewDecoder", "IntllivueDistiller"],
+    py_modules=["PERSEUS",
+                "Dispatch.Dispatch", "Dispatch.Messenger", "Dispatch.EventStore",
+                "TelemetryLogger.CWRU_utils",
+                "TelemetryStream.TelemetryStream",
+                "TelemetryStream.SimpleStripChart",
+                "TelemetryStream.PhilipsTelemetryStream",
+                "TelemetryStream.QualityOfSignal",
+                "TelemetryStream.IntellivueProtocol.IntellivueDecoder",
+                "TelemetryStream.IntellivueProtocol.IntellivueDistiller",
+                "TelemetryStream.IntellivueProtocol.RS232"],
     include_package_data=True,
     zip_safe=True,
     install_requires=['PyYAML', 'Twilio', 'splunk-sdk', 'pyserial', 'numpy', 'scipy', 'matplotLib'],

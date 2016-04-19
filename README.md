@@ -17,14 +17,17 @@ Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.
 ### Dependencies
 
 General:
-- Python 2.7
+
+- Python 2.7.10+
 - [PyYAML](http://pyyaml.org) for configuration info
 - [splunk-sdk](http://dev.splunk.com/python) (optional for event routing)
 
 For Dispatch:
+
 - [Twilio API](https://github.com/twilio/twilio-python) (optional for alert routing)
 
 For Listener:
+
 - pyserial for RS232 serial connection protocol
 - numpy for array math functions
 - scipy (optional for quality of signal function)
@@ -43,7 +46,7 @@ In testing, the event and dispatch server are separate components running on the
 
 ### General Setup
 
-[Anaconda]() simplifies cross-platform installation of the Python binary library dependencies required for the client systems.  Pip can be used for any pure-Python packages.
+[Anaconda](http://www.anaconda.org) simplifies cross-platform installation of the Python binary library dependencies required for the client systems.  Pip can be used to install any pure-Python packages and for PERSEUS itself.
 
 
 ### Client Setup
