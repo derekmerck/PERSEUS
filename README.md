@@ -9,7 +9,8 @@ Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
 ## Overview
 
-_To be discussed by Leo._
+> Everything old is new again.
+- Peter Allan, All That Jazz, 1974
 
 Original test site is at [Rhode Island Hospital](http://www.rhodeislandhospital.org) Emergency Department.
 

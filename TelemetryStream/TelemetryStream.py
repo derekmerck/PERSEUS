@@ -46,7 +46,6 @@ class TelemetryGUI(object):
         self.tstream = tstream
         self.display = None
         self.display_type = kwargs.get('display_type', 'SimpleStripchart')
-        self.polling_interval = kwargs.get('polling_interval', 0.25)
         self.redraw_interval = kwargs.get('redraw_interval', 0.1)
         self.last_redraw = time.time()
         self.last_poll = self.last_redraw
@@ -54,7 +53,7 @@ class TelemetryGUI(object):
     def update(self, blocking=False):
         now = time.time()
 
-        if now > (self.last_poll + self.polling_interval):
+        if now > (self.last_poll + self.tstream.polling_interval):
             data = self.tstream.read(1, blocking=blocking)
             if data:
                 self.display.update_data(data, self.tstream.sampled_data)
@@ -145,7 +144,7 @@ class TelemetryStream(object):
         # self.logger.setLevel(logging.WARN)
         # Do anything else that would be generic across all monitor readers here
         self.update_funcs = []
-
+        self.polling_interval = kwargs.get('polling_interval', 0.25)
         self.sampled_data_dur = kwargs.get('sampled_data_dur', 7)
         self.sampled_data = {}
 
@@ -156,8 +155,8 @@ class TelemetryStream(object):
                 self.sampled_data[key] = {'freq': freq,
                                           'samples': SampledDataBuffer(freq, self.sampled_data_dur)}
 
-        logging.debug('sampled data array')
-        logging.debug(self.sampled_data)
+        # logging.debug('sampled data array')
+        # logging.debug(self.sampled_data)
 
     def update_sampled_data(self, data):
         if not data:
@@ -177,12 +176,12 @@ class TelemetryStream(object):
     def add_update_func(self, f):
         self.update_funcs.append(f)
 
-    def run(self, blocking=False, polling_interval=0.25):
+    def run(self, blocking=False):
         # Create a main loop that just echoes the results to the loggers
         self.open()
         while 1:
             self.read(1, blocking=blocking)
-            time.sleep(polling_interval)
+            time.sleep(self.polling_interval)
 
     def open(self, *args, **kwargs):
         raise NotImplementedError

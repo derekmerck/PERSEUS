@@ -48,9 +48,9 @@ class Stripchart(object):
                 return
             samples = channel.get('samples')
 
-            logging.debug('Updating channel: {0} over range [{1},{2}] ({3} secs)'\
-                          .format(self.name, samples.t.min(), samples.t.max(),
-                                  samples.t.max() - samples.t.min()))
+            # logging.debug('Updating channel: {0} over range [{1},{2}] ({3} secs)'\
+            #               .format(self.name, samples.t.min(), samples.t.max(),
+            #                       samples.t.max() - samples.t.min()))
             # logging.debug(samples.y)
             # logging.debug(samples.t)
 

@@ -82,25 +82,23 @@ if __name__ == "__main__":
     elif opts.command == 'listener':
 
         logging.debug('PERSEUS Listener v{0}'.format(TelemetryStream.__version__))
-        logging.debug('Forked from the NeuroLogic/PyMMND Philips Vitals Monitor Decoder')
+        logging.debug('Forked from the NeuroLogic Philips Vitals Monitor Decoder')
 
         tstream, polling_interval, redraw_interval = None, None, None
         if opts.port == "sample":
-            tstream = TelemetryStream.SampleTelemetryStream(values=opts.values)
-            polling_interval = 0.25
+            tstream = TelemetryStream.SampleTelemetryStream(values=opts.values, polling_interval=0.25)
             redraw_interval = 0.1
         else:
-            tstream = PhilipsTelemetryStream.PhilipsTelemetryStream(**opts)
+            tstream = PhilipsTelemetryStream.PhilipsTelemetryStream(polling_interval=0.05, **opts)
             tstream.add_update_func(PhilipsTelemetryStream.qos)
-            polling_interval = 0.05
             redraw_interval = 0.05
 
         TelemetryStream.attach_loggers(tstream, opts)
 
         if opts.gui:
             # Pass the to a gui for use in it's own polling function and main loop
-            gui = TelemetryStream.TelemetryGUI(tstream, type=opts.gui, polling_interval=polling_interval, redraw_interval=redraw_interval)
+            gui = TelemetryStream.TelemetryGUI(tstream, type=opts.gui, redraw_interval=redraw_interval)
             gui.run(blocking=True)
 
         else:
-            tstream.run(polling_interval=polling_interval)
+            tstream.run()
