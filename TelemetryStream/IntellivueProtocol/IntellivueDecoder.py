@@ -1156,7 +1156,7 @@ class IntellivueDecoder(object):
         OID_Type = OID_Type_Dict.copy()
         OID_Type.update(OID_Type_Reverse_Dict)
 
-        logging.debug("OIDType Dict: {0}".format(OID_Type))
+        # logging.debug("OIDType Dict: {0}".format(OID_Type))
 
         oid_file.close()
 
@@ -1335,7 +1335,7 @@ class IntellivueDecoder(object):
             Label.update(Label_Reverse_Dict)
             Label.update(Label_Reverse_Dict2)
 
-        logging.debug('Labels: {0}'.format(Label))
+        # logging.debug('Labels: {0}'.format(Label))
 
         return Label
 
