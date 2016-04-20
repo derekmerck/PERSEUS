@@ -1,12 +1,10 @@
-# ![logo](images/perseus_logo_sm.png) PERSEUS Listener
+# PERSEUS Listener
 Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
 [Derek Merck](email:derek_merck@brown.edu)  
 [Leo Kobayashi](email:lkobayashi@lifespan.org)  
 
 <https://github.com/derekmerck/PERSEUS>
-
-<!-- TODO: Test installation of scipy on rpi -->
 
 
 ## Overview
@@ -68,7 +66,6 @@ optional arguments:
                         List of paired value names and frequencies to monitor,
                         e.g. 'ecg 100 pleth 64'
 ```
-
 
 ## Output
 

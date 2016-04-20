@@ -1,4 +1,4 @@
-# ![logo](images/perseus_logo_sm.png) PERSEUS
+# PERSEUS Logger Utilities
 Push Electronic Relay for Smart Alarms for End User Situational Awareness
 
 [Derek Merck](email:derek_merck@brown.edu)  

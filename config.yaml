@@ -21,12 +21,12 @@ rules:
 #                    full alarm_code names to avoid potential similar alarms from other sources in Philips system
 #                    e.g., "MAX.ALERT: Room C-1; Alert# 2;  VTach | HR 122 | No current SpO2 reading"
 
-# Derek's Thoughts:  We need to definte an _aggregation function_ and _aggregation interval_ and
+# Derek's Thoughts:  We need to define an _aggregation function_ and _aggregation interval_ and
 #                    _history Interval_.  Maybe all the same, maybe rule or condition specific
 #                    ie, max(bpm) in last 10 seconds > X or avg(bpm) in last 2 minutes > X.
 #                    History and aggregation may be the same thing -- did any of the 10 second intervals
 #                    over the last 2 minutes have these qualities?
-#                    Another complexity is that the last 30 seconds may be partially incopmlete
+#                    Another complexity is that the last 30 seconds may be partially incomplete
 
 ### MAXIMUM PRIORITY
 
