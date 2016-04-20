@@ -219,7 +219,18 @@ class SplunkLogHandler(logging.Handler):
     def emit(self, record):
         # Submit an event over HTTP
         logging.debug("Emitting: {0}".format(record.msg))
-        self.index.submit(json.dumps(record.msg, ensure_ascii=False).encode('ascii', errors='ignore'), sourcetype=self.sourcetype, host=SplunkLogHandler.host)
+
+        class TelemetryEncoder(json.JSONEncoder):
+            def default(self, o):
+                # Deal with datetime
+                if isinstance(o, datetime.datetime):
+                    return o.isoformat()
+                # Deal with numpy
+                if type(o).__module__ == np.__name__:
+                    return o.tolist()
+                return json.JSONEncoder.default(self, o)
+
+        self.index.submit(json.dumps(record.msg, cls=TelemetryEncoder, ensure_ascii=False).encode('ascii', errors='ignore'), sourcetype=self.sourcetype, host=SplunkLogHandler.host)
 
 class SampleTelemetryStream(TelemetryStream):
     # Implements specific handshaking and parsing for Philips monitor serial protocol

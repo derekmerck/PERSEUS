@@ -55,18 +55,7 @@ On Windows or Mac machines without a pre-installed git client, a binary distribu
 
 Setup each client with a separate host name that will be used in the zone descriptions.
 
-PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup quickly by installing the Anaconda Python distribution as above, manually installing the numpy, scipy, and matplotlib dependencies, and using pip to install the latest PERSEUS scripts.[^pip_dependencies]
-
-[^pip_dependences]:  Not sure why, but pip doesn't seem to install the requirements if you try to install it directly from github.
-
-```bash
-$ conda update conda
-$ conda install numpy scipy matplotlib
-$ pip install pyserial pyyaml splunk-sdk
-$ pip install git+https://github.com/derekmerck/PERSEUS
-```
-
-If you want to clone the repository, you need to install the Python library dependencies separately as well.
+PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup quickly by installing the Anaconda Python distribution as above, manually installing the numpy, scipy, and matplotlib dependencies, and using pip to install the Python dependencies, and git to clone the latest PERSEUS scripts.
 
 ```bash
 $ conda update conda
@@ -75,10 +64,17 @@ $ pip install pyserial pyyaml splunk-sdk
 $ git clone https://github.com/derekmerck/PERSEUS
 ```
 
-$ python -m perseus listener --values Pleth 128 ECG 256 --port /dev/cu.usbserial --splunk perseus
+Running `listener` command with the flags `--port sample --gui SimpleStripChart` will generate and display a pair of sinusoidal sample functions for testing.
+
+```bash
+$ python PERSEUS.py listener --port sample --gui SimpleStripChart
 ```
 
-Setting the flags `--port sample --gui SimpleStripChart` will generate and display a pair of sinusoidal sample functions for testing.
+Setting up variables for a Splunk connection (`SPLUNK_HOST`, `SPLUNK_PORT`, `SPLUNK_USER`, `SPLUNK_PWORD`) in the environment or in `shadow.yaml` and running the `listener` command with the  flags `--port COM3 --splunk perseus` will connect to a monitor attached via a USB-to-serial connection and start sending data to an index called `perseus` in a central Splunk event store.
+
+```bash
+$ python PERSEUS.py listener --port COM3 --splunk perseus
+```
 
 See the [TelemetryStream README](TelemetryStream/README.md) for more details on the Intelivue serial protocol and setup instructions for using PERSEUS Listener with Raspberry Pi hardware.
 
@@ -101,7 +97,7 @@ Credentials for the event store, any email relays, [Twilio][] auth tokens, and [
 Once the event store (Splunk, for example) is setup and the clients are running, Dispatch can be started from the command line:
 
 ```bash
-$ python -m perseus dispatch --config my_config.yaml
+$ python PERSEUS.py dispatch --config my_config.yaml
 ```
 
 Future work includes developing a fabric- or Ansible-based system to deploy and bring up the entire PERSEUS network automatically.
