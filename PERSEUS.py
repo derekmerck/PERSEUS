@@ -89,7 +89,7 @@ if __name__ == "__main__":
             tstream = TelemetryStream.SampleTelemetryStream(values=opts.values, polling_interval=0.25)
             redraw_interval = 0.1
         else:
-            tstream = PhilipsTelemetryStream.PhilipsTelemetryStream(polling_interval=0.05, **opts)
+            tstream = PhilipsTelemetryStream.PhilipsTelemetryStream(polling_interval=0.05, **vars(opts))
             tstream.add_update_func(PhilipsTelemetryStream.qos)
             redraw_interval = 0.05
 
