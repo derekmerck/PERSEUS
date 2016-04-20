@@ -517,7 +517,7 @@ if __name__ == '__main__':
     if not opts.gui:
 
         # Create a main loop that just echoes the results to the loggers
-        tstream.run(blocking=true)
+        tstream.run(blocking=True)
         # tstream.open()
         # while 1:
         #     tstream.read(1, blocking=True)

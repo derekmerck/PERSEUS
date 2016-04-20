@@ -11,10 +11,12 @@ import splunklib.client as SplunkClient
 import splunklib.results as SplunkResults
 
 # Lookup credentials from either os.env or shadow.yaml
-shadow = None
-with file("shadow.yaml") as f:
-    shadow_env = yaml.load(f)
-os.environ.update(shadow_env)
+try:
+    with file("shadow.yaml") as f:
+        shadow_env = yaml.load(f)
+    os.environ.update(shadow_env)
+except IOError as e:
+    print("Unable to open shadow.yaml file for additional environment vars") #Does not exist OR no read permissions
 
 
 class EventStore(object):
