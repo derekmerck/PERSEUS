@@ -55,11 +55,14 @@ On Windows or Mac machines without a pre-installed git client, a binary distribu
 
 Setup each client with a separate host name that will be used in the zone descriptions.
 
-PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup quickly by installing the Anaconda Python distribution as above, manually installing the numpy, scipy, and matplotlib dependencies, and using pip to install the latest PERSEUS scripts.
+PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup quickly by installing the Anaconda Python distribution as above, manually installing the numpy, scipy, and matplotlib dependencies, and using pip to install the latest PERSEUS scripts.[^pip_dependencies]
+
+[^pip_dependences]:  Not sure why, but pip doesn't seem to install the requirements if you try to install it directly from github.
 
 ```bash
 $ conda update conda
 $ conda install numpy scipy matplotlib
+$ pip install pyserial pyyaml splunk-sdk
 $ pip install git+https://github.com/derekmerck/PERSEUS
 ```
 

@@ -2086,8 +2086,8 @@ class IntellivueDecoder(object):
 
         if parameters == []:
             parameters = {}
-        logging.debug("Write data->parameters: {0}".format(parameters))
-        logging.debug("Write data->message list: {0}".format(message_list))
+        # logging.debug("Write data->parameters: {0}".format(parameters))
+        # logging.debug("Write data->message list: {0}".format(message_list))
 
         # Iterate through message_list and write message
         finalIndex = self.recurseWrite(message_list, output_message, length, ASNLength, LILength, index, parameters)
