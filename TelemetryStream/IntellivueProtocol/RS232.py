@@ -11,7 +11,7 @@ import serial.tools.list_ports
 import struct
 import logging
 import os.path
-
+import itertools
 
 class RS232(object):
     """
@@ -21,7 +21,9 @@ class RS232(object):
     def __init__(self, specifiedPort):
 
         # Check to see if the named port exists
-        if not os.path.exists(specifiedPort):
+        if specifiedPort not in itertools.chain.from_iterable(serial.tools.list_ports.comports()):
+        # can't use os.path.exists on Windows!
+        # if not os.path.exists(specifiedPort):
             logging.warn('Device at {0} does not exist!'.format(specifiedPort))
             logging.info('Available ports: {0}'.format(serial.tools.list_ports.comports()))
             self.socket = None
