@@ -414,7 +414,7 @@ class PhilipsTelemetryStream(TelemetryStream):
     def condense(m):
         # Second pass distillation, from long intermediate format to condensed PERSEUS format
 
-        logging.debug(m)
+        # logging.debug(m)
 
         # This is 'NOM_ECG_ELEC_POTL_II' on my monitors, but let's many _any_ ECG wave label to ECG
         ecg_label = None
@@ -431,6 +431,8 @@ class PhilipsTelemetryStream(TelemetryStream):
                 'Respiration Rate': m.get('Respiration Rate'),
                 'alarms': m.get('alarms'),
                 'timestamp': m.get('timestamp')}
+
+        # logging.debug(ret)
 
         return ret
 
@@ -465,6 +467,7 @@ class PhilipsTelemetryStream(TelemetryStream):
                         new_data = f(sampled_data=self.sampled_data, **data)
                         data.update(new_data)
 
+                self.logger.info(data)
                 return data
             except IOError:
                 logging.debug('Caught IOError, closing and reopening')
@@ -488,12 +491,12 @@ if __name__ == '__main__':
 
     opts = parse_args()
     # opts.splunk = "perseus"
-    #opts.gui = "SimpleStrip"
+    opts.gui = "SimpleStripchart"
     # ECG is 64 samples and Pleth is 32 samples every 0.25 secs
     opts.values = ["Pleth", 32*4, 'ECG', 64*4]
     # Pleth _must_ be listed first if both Pleth and ECG are included
 
-    tstream = PhilipsTelemetryStream(port=opts.port, values=opts.values)
+    tstream = PhilipsTelemetryStream(port=opts.port, values=opts.values, polling_interval=0.05)
 
     # Wrapper for UCSF QoS code
     def qos(*args, **kwargs):
@@ -512,13 +515,15 @@ if __name__ == '__main__':
     attach_loggers(tstream, opts)
 
     if not opts.gui:
+
         # Create a main loop that just echoes the results to the loggers
-        tstream.open()
-        while 1:
-            tstream.read(1, blocking=True)
-            time.sleep(0.05)
+        tstream.run(blocking=true)
+        # tstream.open()
+        # while 1:
+        #     tstream.read(1, blocking=True)
+        #     time.sleep(0.05)
 
     else:
         # Pass the to a gui for use in it's own polling function and main loop
-        gui = TelemetryGUI(tstream, type=opts.gui, polling_interval=0.05, redraw_interval=0.05)
+        gui = TelemetryGUI(tstream, type=opts.gui, redraw_interval=0.05)
         gui.run(blocking=True)

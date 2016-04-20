@@ -46,7 +46,9 @@ In testing, the event and dispatch servers are separate components running on a 
 
 ### General Setup
 
-[Anaconda](http://www.anaconda.org) is a package manager that simplifies cross-platform installation of the Python binary library dependencies required for the client systems.  `pip` can be used to install any pure-Python packages and for PERSEUS itself.
+On Windows or Mac machines without a pre-installed git client, a binary distribution is available at [git-scm][].
+
+[Anaconda][] is a package manager that simplifies cross-platform installation of the Python binary library dependencies required for the client systems.  `pip` can be used to install any pure-Python packages and for PERSEUS itself.
 
 
 ### Client Setup
@@ -58,8 +60,18 @@ PERSEUS Listener bedside clients for Philips Intellivue monitors can be setup qu
 ```bash
 $ conda update conda
 $ conda install numpy scipy matplotlib
-$ pip install pyserial pyyaml splunk-sdk
 $ pip install git+https://github.com/derekmerck/PERSEUS
+```
+
+If you want to clone the repository, you need to install the Python library dependencies separately as well.
+
+```bash
+$ conda update conda
+$ conda install numpy scipy matplotlib
+$ pip install pyserial pyyaml splunk-sdk
+$ git clone https://github.com/derekmerck/PERSEUS
+```
+
 $ python -m perseus listener --values Pleth 128 ECG 256 --port /dev/cu.usbserial --splunk perseus
 ```
 
@@ -119,7 +131,8 @@ Using gmail as an SMS relay requires either turning off app security in gmail, o
 
 [MIT](http://opensource.org/licenses/mit-license.html)
 
-
+[Anaconda]: http://www.anaconda.org
+[git-scm]: https://www.git-scm.com
 [Splunk]: http://www.splunk.com
 [Slack]: http://www.slack.com
 [Twilio]: http://www.twilio.com

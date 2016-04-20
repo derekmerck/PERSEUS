@@ -79,8 +79,8 @@ class Stripchart(object):
             self.name1 = None
 
         def range_of(name):
-            if name.lower() == 'ecg': return (1000, 3000)
-            elif name.lower() == 'pleth': return (-1.2, 1.2)
+            if name.lower() == 'pleth': return (1000, 3000)
+            elif name.lower() == 'ecg': return (-1.2, 1.2)
             else:
                 logging.warn('Missing range for {0}'.format(name))
                 return (-1,1)

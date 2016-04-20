@@ -256,11 +256,11 @@ class SampleTelemetryStream(TelemetryStream):
             if data0:
                 x0 = np.linspace(now-1.0/self.polling_freq, now, data0['freq']/self.polling_freq)
                 y0 = np.cos(x0)
-                ret['ECG'] = (y0*900)+2000
+                ret['ECG'] = y0
             if data1:
                 x1 = np.linspace(now-1.0/self.polling_freq, now, data1['freq']/self.polling_freq)
                 y1 = np.sin(x1)
-                ret['Pleth'] = y1
+                ret['Pleth'] = (y1*900)+2000
 
             ret['Heart Rate'] = 80
             ret['SpO2'] = 95
