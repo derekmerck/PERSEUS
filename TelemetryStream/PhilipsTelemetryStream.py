@@ -518,10 +518,6 @@ if __name__ == '__main__':
 
         # Create a main loop that just echoes the results to the loggers
         tstream.run(blocking=True)
-        # tstream.open()
-        # while 1:
-        #     tstream.read(1, blocking=True)
-        #     time.sleep(0.05)
 
     else:
         # Pass the to a gui for use in it's own polling function and main loop

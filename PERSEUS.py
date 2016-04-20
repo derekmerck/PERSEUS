@@ -101,4 +101,4 @@ if __name__ == "__main__":
             gui.run(blocking=True)
 
         else:
-            tstream.run()
+            tstream.run(blocking=True)
