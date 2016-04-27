@@ -438,10 +438,23 @@ class PhilipsTelemetryStream(TelemetryStream):
 
     # TelemetryStream parent class API
     def open(self, blocking=False):
-        self.rs232 = RS232(self.port)
-        self.initiate_association(blocking)
-        self.set_priority_lists()
-        self.start_polling()
+
+        opened = False
+
+        while not opened:
+
+            try:
+                self.rs232 = RS232(self.port)
+                self.initiate_association(blocking)
+                self.set_priority_lists()
+                self.start_polling()
+                opened = True
+
+            except IOError:
+                # Cool down period
+                time.sleep(1.0)
+                pass
+
 
     def read(self, count=1, blocking=False):
         # Only read(1) is 'safe' and will block until it reconnects.

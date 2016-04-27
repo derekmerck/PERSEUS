@@ -242,7 +242,11 @@ class RS232(object):
             while(messageNotDone):
                 messageByte = self.socket.read(1)
 
-                if messageByte != b'\xC1':
+                if messageByte is None:
+                    # Bail out! The message is incomplete.
+                    logging.warn('Incomplete message received!')
+                    return None
+                elif messageByte != b'\xC1':
                     message = message + messageByte
                 else:
                     message = message + messageByte

@@ -199,13 +199,13 @@ class IntellivueDistiller(object):
                                     #*self.checkPatientFile(self.VitalsWaveInfo[label], temp_array.size, self.VitalsNumericsAlarmsData[label].shape[1])
 
                                     # Save on RAM in python dict
-                                    self.VitalsWaveData[label][:,self.VitalsWaveInfo[label]['Index']:self.VitalsWaveInfo[label]['Index']+temp_array.size] = [temp_times,temp_array*self.VitalsWaveInfo[label]['ValueConversion'][0] + self.VitalsWaveInfo[label]['ValueConversion'][1]]
+                                    # self.VitalsWaveData[label][:,self.VitalsWaveInfo[label]['Index']:self.VitalsWaveInfo[label]['Index']+temp_array.size] = [temp_times,temp_array*self.VitalsWaveInfo[label]['ValueConversion'][0] + self.VitalsWaveInfo[label]['ValueConversion'][1]]
 
                                     # Save data to HDF5 File
                                     # self.VitalsGroup[label][:,self.VitalsWaveInfo[label]['Index']:self.VitalsWaveInfo[label]['Index']+temp_array.size] = [temp_times,temp_array*self.VitalsWaveInfo[label]['ValueConversion'][0] + self.VitalsWaveInfo[label]['ValueConversion'][1]]
 
                                     # Add to index
-                                    self.VitalsWaveInfo[label]['Index'] += temp_array.size
+                                    # self.VitalsWaveInfo[label]['Index'] += temp_array.size
 
                                     ret[label] = temp_array*self.VitalsWaveInfo[label]['ValueConversion'][0] + self.VitalsWaveInfo[label]['ValueConversion'][1]
 
@@ -237,13 +237,13 @@ class IntellivueDistiller(object):
                                                 #*self.checkPatientFile(self.VitalsWaveInfo[label], temp_array.size, self.VitalsNumericsAlarmsData[label].shape[1])
 
                                                 # Save on RAM in python dict
-                                                self.VitalsWaveData[label][:,self.VitalsWaveInfo[label]['Index']:self.VitalsWaveInfo[label]['Index']+temp_array.size] = [temp_times,temp_array*self.VitalsWaveInfo[label]['ValueConversion'][0] + self.VitalsWaveInfo[label]['ValueConversion'][1]]
+#                                                self.VitalsWaveData[label][:,self.VitalsWaveInfo[label]['Index']:self.VitalsWaveInfo[label]['Index']+temp_array.size] = [temp_times,temp_array*self.VitalsWaveInfo[label]['ValueConversion'][0] + self.VitalsWaveInfo[label]['ValueConversion'][1]]
 
                                                 # Save data to HDF5 File
                                                 # self.VitalsGroup[label][:,self.VitalsWaveInfo[label]['Index']:self.VitalsWaveInfo[label]['Index']+temp_array.size] = [temp_times,temp_array*self.VitalsWaveInfo[label]['ValueConversion'][0] + self.VitalsWaveInfo[label]['ValueConversion'][1]]
 
                                                 # Add to index
-                                                self.VitalsWaveInfo[label]['Index'] += temp_array.size
+#                                                self.VitalsWaveInfo[label]['Index'] += temp_array.size
 
                                                 ret[label] = temp_array*self.VitalsWaveInfo[label]['ValueConversion'][0] + self.VitalsWaveInfo[label]['ValueConversion'][1]
 
@@ -422,6 +422,8 @@ class IntellivueDistiller(object):
             for key, value in self.VitalsNumericsAlarmsData[currentTime].iteritems():
                 if key != 'timestamp':
                     ret[key] = value
+            # This possibly fixes growing forever problem
+            del self.VitalsNumericsAlarmsData[currentTime]
 
         if len(ret) < 2:
             return None
@@ -513,13 +515,18 @@ class IntellivueDistiller(object):
 
         ret = {'timestamp': self.timestamp(decoded_message),
                'alarms': {} }
-        for key, value in self.VitalsNumericsAlarmsData[currentTime].iteritems():
-            if key.startswith('Alarm'):
-                ret['alarms'][key] = {'source': value['source'],
-                                      'code': value['code'],
-                                      'state': value['state'],
-                                      'string': value['string'],
-                                      'type': value['alarmType']}
+
+        if currentTime:
+            for key, value in self.VitalsNumericsAlarmsData[currentTime].iteritems():
+                if key.startswith('Alarm'):
+                    ret['alarms'][key] = {'source': value['source'],
+                                          'code': value['code'],
+                                          'state': value['state'],
+                                          'string': value['string'],
+                                          'type': value['alarmType']}
+
+            # This possibly fixes growing forever problem
+            del self.VitalsNumericsAlarmsData[currentTime]
 
         if not ret['alarms']:
             return None
