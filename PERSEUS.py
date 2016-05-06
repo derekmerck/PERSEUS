@@ -14,6 +14,9 @@ Dependencies: PyYAML, splunk-sdk, Twilio, numpy, scipy, pyserial, matplotlib
 See README.md for usage, notes, and license info.
 """
 
+# TODO @uday:  Still hangs on partially received packet??
+# TODO @derek: Crashes on linear algebra error - SVD did not converge, need to put qos in a try block
+
 import argparse
 import logging
 import os

@@ -37,7 +37,13 @@ class QualityOfSignal():
         sigMat, idx = self.formSignalMatrix(ppgSig, onset, fs)
 
         if len(sigMat) != 0:
-            u, s, v = np.linalg.svd(sigMat)
+
+            try:
+                u, s, v = np.linalg.svd(sigMat)
+            except np.linalg.linalg.LinAlgError:
+                logging.warn("Single value decomposition failed! Returning indeterminate (0)")
+                return 0
+
         else:
             qualityFlag = 0
             return qualityFlag
