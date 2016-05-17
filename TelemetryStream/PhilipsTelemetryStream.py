@@ -59,8 +59,8 @@ class PhilipsTelemetryStream(TelemetryStream):
         # Initialize variables to keep track of time, and values to collect
 
         # Note: The listener automatically shuts down after this many seconds
-        # TODO: @Uday -- is this still true?  Do you have to tell the monitor how long to run on startup?
-        self.dataCollectionTime = 60 * 60 * 12  # seconds
+        self.dataCollectionTime = 60 * 2
+            # 30 * 60 * 60 * 12  # seconds
         self.dataCollection = {'RelativeTime': self.dataCollectionTime * 8192}
         self.KeepAliveTime = 0
         self.messageTimes = []
@@ -343,7 +343,6 @@ class PhilipsTelemetryStream(TelemetryStream):
         while not_refused:
             message = self.rs232.receive()
 
-            # TODO: This is immediately prior to a crash in some circumstances
             if not message:
                 print('No release msg received!')
                 break
