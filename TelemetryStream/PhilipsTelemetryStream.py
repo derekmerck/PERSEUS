@@ -59,6 +59,7 @@ class PhilipsTelemetryStream(TelemetryStream):
         # Initialize variables to keep track of time, and values to collect
 
         # Note: The listener automatically shuts down after this many seconds
+        # TODO: @Uday -- is this still true?  Do you have to tell the monitor how long to run on startup?
         self.dataCollectionTime = 60 * 60 * 12  # seconds
         self.dataCollection = {'RelativeTime': self.dataCollectionTime * 8192}
         self.KeepAliveTime = 0
@@ -101,8 +102,17 @@ class PhilipsTelemetryStream(TelemetryStream):
         # There are 2 phases to the association, the request/response and the creation event
         # If any phase fails, throw an error
         def request_assocation():
-            self.rs232.send(self.AssociationRequest)
-            self.logger.info('Sent Association Request...')
+
+            if not self.rs232:
+                logging.warn('Trying to send an Association Request without a socket!')
+                raise IOError
+
+            try:
+                self.rs232.send(self.AssociationRequest)
+                self.logger.info('Sent Association Request...')
+            except:
+                self.logger.warn("Unable to send Association Request")
+                raise IOError
 
         def receive_association_response():
             association_message = self.rs232.receive()
@@ -333,6 +343,7 @@ class PhilipsTelemetryStream(TelemetryStream):
         while not_refused:
             message = self.rs232.receive()
 
+            # TODO: This is immediately prior to a crash in some circumstances
             if not message:
                 print('No release msg received!')
                 break
