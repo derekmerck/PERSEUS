@@ -353,10 +353,14 @@ class PhilipsTelemetryStream(TelemetryStream):
             # If release response or association abort received, continue
             if message_type == 'ReleaseResponse' or message_type == 'AssociationAbort' or message_type == 'TimeoutError' or message_type == 'Unknown':
                 print('Connection with monitor released.')
-            else:
-                if count == 0:
-                    logging.info('Disconnecting...')
-                    count = 1
+            elif count % 12 == 0:
+                self.rs232.send(self.AssociationAbort)
+                print('Re-sent Association Abort...')
+                self.rs232.send(self.ReleaseRequest)
+                print('Re-sent Release Request...')
+
+            logging.info('Trying to disconnect {0}'.format(count))
+            count += 1
 
         self.rs232.close()
         self.rs232 = None
