@@ -282,7 +282,7 @@ class RS232(object):
 
     # closes port
     def close(self):
-        if not self.socket:
+        if not hasattr(self, "socket"):
             print('Trying to close without a socket')
             return
 
