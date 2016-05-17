@@ -59,8 +59,8 @@ class PhilipsTelemetryStream(TelemetryStream):
         # Initialize variables to keep track of time, and values to collect
 
         # Note: The listener automatically shuts down after this many seconds
-        self.dataCollectionTime = 60 * 2
-            # 30 * 60 * 60 * 12  # seconds
+        # Max is
+        self.dataCollectionTime = 72 * 60 * 60  # seconds
         self.dataCollection = {'RelativeTime': self.dataCollectionTime * 8192}
         self.KeepAliveTime = 0
         self.messageTimes = []

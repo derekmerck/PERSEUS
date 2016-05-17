@@ -35,6 +35,10 @@ class RS232(object):
                                     baudrate=115200, bytesize=serial.EIGHTBITS,
                                     parity=serial.PARITY_NONE,
                                     stopbits=serial.STOPBITS_ONE, timeout=2, writeTimeout=2)
+        if not self.socket:
+            logging.warn("Failed to open serial connection")
+            raise IOError
+
         # Create CRC16 Table
         self.CRCTable = self.getCRCTable()
         logging.debug('Serial connection opened')
