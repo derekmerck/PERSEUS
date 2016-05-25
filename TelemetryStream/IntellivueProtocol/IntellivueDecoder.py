@@ -1559,7 +1559,9 @@ class IntellivueDecoder(object):
 
         for i in range(0, int(current_message_dict['String']['length']/2), 1):
             temp = byte_values[2*i+1:2*i+2] + byte_values[2*i:2*i+1]
-            current_message_dict['String']['value'] += temp.decode('utf-16', errors='ignore')
+            # This fixes a number of things that turn out to be important and should not be ignored.
+            # current_message_dict['String']['value'] += temp.decode('utf-16', errors='ignore')
+            current_message_dict['String']['value'] += temp.decode('utf-16')
 
         current_message_dict['String']['value'] = current_message_dict['String']['value'].split(' ')[0]
 
