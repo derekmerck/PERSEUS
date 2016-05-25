@@ -706,6 +706,7 @@ class IntellivueDecoder(object):
             'NOM_ATTR_DEV_AL_COND': 'DeviceAlertCondition',
             'NOM_ATTR_AL_MON_P_AL_LIST': 'DevAlarmList',
             'NOM_ATTR_AL_MON_T_AL_LIST': 'DevAlarmList',
+            'NOM_ATTR_TIME_STAMP_REL': 'RelativeTime'
         }
 
         self.DataKeys['OIDType'] = self.loadOIDTypes()
