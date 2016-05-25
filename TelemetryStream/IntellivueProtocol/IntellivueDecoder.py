@@ -266,11 +266,19 @@ class IntellivueDecoder(object):
         self.DataTypes['max_aud_alarm'] = ['AlertType']
         self.DataTypes['AlertType'] = [16]
         self.DataTypes['DevAlarmList'] = ['count','length_DevAlarmList', 'DevAlarmEntry']
-        self.DataTypes['DevAlarmEntry'] = ['al_source_code', 'AlertType', 'AlertState', 'ManagedObjectID', 'StrAlMonInfo']
+        self.DataTypes['DevAlarmEntry'] = ['al_source_code', 'AlertType', 'AlertState', 'ManagedObjectID', 'alert_info_id', 'length_DevAlarmEntry', 'StrAlMonInfo']
         self.DataTypes['StrAlMonInfo'] = ['al_inst_no','TextId','AlertPriority','AlertFlags','String']
         self.DataTypes['al_inst_no'] = [16]
+        self.DataTypes['alert_info_id'] = [16]
         self.DataTypes['AlertPriority'] = [16]
         self.DataTypes['AlertFlags'] = [16]
+
+        self.DataKeys['alert_info_id'] = {
+            'GEN_ALMON_INFO': b'\x02\x01',
+            'STR_ALMON_INFO': b'\x02\x04',
+            b'\x02\x01': 'GEN_ALMON_INFO',
+            b'\x02\x04': 'STR_ALMON_INFO',
+        }
 
         self.DataKeys['AlertFlags'] = {
             'BEDSIDE_AUDIBLE': b'\x40\x00',
