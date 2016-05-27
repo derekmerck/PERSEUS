@@ -206,19 +206,22 @@ class TelemetryEncoder(json.JSONEncoder):
 
 
 class JSONLogHandler(logging.FileHandler):
+    # TODO: Need to separate out the data logging from the status/user/debug logging
 
     def __init__(self, *args, **kwargs):
         super(JSONLogHandler, self).__init__(*args, **kwargs)
 
     def emit(self, record):
         # Submit an event over HTTP
-        logging.debug("Emitting: {0}".format(record.msg))
+        # logging.debug("Emitting: {0}".format(record.msg))
+        if not record.msg: return
+        if record.levelno != logging.INFO: return
         record.msg = json.dumps(record.msg, cls=TelemetryEncoder, ensure_ascii=False).encode('ascii', errors='ignore')
         super(JSONLogHandler, self).emit(record)
 
 
 class SplunkLogHandler(logging.Handler):
-    # TODO: Could extend HTTPHandler instead and use built-in mappig function
+    # TODO: Could extend HTTPHandler instead and use built-in mapping function
     # Send an event to a Splunk index as a specific sourcetype
 
     host = socket.gethostname()
@@ -243,6 +246,8 @@ class SplunkLogHandler(logging.Handler):
     def emit(self, record):
         # Submit an event over HTTP
         # logging.debug("Emitting: {0}".format(record.msg))
+        if not record.msg: return
+        if record.levelno != logging.INFO: return
 
         class TelemetryEncoder(json.JSONEncoder):
             def default(self, o):
