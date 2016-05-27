@@ -194,7 +194,31 @@ class TelemetryStream(object):
         raise NotImplementedError
 
 
+class TelemetryEncoder(json.JSONEncoder):
+    def default(self, o):
+        # Deal with datetime
+        if isinstance(o, datetime.datetime):
+            return o.isoformat()
+        # Deal with numpy
+        if type(o).__module__ == np.__name__:
+            return o.tolist()
+        return json.JSONEncoder.default(self, o)
+
+
+class JSONLogHandler(logging.FileHandler):
+
+    def __init__(self, *args, **kwargs):
+        super(JSONLogHandler, self).__init__(*args, **kwargs)
+
+    def emit(self, record):
+        # Submit an event over HTTP
+        logging.debug("Emitting: {0}".format(record.msg))
+        record.msg = json.dumps(record.msg, cls=TelemetryEncoder, ensure_ascii=False).encode('ascii', errors='ignore')
+        super(JSONLogHandler, self).emit(record)
+
+
 class SplunkLogHandler(logging.Handler):
+    # TODO: Could extend HTTPHandler instead and use built-in mappig function
     # Send an event to a Splunk index as a specific sourcetype
 
     host = socket.gethostname()
@@ -218,7 +242,7 @@ class SplunkLogHandler(logging.Handler):
 
     def emit(self, record):
         # Submit an event over HTTP
-        logging.debug("Emitting: {0}".format(record.msg))
+        # logging.debug("Emitting: {0}".format(record.msg))
 
         class TelemetryEncoder(json.JSONEncoder):
             def default(self, o):
@@ -323,7 +347,7 @@ def attach_loggers(tstream, opts):
     # Attach any additional loggers
     if opts.file:
         # Add a file stuctured log handler that only saves "INFO" level messages
-        fh = logging.FileHandler(opts.file)
+        fh = JSONLogHandler(opts.file)
         fh.setLevel(logging.INFO)
         tstream.logger.addHandler(fh)
 
