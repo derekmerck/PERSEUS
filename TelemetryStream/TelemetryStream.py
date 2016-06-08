@@ -19,6 +19,9 @@ import os
 import yaml
 import numpy as np
 
+# @derek
+# TODO: Split out data logger and status loggers
+# TODO: Split into multiple threads -- is this really going to make a difference?
 
 try:
     from SimpleStripchart import Stripchart
@@ -26,7 +29,7 @@ except ImportError:
     pass
 
 __description__ = "Monitor decoder for PERSEUS (Push Electronic Relay for Smart Alarms for End User Situational Awareness)"
-__version_info__ = ('0', '3', '2')
+__version_info__ = ('0', '3', '3')
 __version__ = '.'.join(__version_info__)
 
 # Lookup credentials from either os.env or shadow.yaml

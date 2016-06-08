@@ -6,7 +6,12 @@ Requires pyserial (for RS232)
 """
 
 # @leo/@uday/@derek
-# TODO: How do we want to smooth the QoS values
+# TODO: How do we want to smooth the QoS values?
+
+# Approaches to stability problems:
+# TODO: log rotation, keep smaller files?
+# TODO: Set priority to high/rt and see if it crashes?
+# TODO: Turn the QoS function off and test?
 
 from __future__ import unicode_literals
 
@@ -33,6 +38,12 @@ def qos(*args, **kwargs):
         return {'qos': res}
     else:
         return -1
+
+
+class CriticalIOError(IOError):
+    """Need to tear the socket down."""
+    pass
+
 
 class PhilipsTelemetryStream(TelemetryStream):
     """
@@ -93,23 +104,24 @@ class PhilipsTelemetryStream(TelemetryStream):
         self.data_flow = False
 
         self.last_read_time = time.time()
-        self.timeout = 5
+        self.timeout = 5 * 60  # 5 minute timeout, just to see if failures are transient
 
         self.last_keep_alive = time.time()
 
     def initiate_association(self, blocking=False):
 
         # There are 2 phases to the association, the request/response and the creation event
-        # If any phase fails, throw an error
-        def request_assocation():
+        # If any phase fails, raise an error. If blocking, raising an `IOError` will wait and
+        # try again, raising a `CriticalIOError` passes it up to reset the socket
+
+        def request_association():
 
             if not self.rs232:
                 logging.warn('Trying to send an Association Request without a socket!')
-                raise IOError
-
+                raise CriticalIOError
             try:
                 self.rs232.send(self.AssociationRequest)
-                self.logger.info('Sent Association Request...')
+                self.logger.debug('Sent Association Request...')
             except:
                 self.logger.warn("Unable to send Association Request")
                 raise IOError
@@ -123,7 +135,7 @@ class PhilipsTelemetryStream(TelemetryStream):
                 raise IOError
 
             message_type = self.decoder.getMessageType(association_message)
-            self.logger.info('Received ' + message_type + '.')
+            self.logger.debug('Received ' + message_type + '.')
 
             # If we got an AssociationResponse we can return
             if message_type == 'AssociationResponse':
@@ -131,15 +143,14 @@ class PhilipsTelemetryStream(TelemetryStream):
 
             # Fail and reset!
             elif message_type == 'AssociationAbort' or message_type == 'ReleaseRequest' or message_type == 'Unknown' or message_type == 'TimeoutError':
-                self.close()
-                raise IOError
+                raise CriticalIOError
 
             # If data still coming in from a previous connection or no data is coming in, abort/release
             elif message_type == 'MDSExtendedPollActionResult' or message_type == 'LinkedMDSExtendedPollActionResult':
-                self.rs232.send(self.AssociationAbort)
-                self.rs232.send(self.ReleaseRequest)
-                self.close()
-                raise IOError
+                # self.rs232.send(self.AssociationAbort)
+                # self.rs232.send(self.ReleaseRequest)
+                # self.close()
+                raise CriticalIOError
 
             else:
                 raise IOError
@@ -149,7 +160,7 @@ class PhilipsTelemetryStream(TelemetryStream):
             event_message = self.rs232.receive()
 
             message_type = self.decoder.getMessageType(event_message)
-            logging.info('Received ' + message_type + '.')
+            logging.debug('Received ' + message_type + '.')
 
             # ie, we got the create event response
             if message_type == 'MDSCreateEvent':
@@ -175,31 +186,38 @@ class PhilipsTelemetryStream(TelemetryStream):
                 # Send MDS Create Event Result
                 self.MDSCreateEventResult = self.decoder.writeData('MDSCreateEventResult', self.MDSParameters)
                 self.rs232.send(self.MDSCreateEventResult)
-                logging.info('Sent MDS Create Event Result...')
+                logging.debug('Sent MDS Create Event Result...')
                 return
             else:
                 # We didn't get a properly formed create event message!
                 self.logger.error('Bad handshake!')
-                self.close()
-                raise IOError
+                raise CriticalIOError
 
         # Keep trying until success
         if blocking:
+            io_errors = 0
             while 1:
                 try:
-                    request_assocation()
+                    request_association()
                     m = receive_association_response()
                     receive_event_creation(m)
                     break
+                except CriticalIOError:
+                    logging.error('Critical IOError, resetting socket')
+                    raise
                 except IOError:
-                    time.sleep(2.0)
-                    continue
+                    # Willing to tolerate 12 errors before passing it up
+                    io_errors += 1
+                    if io_errors >= 12:
+                        raise
+                    else:
+                        time.sleep(2.0)
+                        continue
 
         else:
-            request_assocation()
+            request_association()
             m = receive_association_response()
             receive_event_creation(m)
-
 
     # Set Priority Lists (ie what data should be polled)
     def set_priority_lists(self):
@@ -216,7 +234,7 @@ class PhilipsTelemetryStream(TelemetryStream):
 
         # Read in confirmation of changes
         no_confirmation = True
-        while (no_confirmation):
+        while no_confirmation:
 
             message = self.rs232.receive()
             if not message:
@@ -328,13 +346,13 @@ class PhilipsTelemetryStream(TelemetryStream):
 
         # If we have already closed or otherwise lost the port, pass and return
         if self.rs232 is None:
-            return
+            raise IOError
 
         # Send Association Abort and Release Request
         self.rs232.send(self.AssociationAbort)
-        print('Sent Association Abort...')
+        logging.debug('Sent Association Abort...')
         self.rs232.send(self.ReleaseRequest)
-        print('Sent Release Request...')
+        logging.debug('Sent Release Request...')
 
         not_refused = True
 
@@ -344,22 +362,22 @@ class PhilipsTelemetryStream(TelemetryStream):
             message = self.rs232.receive()
 
             if not message:
-                print('No release msg received!')
+                logging.debug('No release msg received!')
                 break
 
             message_type = self.decoder.getMessageType(message)
-            print('Received ' + message_type + '.')
+            logging.debug('Received ' + message_type + '.')
 
             # If release response or association abort received, continue
             if message_type == 'ReleaseResponse' or message_type == 'AssociationAbort' or message_type == 'TimeoutError' or message_type == 'Unknown':
-                print('Connection with monitor released.')
+                logging.debug('Connection with monitor released.')
             elif count % 12 == 0:
                 self.rs232.send(self.AssociationAbort)
-                print('Re-sent Association Abort...')
+                logging.debug('Re-sent Association Abort...')
                 self.rs232.send(self.ReleaseRequest)
-                print('Re-sent Release Request...')
+                logging.debug('Re-sent Release Request...')
 
-            logging.info('Trying to disconnect {0}'.format(count))
+            logging.debug('Trying to disconnect {0}'.format(count))
             count += 1
 
         self.rs232.close()
@@ -389,33 +407,38 @@ class PhilipsTelemetryStream(TelemetryStream):
         message = self.rs232.receive()
         if not message:
             logging.warn('No message received')
-            if (now - self.last_read_time) >  self.timeout:
-                logging.error('Data stream timed out')
+            if (now - self.last_read_time) > self.timeout:
+                logging.warn('Data stream timed out')
                 raise IOError
+            return
 
         message_type = self.decoder.getMessageType(message)
         logging.debug(message_type)
 
         if message_type == 'AssociationAbort' or message_type == 'ReleaseResponse':
-            logging.info('Received \'Data Collection Terminated\' message type.')
-            self.rs232.close()
+            logging.warn('Received \'Data Collection Terminated\' message type.')
+            # self.rs232.close()
             raise IOError
 
-        elif message_type == 'TimeoutError':
-            if time.time() - self.last_read_time > 5:
-                self.close()
-                raise IOError
+        # Apparently redundant
+        # elif message_type == 'TimeoutError':
+        #     if time.time() - self.last_read_time > self.timeout:
+        #         self.close()
+        #         raise IOError
 
         elif message_type == 'RemoteOperationError':
-            logging.error('Received (unhandled) \'RemoteOpsError\' message type')
+            logging.warn('Received (unhandled) \'RemoteOpsError\' message type')
 
         elif message_type == 'MDSSinglePollActionResult':
-            logging.info('Received (unhandled) \'SinglePollActionResult\' message type')
+            logging.debug('Received (unhandled) \'SinglePollActionResult\' message type')
 
         elif message_type == 'MDSExtendedPollActionResult' or message_type == 'LinkedMDSExtendedPollActionResult':
             decoded_message = self.decoder.readData(message)
             m = self.distiller.refine(decoded_message)
-            self.last_read_time = time.time()
+            if not m:
+                logging.warn('Failed to distill message: {0}'.format(decoded_message))
+            else:
+                self.last_read_time = time.time()
 
         else:
             logging.warn('Received {0}'.format(message_type))
@@ -468,7 +491,6 @@ class PhilipsTelemetryStream(TelemetryStream):
                 # Cool down period
                 time.sleep(1.0)
                 pass
-
 
     def read(self, count=1, blocking=False):
         # Only read(1) is 'safe' and will block until it reconnects.

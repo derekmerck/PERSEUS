@@ -283,13 +283,17 @@ class RS232(object):
     # closes port
     def close(self):
         if not hasattr(self, "socket"):
-            print('Trying to close without a socket')
+            logging.warn('Trying to close without a socket')
             return
 
         # Maybe help with hangs?
-        self.socket.flush()
-        self.socket.close()
-        print('Serial Port Closed.')
+        try:
+            self.socket.flush()
+            self.socket.close()
+            logging.warn('Socket closed')
+        except:
+            logging.warn('Failed to close the socket')
+            raise
 
 
 if __name__ == '__main__':
