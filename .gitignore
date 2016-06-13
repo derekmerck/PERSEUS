@@ -4,4 +4,5 @@ README.rst
 *.pyc
 old/*
 NOTES.md
+/TelemetryStream/IntellivueProtocol/Philips Data Export Interface Programming Guide.pdf
 *.log
