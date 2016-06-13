@@ -24,7 +24,7 @@ from TelemetryStream import *
 from QualityOfSignal import QualityOfSignal as QoS
 
 __description__ = "PERSEUS telemetry stream listener for Philips Invellivue devices with serial connections"
-__version_info__ = ('0', '7', '0')
+__version_info__ = ('0', '7', '1')
 __version__ = '.'.join(__version_info__)
 
 # Wrapper for UCSF QoS code
@@ -41,7 +41,7 @@ def qos(*args, **kwargs):
 
 
 class CriticalIOError(IOError):
-    """Need to tear the socket down."""
+    """Need to tear the socket down and reset."""
     pass
 
 
@@ -104,7 +104,7 @@ class PhilipsTelemetryStream(TelemetryStream):
         self.data_flow = False
 
         self.last_read_time = time.time()
-        self.timeout = 5 * 60  # 5 minute timeout, just to see if failures are transient
+        self.timeout = 10  # Seconds to wait before reset to transient failures
 
         self.last_keep_alive = time.time()
 
@@ -209,8 +209,10 @@ class PhilipsTelemetryStream(TelemetryStream):
                     # Willing to tolerate 12 errors before passing it up
                     io_errors += 1
                     if io_errors >= 12:
+                        logging.error('Escalating IOError, resetting socket')
                         raise
                     else:
+                        logging.error('IOError, waiting to try again {0}'.format(io_errors))
                         time.sleep(2.0)
                         continue
 
@@ -230,7 +232,7 @@ class PhilipsTelemetryStream(TelemetryStream):
 
         # Send priority lists
         self.rs232.send(self.MDSSetPriorityListWave)
-        logging.info('Sent MDS Set Priority List Wave...')
+        logging.debug('Sent MDS Set Priority List Wave...')
 
         # Read in confirmation of changes
         no_confirmation = True
@@ -250,93 +252,93 @@ class PhilipsTelemetryStream(TelemetryStream):
                 # If there are wave data objects, create a group for them
                 if 'NOM_ATTR_POLL_RTSA_PRIO_LIST' in PriorityListResult['SetResult']['AttributeList']['AVAType']:
                     self.MDSSetPriorityListResultWave = PriorityListResult
-                    logging.info('Received MDS Set Priority List Result Wave.')
+                    logging.debug('Received MDS Set Priority List Result Wave.')
 
                 no_confirmation = False
 
             # If MDSCreateEvent, then state failure to confirm
             elif message_type == 'MDSCreateEvent':
                 no_confirmation = False
-                logging.warn('Failed to confirm setting of priority lists.')
+                logging.warn('Failed to confirm priority list setting.')
 
     def submit_keep_alive(self):
         self.rs232.send(self.KeepAliveMessage)
         self.last_keep_alive = time.time()
-        logging.info('Sent Keep Alive Message...')
+        logging.debug('Sent Keep Alive Message...')
 
-    # Extended retrieve data from monitor; this is unused but preserved from original code
-    def extended_poll(self):
-        """
-        Sends Extended Poll Requests for Numeric and Wave Data
-        """
-
-        # Need to poll numerics to keep machine alive, but don't save if not
-        # specified
-        self.rs232.send(self.MDSExtendedPollActionNumeric)
-        self.rs232.send(self.MDSExtendedPollActionWave)
-        self.rs232.send(self.MDSExtendedPollActionAlarm)
-        logging.info('Sent MDS Extended Poll Action for Numerics...')
-        logging.info('Sent MDS Extended Poll Action for Waves...')
-        logging.info('Sent MDS Extended Poll Action for Alarms...')
-
-        keep_alive_messages = 1
-        self.data_flow = True
-        while (self.data_flow):
-
-            message = self.rs232.receive()
-            if not message:
-                logging.warn('No data msg received!')
-                self.data_flow = False
-                break
-
-            message_type = self.decoder.getMessageType(message)
-
-            if message_type == 'AssociationAbort':
-                logging.info('Data Collection Terminated.')
-                self.rs232.close()
-                self.data_flow = False
-
-            elif message_type == 'RemoteOperationError':
-                logging.error('Error Message')
-
-            elif message_type == 'MDSSinglePollActionResult':
-                # logging.info('Message Kept Alive!')
-                pass
-
-            elif message_type == 'MDSExtendedPollActionResult' or message_type == 'LinkedMDSExtendedPollActionResult':
-
-                decoded_message = self.decoder.readData(message)
-                # This will send to splunk/file whatever
-                # self.logger.info(decoded_message)
-                #logging.info("Decoded message: {0}".format(decoded_message))
-
-                m = None # Secondary message decoding to "important stuff"
-
-                if decoded_message['PollMdibDataReplyExt']['Type']['OIDType'] == 'NOM_MOC_VMO_METRIC_SA_RT':
-                    m = self.distiller.refine_wave_message(decoded_message)
-
-                    # To store and output message times (in order to log when to send Keep Alive Messages)
-                    if decoded_message['ROapdus']['length'] > 100:
-                        if 'RelativeTime' in decoded_message['PollMdibDataReplyExt'] and \
-                                        decoded_message['PollMdibDataReplyExt']['sequence_no'] != 0:
-                            self.messageTimes.append((decoded_message['PollMdibDataReplyExt'][
-                                                          'RelativeTime'] - self.relativeInitialTime) / 8192)
-                            # print(self.messageTimes[-1])
-
-                            # print('Received Monitor Data.')
-                elif decoded_message['PollMdibDataReplyExt']['Type']['OIDType'] == 'NOM_MOC_VMO_METRIC_NU':
-                    m = self.distiller.refine_numerics_message(decoded_message)
-                    # print('Received Monitor Data.')
-                elif decoded_message['PollMdibDataReplyExt']['Type']['OIDType'] == 'NOM_MOC_VMO_AL_MON':
-                    m = self.distiller.refine_alarms_message(decoded_message)
-                    # print('Received Alarm Data.')
-
-                if m:
-                    mm = self.condense(m)
-                    logging.info(mm)
-
-            else:
-                logging.info('Received ' + message_type + '.')
+    # # Extended retrieve data from monitor; this is unused but preserved from original code
+    # def extended_poll(self):
+    #     """
+    #     Sends Extended Poll Requests for Numeric and Wave Data
+    #     """
+    #
+    #     # Need to poll numerics to keep machine alive, but don't save if not
+    #     # specified
+    #     self.rs232.send(self.MDSExtendedPollActionNumeric)
+    #     self.rs232.send(self.MDSExtendedPollActionWave)
+    #     self.rs232.send(self.MDSExtendedPollActionAlarm)
+    #     logging.info('Sent MDS Extended Poll Action for Numerics...')
+    #     logging.info('Sent MDS Extended Poll Action for Waves...')
+    #     logging.info('Sent MDS Extended Poll Action for Alarms...')
+    #
+    #     keep_alive_messages = 1
+    #     self.data_flow = True
+    #     while (self.data_flow):
+    #
+    #         message = self.rs232.receive()
+    #         if not message:
+    #             logging.warn('No data msg received!')
+    #             self.data_flow = False
+    #             break
+    #
+    #         message_type = self.decoder.getMessageType(message)
+    #
+    #         if message_type == 'AssociationAbort':
+    #             logging.info('Data Collection Terminated.')
+    #             self.rs232.close()
+    #             self.data_flow = False
+    #
+    #         elif message_type == 'RemoteOperationError':
+    #             logging.error('Error Message')
+    #
+    #         elif message_type == 'MDSSinglePollActionResult':
+    #             # logging.info('Message Kept Alive!')
+    #             pass
+    #
+    #         elif message_type == 'MDSExtendedPollActionResult' or message_type == 'LinkedMDSExtendedPollActionResult':
+    #
+    #             decoded_message = self.decoder.readData(message)
+    #             # This will send to splunk/file whatever
+    #             # self.logger.info(decoded_message)
+    #             #logging.info("Decoded message: {0}".format(decoded_message))
+    #
+    #             m = None # Secondary message decoding to "important stuff"
+    #
+    #             if decoded_message['PollMdibDataReplyExt']['Type']['OIDType'] == 'NOM_MOC_VMO_METRIC_SA_RT':
+    #                 m = self.distiller.refine_wave_message(decoded_message)
+    #
+    #                 # To store and output message times (in order to log when to send Keep Alive Messages)
+    #                 if decoded_message['ROapdus']['length'] > 100:
+    #                     if 'RelativeTime' in decoded_message['PollMdibDataReplyExt'] and \
+    #                                     decoded_message['PollMdibDataReplyExt']['sequence_no'] != 0:
+    #                         self.messageTimes.append((decoded_message['PollMdibDataReplyExt'][
+    #                                                       'RelativeTime'] - self.relativeInitialTime) / 8192)
+    #                         # print(self.messageTimes[-1])
+    #
+    #                         # print('Received Monitor Data.')
+    #             elif decoded_message['PollMdibDataReplyExt']['Type']['OIDType'] == 'NOM_MOC_VMO_METRIC_NU':
+    #                 m = self.distiller.refine_numerics_message(decoded_message)
+    #                 # print('Received Monitor Data.')
+    #             elif decoded_message['PollMdibDataReplyExt']['Type']['OIDType'] == 'NOM_MOC_VMO_AL_MON':
+    #                 m = self.distiller.refine_alarms_message(decoded_message)
+    #                 # print('Received Alarm Data.')
+    #
+    #             if m:
+    #                 mm = self.condense(m)
+    #                 logging.info(mm)
+    #
+    #         else:
+    #             logging.info('Received ' + message_type + '.')
 
     def close(self):
         """
@@ -346,6 +348,7 @@ class PhilipsTelemetryStream(TelemetryStream):
 
         # If we have already closed or otherwise lost the port, pass and return
         if self.rs232 is None:
+            logging.error('Trying to close a socket that no longer exists')
             raise IOError
 
         # Send Association Abort and Release Request
@@ -388,11 +391,11 @@ class PhilipsTelemetryStream(TelemetryStream):
         Sends Extended Poll Requests for Numeric, Alarm, and Wave Data
         """
         self.rs232.send(self.MDSExtendedPollActionNumeric)
-        logging.info('Sent MDS Extended Poll Action for Numerics...')
+        logging.debug('Sent MDS Extended Poll Action for Numerics...')
         self.rs232.send(self.MDSExtendedPollActionWave)
-        logging.info('Sent MDS Extended Poll Action for Waves...')
+        logging.debug('Sent MDS Extended Poll Action for Waves...')
         self.rs232.send(self.MDSExtendedPollActionAlarm)
-        logging.info('Sent MDS Extended Poll Action for Alarms...')
+        logging.debug('Sent MDS Extended Poll Action for Alarms...')
 
     def single_poll(self):
 
@@ -408,7 +411,7 @@ class PhilipsTelemetryStream(TelemetryStream):
         if not message:
             logging.warn('No message received')
             if (now - self.last_read_time) > self.timeout:
-                logging.warn('Data stream timed out')
+                logging.error('Data stream timed out')
                 raise IOError
             return
 
@@ -416,7 +419,7 @@ class PhilipsTelemetryStream(TelemetryStream):
         logging.debug(message_type)
 
         if message_type == 'AssociationAbort' or message_type == 'ReleaseResponse':
-            logging.warn('Received \'Data Collection Terminated\' message type.')
+            logging.error('Received \'Data Collection Terminated\' message type.')
             # self.rs232.close()
             raise IOError
 
@@ -489,6 +492,7 @@ class PhilipsTelemetryStream(TelemetryStream):
 
             except IOError:
                 # Cool down period
+                logging.error('Failed to open connection to {0}, waiting to try again'.format(self.port))
                 time.sleep(1.0)
                 pass
 
@@ -497,7 +501,9 @@ class PhilipsTelemetryStream(TelemetryStream):
 
         if count < 0:
             # Read forever
-            self.extended_poll()
+            # self.extended_poll()
+            logging.error('Extended poll is unimplemented in this version')
+            raise NotImplementedError
 
         elif count == 0:
             return
@@ -516,18 +522,29 @@ class PhilipsTelemetryStream(TelemetryStream):
                         new_data = f(sampled_data=self.sampled_data, **data)
                         data.update(new_data)
 
+                # TODO: This should be sent to the data logger
                 self.logger.info(data)
                 return data
             except IOError:
-                logging.debug('Caught IOError, closing and reopening')
-                self.close()
-                self.open(blocking)
-                return self.read(1)
+                while 1:
+                    logging.error('IOError reading stream, resetting connection')
+                    try:
+                        self.close()
+                    except IOError:
+                        logging.error('Ignoring IOError closing connection')
+
+                    try:
+                        self.open(blocking)
+                        return self.read(1)
+                    except IOError:
+                        logging.error('IOError reestablishing connection, trying again')
+                        time.sleep(1.0)
+                        pass
 
         else:
             ret = []
             for i in xrange(0, count):
-                data = self.single_poll()
+                data = self.read(1)
                 if data:
                     ret.append(data)
             return ret

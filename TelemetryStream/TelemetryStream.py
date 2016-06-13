@@ -29,7 +29,7 @@ except ImportError:
     pass
 
 __description__ = "Monitor decoder for PERSEUS (Push Electronic Relay for Smart Alarms for End User Situational Awareness)"
-__version_info__ = ('0', '3', '3')
+__version_info__ = ('0', '3', '4')
 __version__ = '.'.join(__version_info__)
 
 # Lookup credentials from either os.env or shadow.yaml
@@ -240,6 +240,7 @@ class SplunkLogHandler(logging.Handler):
 
         # Verify login
         if not self.service.apps:
+            logging.error('Unable to connect to Splunk server')
             raise IOError
 
         # Retrieve the index for the data
@@ -252,15 +253,15 @@ class SplunkLogHandler(logging.Handler):
         if not record.msg: return
         if record.levelno != logging.INFO: return
 
-        class TelemetryEncoder(json.JSONEncoder):
-            def default(self, o):
-                # Deal with datetime
-                if isinstance(o, datetime.datetime):
-                    return o.isoformat()
-                # Deal with numpy
-                if type(o).__module__ == np.__name__:
-                    return o.tolist()
-                return json.JSONEncoder.default(self, o)
+        # class TelemetryEncoder(json.JSONEncoder):
+        #     def default(self, o):
+        #         # Deal with datetime
+        #         if isinstance(o, datetime.datetime):
+        #             return o.isoformat()
+        #         # Deal with numpy
+        #         if type(o).__module__ == np.__name__:
+        #             return o.tolist()
+        #         return json.JSONEncoder.default(self, o)
 
         self.index.submit(json.dumps(record.msg, cls=TelemetryEncoder, ensure_ascii=False).encode('ascii', errors='ignore'), sourcetype=self.sourcetype, host=SplunkLogHandler.host)
 
@@ -376,7 +377,7 @@ if __name__ == "__main__":
     # By default, we want to look at _all_ messages on the console
     logging.basicConfig(level=logging.DEBUG)
     logging.debug('PERSEUS Listener v{0}'.format(__version__))
-    logging.debug('Forked from the NeuroLogic Philips Vitals Monitor Decoder')
+    logging.debug('Forked from the pyMind Philips Vitals Monitor Decoder')
 
     opts = parse_args()
 

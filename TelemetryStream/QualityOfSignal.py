@@ -26,7 +26,8 @@ class QualityOfSignal():
         else:
             opt = self.makeDefaultPPGSignalQualityParameter()
 
-        dt = 1./np.diff(tsofSig)
+        # Derek -- this throws div0 error sometimes, appears to be unused?
+        # dt = 1./np.diff(tsofSig)
 
         onset = self.DetectPulseOnset(ppgSig, fs, opt['pulseWidth'])
 
