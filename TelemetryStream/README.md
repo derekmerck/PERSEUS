@@ -183,7 +183,29 @@ The standard usb-to-serial converters work with Raspberrian's default drivers.  
 
 ## Acknowledgements
 
-The Intellivue Decoder portion of this package was forked from the RIH NeuroLogic package developed by [Agrawal](mailto:uagrawal61@gmail.com), [Oyalowo](mailto:adewole_oyalowo@brown.edu), Asaad, and others.
+The Intellivue Decoder portion of this package was forked from the RIH pyMIND package (Multimodal Integration of Neural
+Data; previously known as NeuroLogic) developed by [Agrawal](mailto:uagrawal61@gmail.com),
+[Oyalowo](mailto:adewole_oyalowo@brown.edu), Asaad, and others under the MIT License provided below.
 
-See <https://bitbucket.org/uagrawal61/neurologic> for documentation of the NeuroLogic project.
+See <https://bitbucket.org/asaadneurolab/pymind> for documentation of the pyMIND project.
 
+Contributions to the Intellivue Decoder by the current project (PERSEUS) include backporting to Python 2.7 and improving
+overall system robustness (e.g. handling when a connection is broken). PERSEUS is also available under a MIT License
+(see PERSEUS/README.md).
+
+pyMIND: Multimodal Integration of Neural Data
+
+Copyright (c) 2015-2016, Uday Agrawal, Adewole Oyalowo, Asaad Lab
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

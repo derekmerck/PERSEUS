@@ -1,4 +1,10 @@
 """
+Contributions:
+Contributors:
+
+Original copyright (c) 2015-2016, Uday Agrawal, Adewole Oyalowo, Asaad Lab under MIT License. See full license and associated
+project at < https://bitbucket.org/asaadneurolab/pymind/ > .
+
 Requires pyserial
 
 On OSX, dl the Mac 1.6 driver at http://plugable.com/drivers/prolific/

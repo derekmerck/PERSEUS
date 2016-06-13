@@ -1,5 +1,9 @@
 """
-@author: uagrawal last update: 1/22/16
+Contributions:
+Contributors:
+
+Original copyright (c) 2015-2016, Uday Agrawal, Adewole Oyalowo, Asaad Lab under MIT License. See full license and associated
+project at < https://bitbucket.org/asaadneurolab/pymind/ > .
 """
 
 from __future__ import division
