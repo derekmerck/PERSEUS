@@ -14,14 +14,13 @@ Dependencies: PyYAML, splunk-sdk, Twilio, numpy, scipy, pyserial, matplotlib
 See README.md for usage, notes, and license info.
 """
 
-# TODO @uday:  Still hangs on partially received packet??
-
 import argparse
 import logging
 import os
 import yaml
 from Dispatch import Dispatch
 from TelemetryStream import TelemetryStream, PhilipsTelemetryStream
+import subprocess
 
 __package__ = "PERSEUS"
 __description__ = "Push Electronic Relay for Smart Alarms for End User Situational Awareness"
@@ -32,6 +31,11 @@ __license__ = "MIT"
 __version_info__ = ('0', '3', '4')
 __version__ = '.'.join(__version_info__)
 
+__hash__ = None
+try:
+    __hash__ = subprocess.check_output(["git", "describe"]).strip()
+except:
+    __hash__ = __version__
 
 try:
     with file("shadow.yaml") as f:
@@ -72,7 +76,7 @@ if __name__ == "__main__":
     opts = parse_args()
 
     if opts.command == 'dispatch':
-        logging.debug('PERSEUS Dispatch v{0}'.format(Dispatch.__version__))
+        logging.debug('PERSEUS Dispatch v{0}'.format(__hash__))
 
         with open(opts.config, 'rU') as f:
             config = yaml.load(f)
@@ -83,8 +87,8 @@ if __name__ == "__main__":
 
     elif opts.command == 'listener':
 
-        logging.debug('PERSEUS Listener v{0}'.format(TelemetryStream.__version__))
-        logging.debug('Forked from the NeuroLogic Philips Vitals Monitor Decoder')
+        logging.debug('PERSEUS Listener {0}'.format(__hash__))
+        logging.debug('Forked from the pyMind Philips Vitals Monitor Decoder')
 
         tstream, polling_interval, redraw_interval = None, None, None
         if opts.port == "sample":
