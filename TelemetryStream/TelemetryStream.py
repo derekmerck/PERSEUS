@@ -212,13 +212,16 @@ class JSONLogHandler(logging.FileHandler):
     # TODO: Need to separate out the data logging from the status/user/debug logging
 
     def __init__(self, *args, **kwargs):
-        super(JSONLogHandler, self).__init__(*args, **kwargs)
+        super(JSONLogHandler, self).__init__(*args)
+        self.show_host_time = kwargs.get('host_time', False)
 
     def emit(self, record):
         # Submit an event over HTTP
         # logging.debug("Emitting: {0}".format(record.msg))
         if not record.msg: return
         if record.levelno != logging.INFO: return
+        if self.show_host_time:
+            record.msg['host_time'] = datetime.datetime.now()
         record.msg = json.dumps(record.msg, cls=TelemetryEncoder, ensure_ascii=False).encode('ascii', errors='ignore')
         super(JSONLogHandler, self).emit(record)
 
@@ -330,6 +333,7 @@ class SampleTelemetryStream(TelemetryStream):
 def configure_parser(parser):
     parser.add_argument('-b', '--binary', help="Name of an hdf5 file for binary logging")
     parser.add_argument('-f', '--file', help="Name of a text file for event logging")
+    parser.add_argument('-ht', '--host_time', help="Include host time in file outputs", action='store_true')
     parser.add_argument('-s', '--splunk', help="Name of a Splunk index for event logging")
     parser.add_argument('-g', '--gui', help="Display a graphic user interface, e.g., 'SimpleStripchart'")
     # Default for PL203 usb to serial device
@@ -356,7 +360,7 @@ def attach_loggers(tstream, opts):
     # Attach any additional loggers
     if opts.file:
         # Add a file stuctured log handler that only saves "INFO" level messages
-        fh = JSONLogHandler(opts.file)
+        fh = JSONLogHandler(opts.file, host_time=opts.host_time)
         fh.setLevel(logging.INFO)
         tstream.logger.addHandler(fh)
 

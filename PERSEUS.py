@@ -102,7 +102,7 @@ if __name__ == "__main__":
         TelemetryStream.attach_loggers(tstream, opts)
 
         if opts.gui:
-            # Pass the to a gui for use in it's own polling function and main loop
+            # Pass the stream to a gui for use in it's own polling function and main loop
             gui = TelemetryStream.TelemetryGUI(tstream, type=opts.gui, redraw_interval=redraw_interval)
             gui.run(blocking=True)
 
