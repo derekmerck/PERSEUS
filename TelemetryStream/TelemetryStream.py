@@ -18,6 +18,13 @@ from splunklib import client as SplunkClient
 import os
 import yaml
 import numpy as np
+import subprocess
+
+__hash__ = None
+try:
+    __hash__ = subprocess.check_output(["git", "describe", "--tags"]).strip()
+except:
+    __hash__ = 'unknown'
 
 # @derek
 # TODO: Split out data logger and status loggers
@@ -29,8 +36,6 @@ except ImportError:
     pass
 
 __description__ = "Monitor decoder for PERSEUS (Push Electronic Relay for Smart Alarms for End User Situational Awareness)"
-__version_info__ = ('0', '3', '5')
-__version__ = '.'.join(__version_info__)
 
 # Lookup credentials from either os.env or shadow.yaml
 # This prevents a developer from inadvertently hardcoding and checking in confidential information
@@ -255,18 +260,8 @@ class SplunkLogHandler(logging.Handler):
         # logging.debug("Emitting: {0}".format(record.msg))
         if not record.msg: return
         if record.levelno != logging.INFO: return
-
-        # class TelemetryEncoder(json.JSONEncoder):
-        #     def default(self, o):
-        #         # Deal with datetime
-        #         if isinstance(o, datetime.datetime):
-        #             return o.isoformat()
-        #         # Deal with numpy
-        #         if type(o).__module__ == np.__name__:
-        #             return o.tolist()
-        #         return json.JSONEncoder.default(self, o)
-
         self.index.submit(json.dumps(record.msg, cls=TelemetryEncoder, ensure_ascii=False).encode('ascii', errors='ignore'), sourcetype=self.sourcetype, host=SplunkLogHandler.host)
+
 
 class SampleTelemetryStream(TelemetryStream):
     # Implements specific handshaking and parsing for Philips monitor serial protocol
@@ -350,7 +345,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__description__)
     parser.add_argument('-V', '--version',
                         action='version',
-                        version='%(prog)s (version ' + __version__ + ')')
+                        version='%(prog)s (version ' + __hash__ + ')')
     parser = configure_parser(parser)
     _opts = parser.parse_args()
     return _opts
@@ -380,7 +375,7 @@ if __name__ == "__main__":
 
     # By default, we want to look at _all_ messages on the console
     logging.basicConfig(level=logging.DEBUG)
-    logging.debug('PERSEUS Listener v{0}'.format(__version__))
+    logging.debug('PERSEUS Listener v{0}'.format(__hash__))
     logging.debug('Forked from the pyMind Philips Vitals Monitor Decoder')
 
     opts = parse_args()

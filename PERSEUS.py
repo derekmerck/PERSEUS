@@ -33,7 +33,7 @@ __version__ = '.'.join(__version_info__)
 
 __hash__ = None
 try:
-    __hash__ = subprocess.check_output(["git", "describe"]).strip()
+    __hash__ = subprocess.check_output(["git", "describe", "--tags"]).strip()
 except:
     __hash__ = __version__
 
