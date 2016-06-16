@@ -167,15 +167,15 @@ Raspberrian requires a little bit of work to get Python 2.7.11 and the dependenc
 ```bash
 $ sudo apt-get update && sudo apt-get upgrade
 $ sudo pip install virtualenv virtualenvwrapper
-$ export WORKON_HOME=~/envs                   # Put this in .bashrc
-$ source /usr/local/bin/virtualenvwrapper.sh  # Put this in .bashrc
-$ mkvirtualenv perseus
+$ export WORKON_HOME=/home/pi/envs                   # Put this in .bash_profile
+$ source /usr/local/bin/virtualenvwrapper.sh         # Put this in .bash_profile
+$ sudo apt-get install python-dev python-numpy python-scipy python-matplotlib  # global installations
+$ mkvirtualenv perseus --system-site-packages
 $ workon perseus
-$ sudo apt-get install python-dev python-numpy python-matplotlib
-$ pip install pyyaml pyserial splunk-sdk numpy matplotlib
-$ mkdir perseus
-$ cd perseus/
-$ git clone https://github.com/derekmerck/PERSEUS.git
+(perseus)$ pip install pyyaml pyserial splunk-sdk python-dateutil requests twilio
+(perseus)$ mkdir perseus
+(perseus)$ cd perseus/
+(perseus)$ git clone https://github.com/derekmerck/PERSEUS.git
 ``` 
 
 The standard usb-to-serial converters work with Raspberrian's default drivers.  It is also possible to build RS232 connectors for the GPIO header using this [expansion card](http://www.amazon.com/dp/B0088SNIOQ).  Using an rPi3 with a serial-to-usb dongle, connect to `--port /dev/ttyUSB0`, for a direct connection from the GPIO header, connect to `--port /dev/ttyS0`. 

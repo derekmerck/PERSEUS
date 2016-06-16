@@ -26,14 +26,14 @@ try:
 except:
     __hash__ = 'unknown'
 
-# @derek
-# TODO: Split out data logger and status loggers
-# TODO: Split into multiple threads -- is this really going to make a difference?
-
 try:
     from SimpleStripchart import Stripchart
 except ImportError:
-    pass
+    logging.error('Cannot import Stripchart, check Matplotlib')
+
+# @derek
+# TODO: Split out data logger and status loggers
+# TODO: Split into multiple threads -- is this really going to make a difference?
 
 __description__ = "Monitor decoder for PERSEUS (Push Electronic Relay for Smart Alarms for End User Situational Awareness)"
 

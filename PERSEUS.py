@@ -18,9 +18,10 @@ import argparse
 import logging
 import os
 import yaml
+import subprocess
+
 from Dispatch import Dispatch
 from TelemetryStream import TelemetryStream, PhilipsTelemetryStream
-import subprocess
 
 __package__ = "PERSEUS"
 __description__ = "Push Electronic Relay for Smart Alarms for End User Situational Awareness"
@@ -42,7 +43,7 @@ try:
         shadow_env = yaml.load(f)
     os.environ.update(shadow_env)
 except IOError as e:
-    print("Unable to open shadow.yaml file for additional environment vars") #Does not exist OR no read permissions
+    print("Unable to open shadow.yaml file for additional environment vars") # Does not exist OR no read permissions
 
 
 def parse_args():
@@ -76,6 +77,7 @@ if __name__ == "__main__":
     opts = parse_args()
 
     if opts.command == 'dispatch':
+
         logging.debug('PERSEUS Dispatch v{0}'.format(__hash__))
 
         with open(opts.config, 'rU') as f:
