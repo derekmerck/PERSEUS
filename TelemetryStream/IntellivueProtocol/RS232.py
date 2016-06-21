@@ -232,7 +232,7 @@ class RS232(object):
         returns: message - ready to be interpreted by IntellivueDecoder()
         """
 
-        if not self.socket:
+        if not self.socket or not self.socket.isOpen():
             logging.warn('Trying to receive without a socket')
             return
 
@@ -288,7 +288,7 @@ class RS232(object):
 
     # closes port
     def close(self):
-        if not hasattr(self, "socket"):
+        if not hasattr(self, "socket") or not self.socket.isOpen():
             logging.warn('Trying to close without a socket')
             return
 
