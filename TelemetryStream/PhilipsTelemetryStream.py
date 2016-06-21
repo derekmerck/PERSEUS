@@ -498,6 +498,7 @@ class PhilipsTelemetryStream(TelemetryStream):
                 # Cool down period
                 logging.error('Failed to open connection to {0}, waiting to try again'.format(self.port))
                 time.sleep(1.0)
+                self.rs232 = None
                 pass
 
     def read(self, count=1, blocking=False):
