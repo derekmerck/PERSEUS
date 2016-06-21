@@ -137,7 +137,7 @@ The PhilipsTelemetryStream module opens an RS232 connection, passes it to the In
 
 Each update yields a timestamped dictionary of alarm, numerics, and wave data.  Wave data is returned at 0.25sec intervals, which determines the polling frequency.  The wave data is stored in an internal sample buffer with a default duration of 7-9 seconds.  This buffer can be accessed for signal post-processing and annotation.
 
-See the [Intellivue Programmers Guide](IntellivueProtocol/Philips Data Export Interface Programming Guide.pdf) for details of the protocol.
+See the _Intellivue Programmers Guide_ for details of the protocol.
 
 
 ## Failure Recovery
@@ -158,16 +158,18 @@ The default QoS code was adapted from Xiao Hu, PhD's MATLAB code for waveform qu
 According to this paper, the same method is also implemented in the [PhysioToolkit](http://www.physionet.org)
 
 
-## Raspberry Pi
+## PERSEUS on Embedded Devices
 
-Testing is underway using Raspberry Pi's as monitor boxes.  This would be an extremely inexpensive solution for retrofitting a large number of older, non-networked monitors with Listeners.
+### Raspberry Pi
 
-Raspberrian requires a little bit of work to get Python 2.7.11 and the dependencies installed.
+Testing is underway using [Raspberry Pi](https://www.raspberrypi.org) boards as listener.  This would be an extremely inexpensive solution for retrofitting a large number of older, non-networked monitors with Listeners.
+
+[Raspbian](https://www.raspbian.org) requires a little bit of work to get Python 2.7.9+ and the dependencies installed.
 
 ```bash
 $ sudo apt-get update && sudo apt-get upgrade
 $ sudo pip install virtualenv virtualenvwrapper
-$ export WORKON_HOME=/home/pi/envs                   # Put this in .bash_profile
+$ export WORKON_HOME=envs                            # Put this in .bash_profile
 $ source /usr/local/bin/virtualenvwrapper.sh         # Put this in .bash_profile
 $ sudo apt-get install python-dev python-numpy python-scipy python-matplotlib  # global installations
 $ mkvirtualenv perseus --system-site-packages
@@ -178,34 +180,35 @@ $ workon perseus
 (perseus)$ git clone https://github.com/derekmerck/PERSEUS.git
 ``` 
 
-The standard usb-to-serial converters work with Raspberrian's default drivers.  It is also possible to build RS232 connectors for the GPIO header using this [expansion card](http://www.amazon.com/dp/B0088SNIOQ).  Using an rPi3 with a serial-to-usb dongle, connect to `--port /dev/ttyUSB0`, for a direct connection from the GPIO header, connect to `--port /dev/ttyS0`. 
+The standard usb-to-serial converters work with Raspberrian's default drivers.  It is also possible to build RS232 connectors for the GPIO header using this [expansion card](http://www.amazon.com/dp/B0088SNIOQ).  Using an rPi3 with a serial-to-usb dongle, connect to `--port /dev/ttyUSB0`, for a direct connection from the GPIO header, connect to `--port /dev/ttyS0`.  Using the GPIO headers, you have to turn off the kernel console from the Desktop. 
+
+### CHIP
+
+We have also tested this with [C.H.I.P.](https://getchip.com).  CHIP also runs Debian, so setup follows the same procedure described above, although you need to install `pip` and `git` as well.
+
+```
+$ curl https://bootstrap.pypa.io/ez_setup.py -o - | sudo python
+$ sudo easy_install pip
+$ sudo apt-get install git
+```
+
+PERSEUS runs in test mode, but we have not been able to get the USB-to-serial adaper to work (CHIP wants to be a gadget not a host, I think) nor the GPIO pins.  May need to disable the console to free up the UART <https://bbs.nextthing.co/t/second-serial-port/4163>.
 
 
 ## Acknowledgements
 
-The Intellivue Decoder portion of this package was forked from the RIH pyMIND package (Multimodal Integration of Neural
-Data; previously known as NeuroLogic) developed by [Agrawal](mailto:uagrawal61@gmail.com),
-[Oyalowo](mailto:adewole_oyalowo@brown.edu), Asaad, and others under the MIT License provided below.
+The Intellivue Decoder portion of this package was forked from the RIH pyMIND package (Multimodal Integration of Neural Data; previously known as NeuroLogic) developed by [Agrawal](mailto:uagrawal61@gmail.com), [Oyalowo](mailto:adewole_oyalowo@brown.edu), Asaad, and others under the MIT License provided below.
 
 See <https://bitbucket.org/asaadneurolab/pymind> for documentation of the pyMIND project.
 
-Contributions to the Intellivue Decoder by the current project (PERSEUS) include backporting to Python 2.7 and improving
-overall system robustness (e.g. handling when a connection is broken). PERSEUS is also available under a MIT License
-(see PERSEUS/README.md).
+Contributions to the Intellivue Decoder by the current project (PERSEUS) include backporting to Python 2.7 and improving overall system robustness (e.g. handling when a connection is broken). PERSEUS is also available under a MIT License (see PERSEUS/README.md).
 
 pyMIND: Multimodal Integration of Neural Data
 
 Copyright (c) 2015-2016, Uday Agrawal, Adewole Oyalowo, Asaad Lab
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
-rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
-persons to whom the Software is furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
-Software.
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

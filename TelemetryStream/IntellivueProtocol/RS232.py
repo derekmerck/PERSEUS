@@ -40,7 +40,7 @@ class RS232(object):
         self.socket = serial.Serial(port=specifiedPort,
                                     baudrate=115200, bytesize=serial.EIGHTBITS,
                                     parity=serial.PARITY_NONE,
-                                    stopbits=serial.STOPBITS_ONE, timeout=2, writeTimeout=2)
+                                    stopbits=serial.STOPBITS_ONE, timeout=0.5, writeTimeout=0.5)
         if not self.socket:
             logging.warn("Failed to open serial connection")
             raise IOError
@@ -252,7 +252,7 @@ class RS232(object):
             while(messageNotDone):
                 messageByte = self.socket.read(1)
 
-                if messageByte is None:
+                if not messageByte:
                     # Bail out! The message is incomplete.
                     logging.warn('Incomplete message received!')
                     return None
@@ -294,7 +294,9 @@ class RS232(object):
 
         # Maybe help with hangs?
         try:
-            self.socket.flush()
+            # self.socket.flush()
+            self.socket.flushInput()
+            self.socket.flushOutput()
             self.socket.close()
             logging.warn('Socket closed')
         except:

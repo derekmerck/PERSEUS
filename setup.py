@@ -58,7 +58,7 @@ setup(
                 "TelemetryStream.IntellivueProtocol.RS232"],
     include_package_data=True,
     zip_safe=True,
-    install_requires=['PyYAML', 'twilio', 'splunk-sdk', 'pyserial', 'numpy', 'scipy', 'matplotlib'],
+    install_requires=['PyYAML', 'twilio', 'splunk-sdk', 'pyserial', 'requests', 'python-dateutil', 'numpy', 'scipy', 'matplotlib'],
     classifiers=[
         'Development Status :: 1 - Planning',
         'Intended Audience :: Healthcare Industry',
