@@ -492,6 +492,7 @@ class PhilipsTelemetryStream(TelemetryStream):
                 self.initiate_association(blocking)  # This tries to associate for 12 secs and then throws an error if it fails
                 self.set_priority_lists()
                 self.start_polling()
+                self.last_read_time = time.time()
                 opened = True
 
             except IOError:
