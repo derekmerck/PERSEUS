@@ -33,7 +33,7 @@ class RS232(object):
             logging.warn('Device at {0} does not exist!'.format(specifiedPort))
             logging.info('Available ports: {0}'.format(serial.tools.list_ports.comports()))
             self.socket = None
-            return
+            raise IOError
 
         logging.debug('Trying to open serial connection to device at {0}'.format(specifiedPort))
 
