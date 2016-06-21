@@ -488,8 +488,8 @@ class PhilipsTelemetryStream(TelemetryStream):
         while not opened:
 
             try:
-                self.rs232 = RS232(self.port)
-                self.initiate_association(blocking)
+                self.rs232 = RS232(self.port)        # This throws an error if it fails
+                self.initiate_association(blocking)  # This tries to associate for 12 secs and then throws an error if it fails
                 self.set_priority_lists()
                 self.start_polling()
                 opened = True
@@ -498,6 +498,7 @@ class PhilipsTelemetryStream(TelemetryStream):
                 # Cool down period
                 logging.error('Failed to open connection to {0}, waiting to try again'.format(self.port))
                 time.sleep(1.0)
+                del self.rs232
                 pass
 
     def read(self, count=1, blocking=False):
