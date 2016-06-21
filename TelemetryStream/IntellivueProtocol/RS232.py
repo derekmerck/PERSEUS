@@ -276,7 +276,7 @@ class RS232(object):
         """
         Sends the finalized message to the monitor
         """
-        if not self.socket:
+        if not self.socket or not self.socket.isOpen():
             logging.warn('Trying to write without a socket')
             return
 
