@@ -141,8 +141,12 @@ class PhilipsTelemetryStream(TelemetryStream):
             if message_type == 'AssociationResponse':
                 return association_message
 
+            elif message_type == 'TimeoutError':
+                # Tolerate timeouts for a while in case monitor is resetting
+                raise IOError
+
             # Fail and reset!
-            elif message_type == 'AssociationAbort' or message_type == 'ReleaseRequest' or message_type == 'Unknown' or message_type == 'TimeoutError':
+            elif message_type == 'AssociationAbort' or message_type == 'ReleaseRequest' or message_type == 'Unknown':
                 raise CriticalIOError
 
             # If data still coming in from a previous connection or no data is coming in, abort/release
