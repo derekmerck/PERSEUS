@@ -296,12 +296,14 @@ class IntellivueDistiller(object):
 
                                 # Inititalize Index
                                 # self.VitalsNumericsInfo[label]['Index'] = 0
+                        else:
+                            label = 'noLabel'
 
                         # If there is data, store it
                         if 'NOM_ATTR_NU_VAL_OBS' in decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']:
 
                             # Unique label
-                            label = decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_ID_LABEL']['AttributeValue']['TextId']
+                            # label = decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_ID_LABEL']['AttributeValue']['TextId']
 
                             # If first time storing data, initialize attributes
                             if label not in self.VitalsNumericsAlarmsData['Info']:
@@ -350,7 +352,7 @@ class IntellivueDistiller(object):
                         if 'NOM_ATTR_NU_CMPD_VAL_OBS' in decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']:
 
                             # NOT unique label (each value within the compound value has it)
-                            label = decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_ID_LABEL']['AttributeValue']['TextId']
+                            #label = decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_ID_LABEL']['AttributeValue']['TextId']
 
                             # If the label has been created,
                             if label in self.VitalsNumericsAlarmsData['Info']:
@@ -554,4 +556,3 @@ class IntellivueDistiller(object):
             b = ScaleRangeSpec16['lower_absolute_value']['FLOATType'] - a * ScaleRangeSpec16['lower_scaled_value']
 
             return a, b
-
