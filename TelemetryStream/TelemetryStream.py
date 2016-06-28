@@ -19,6 +19,7 @@ import os
 import yaml
 import numpy as np
 import subprocess
+import collections
 
 __hash__ = None
 try:
@@ -214,7 +215,6 @@ class TelemetryEncoder(json.JSONEncoder):
 
 
 class JSONLogHandler(logging.FileHandler):
-    # TODO: Need to separate out the data logging from the status/user/debug logging
 
     def __init__(self, *args, **kwargs):
         super(JSONLogHandler, self).__init__(*args)
@@ -226,8 +226,12 @@ class JSONLogHandler(logging.FileHandler):
         if not record.msg: return
         if record.levelno != logging.INFO: return
         if self.show_host_time:
-            record.msg['host_time'] = datetime.datetime.now()
-        record.msg = json.dumps(record.msg, cls=TelemetryEncoder, ensure_ascii=False).encode('ascii', errors='ignore')
+            record.msg['timestamp'] = datetime.datetime.now
+        # Sorts the timestamp up to the front for legibility/indexing
+        msg = collections.OrderedDict([('timestamp', record.msg['timestamp'])])
+        msg.update(record.msg)
+        msgs = json.dumps(msg, cls=TelemetryEncoder, ensure_ascii=False).encode('ascii', errors='ignore')
+        record.msg = msgs
         super(JSONLogHandler, self).emit(record)
 
 
@@ -237,8 +241,10 @@ class SplunkLogHandler(logging.Handler):
 
     host = socket.gethostname()
 
-    def __init__(self, index_name=None, sourcetype='JSON'):
+    def __init__(self, index_name=None, sourcetype='_json', **kwargs):
         super(SplunkLogHandler, self).__init__()
+        self.show_host_time = kwargs.get('host_time', False)
+
         # Create a Service instance and log in
         self.service = SplunkClient.connect(
             host=os.environ['SPLUNK_HOST'],
@@ -260,8 +266,13 @@ class SplunkLogHandler(logging.Handler):
         # logging.debug("Emitting: {0}".format(record.msg))
         if not record.msg: return
         if record.levelno != logging.INFO: return
-        self.index.submit(json.dumps(record.msg, cls=TelemetryEncoder, ensure_ascii=False).encode('ascii', errors='ignore'), sourcetype=self.sourcetype, host=SplunkLogHandler.host)
-
+        if self.show_host_time:
+            record.msg['timestamp'] = datetime.datetime.now
+        # Sorts the timestamp up to the front for legibility/indexing
+        msg = collections.OrderedDict([('timestamp', record.msg['timestamp'])])
+        msg.update(record.msg)
+        msgs = json.dumps(msg, cls=TelemetryEncoder, ensure_ascii=False).encode('ascii', errors='ignore')
+        self.index.submit(msgs, sourcetype=self.sourcetype, host=SplunkLogHandler.host)
 
 class SampleTelemetryStream(TelemetryStream):
     # Implements specific handshaking and parsing for Philips monitor serial protocol

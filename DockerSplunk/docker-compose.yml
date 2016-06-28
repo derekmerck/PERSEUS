@@ -1,0 +1,16 @@
+# Set an environment variable for $SPLUNK_PWORD
+
+splunk:
+  image: outcoldman/splunk
+  hostname: splunk
+  volumes:
+    - /opt/splunk/etc
+    - /opt/splunk/var
+  ports:
+    - 8000:8000
+    - 8089:8089
+
+  environment:
+    SPLUNK_START_ARGS: '--accept-license'
+    SPLUNK_CMD_1: "edit user admin -password '${SPLUNK_PWORD}' -role admin -auth admin:changeme"
+    SPLUNK_CMD_2: "add index perseus -auth 'admin:${SPLUNK_PWORD}'"
