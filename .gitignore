@@ -8,3 +8,4 @@ old/*
 NOTES.md
 Philips Data Export Interface Programming Guide.pdf
 *.log
+*log.json
