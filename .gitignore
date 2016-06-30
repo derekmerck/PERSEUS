@@ -2,8 +2,9 @@
 shadow*
 README.rst
 *.pyc
-/DockerSplunk/x00-01-06232016b.json
+# This sample data is too big
+/samples/x00-01-06232016b.json
 old/*
 NOTES.md
-/TelemetryStream/IntellivueProtocol/Philips Data Export Interface Programming Guide.pdf
+Philips Data Export Interface Programming Guide.pdf
 *.log
