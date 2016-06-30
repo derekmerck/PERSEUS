@@ -6,17 +6,25 @@ from Messenger import EmailSMSMessenger, SlackMessenger, TwilioMessenger
 from EventStore import SplunkEventStore
 import datetime
 import dateutil.parser
+import subprocess
 
 __description__ = "PERSEUS Dispatch server with EventStore and Messenger"
-__version_info__ = ('0', '3', '2')
-__version__ = '.'.join(__version_info__)
 
+__hash__ = None
+try:
+    __hash__ = subprocess.check_output(["git", "describe", "--tags"]).strip()
+except:
+    __hash__ = 'unknown'
+
+# Lookup credentials from either os.env or shadow.yaml
+# This prevents a developer from inadvertently hardcoding and checking in confidential information
 try:
     with file("shadow.yaml") as f:
         shadow_env = yaml.load(f)
     os.environ.update(shadow_env)
 except IOError as e:
-    print("Unable to open shadow.yaml file for additional environment vars") #Does not exist OR no read permissions
+    print("Unable to open shadow.yaml file for additional environment vars") # Does not exist OR no read permissions
+
 
 
 class Dispatch(object):
@@ -162,13 +170,13 @@ def test_alert_generator():
                  'conditions': {'bpm': ['GT', 50]},
                  'alert_str': "{priority} alert at {host} | bmp: {bpm}"}
     rule = Rule(**rule_args)
-    host = "sample1A"
-    start_time = dateutil.parser.parse('2015-09-07T12:59:00.000')
+    host = "sample1"
+    start_time = dateutil.parser.parse('2016-06-23T16:41:00.000')
     end_time = start_time + datetime.timedelta(minutes=10)
     number_of_alerts = generator.review(host, rule, start_time, end_time)
 
     logging.debug(number_of_alerts)
-    assert number_of_alerts == 8
+    assert number_of_alerts == 19  # 2/minute for 9.5 minutes
 
 
 def test_alert_router():
@@ -188,17 +196,17 @@ def test_alert_router():
     rule_args = {'name': 'dummy_rule',
                  'priority': 'LOW',
                  'conditions': {},
-                 'alert_str': "{priority} alert at {host} | bmp: {bpm}"}
+                 'alert_str': "{priority} alert at {host} | bpm: {bpm}"}
     rule = Rule(**rule_args)
 
     values = {'bpm': -1,
               'spo2': -1,
               'alarm_source': 'DUMMY_SRC',
               'alarm_code': 'DUMMY_CODE',
-              'pleth_quality': 'DUMMY_VAL'}
+              'QoS': 'DUMMY_VAL'}
 
     msg = rule.alert_msg(host, values)
-    assert msg == "LOW alert at sample1A | bmp: -1"
+    assert msg == "LOW alert at sample1A | bpm: -1"
 
     router.alert(host, rule, values)
 
@@ -213,6 +221,6 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
 
-    test_alert_generator()
-    #test_alert_router()
+    #test_alert_generator()
+    test_alert_router()
 
