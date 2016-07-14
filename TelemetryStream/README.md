@@ -75,6 +75,7 @@ Each message is condensed into a compact `json` format and can be routed to the 
 
 ```json
 {  
+   "timestamp":"2016-03-10 07:41:16.594432",
    "ecg_samples":[  
       -0.010472588789229728,
       0.002685061088021719,
@@ -121,12 +122,17 @@ Each message is condensed into a compact `json` format and can be routed to the 
    ],
    "alarm_source":null,
    "alarm_type":null,
-   "timestamp":"2016-03-10 07:41:16.594432",
    "spo2":95,
    "bpm":80,
    "qos":false
 }
 ```
+
+### Timestamping
+
+The `timestamp` field is shuffled to the front of the dictionary so that event parsers can easily identify it.  (Although technically `JSON` keys can be read in any order, Splunk will not extract it automatically if it is presented at the end of these large messages.)
+
+Each message has a single timestamp and uses the monitor reported time by default.  If the `--host_time` flag is present, the time reported by the host computer will be used instead, which can be useful when syncing multiple data streams.
 
 
 ## Organization
