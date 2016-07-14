@@ -226,7 +226,7 @@ class JSONLogHandler(logging.FileHandler):
         if not record.msg: return
         if record.levelno != logging.INFO: return
         if self.show_host_time:
-            record.msg['timestamp'] = datetime.datetime.now
+            record.msg['timestamp'] = datetime.datetime.now()
         # Sorts the timestamp up to the front for legibility/indexing
         msg = collections.OrderedDict([('timestamp', record.msg['timestamp'])])
         msg.update(record.msg)
