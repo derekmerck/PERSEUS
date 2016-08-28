@@ -88,23 +88,26 @@ def get_experimental_ppg():
 
         for window, time in windows.iteritems():
 
-            # Probably a way to do this as a single shot, but need to HR!=null OR PR!=null...?
-            query_str = "search index=ppg host={host} \"Heart Rate\"!=null \"Respiration Rate\"!=null | stats " \
-                        "count(\"Heart Rate\") as HR-count " \
-                        "avg(\"Heart Rate\") as HR-mean " \
-                        "stdev(\"Heart Rate\") as HR-std " \
-                        "count(\"Respiration Rate\") as RR-count " \
-                        "avg(\"Respiration Rate\") as RR-mean " \
-                        "stdev(\"Respiration Rate\") as RR-std" \
+            query_str = "search index=ppg host={host} \"Heart Rate\"!=null \"Respiration Rate\"!=null | " \
+                        "eval _time=if(isnotnull(host_time),strptime(host_time,\"%Y-%m-%dT%H:%M:%S.%f\"),_time) | " \
+                        "stats " \
+                            "count(\"Heart Rate\") as HR-count " \
+                            "avg(\"Heart Rate\") as HR-mean " \
+                            "stdev(\"Heart Rate\") as HR-std " \
+                            "count(\"Respiration Rate\") as RR-count " \
+                            "avg(\"Respiration Rate\") as RR-mean " \
+                            "stdev(\"Respiration Rate\") as RR-std" \
                         .format(host=subject)
 
-            query_str2 = "search index=ppg host={host} \"pulserate\"!=null \"resprate\"!=null | stats " \
-                        "count(\"pulserate\") as HR-count " \
-                        "avg(\"pulserate\") as HR-mean " \
-                        "stdev(\"pulserate\") as HR-std " \
-                        "count(\"resprate\") as RR-count " \
-                        "avg(\"resprate\") as RR-mean " \
-                        "stdev(\"resprate\") as RR-std" \
+            query_str2 = "search index=ppg host={host} \"pulserate\"!=0 \"resprate\"!=0 | " \
+                        "eval _time=if(isnotnull(host_time),strptime(host_time,\"%Y-%m-%dT%H:%M:%S.%f\"),_time) | " \
+                        "stats " \
+                            "count(pulserate) as HR-count " \
+                            "avg(pulserate) as HR-mean " \
+                            "stdev(pulserate) as HR-std " \
+                            "count(resprate) as RR-count " \
+                            "avg(resprate) as RR-mean " \
+                            "stdev(resprate) as RR-std" \
                         .format(host=subject)
 
             logging.debug(query_str)
@@ -142,7 +145,7 @@ def get_experimental_ppg():
                     rr.append(dict(item))
                     logging.debug(dict(item))
 
-                S = {'times': query_args, 'monitor': r[0], 'vcs': rr[0]}
+                S = {'times': query_args, 'monitor': r[0], 'vsc': rr[0]}
 
                 segment_summaries[segment] = S
 
@@ -161,7 +164,52 @@ def get_experimental_ppg():
     # Return all summary data in dictionary
     return subjects
 
+def convert_ppg_data_to_csv():
+
+    # Read in file
+    with open("data.json", 'r') as infile:
+        data = json.load(infile)
+
+    csv_text = ""
+
+    for subject in data.keys():
+        for window in data[subject]['summary'].keys():
+            for segment in data[subject]['summary'][window]['segments'].keys():
+
+                monitor_data = data[subject]['summary'][window]['segments'][segment]['monitor']
+                vsc_data = data[subject]['summary'][window]['segments'][segment]['vsc']
+
+                # Construct this data line
+                line="{sub},{win},{seg}," \
+                     "{mon_HR_mean},{mon_HR_std},{mon_HR_count}," \
+                     "{mon_RR_mean},{mon_RR_std},{mon_RR_count}," \
+                     "{vsc_HR_mean},{vsc_HR_std},{vsc_HR_count}," \
+                     "{vsc_RR_mean},{vsc_RR_std},{vsc_RR_count}," \
+                    .format(
+                        sub=subject,
+                        win=window,
+                        seg=segment,
+                        mon_HR_mean=monitor_data.get('HR-mean', ""),
+                        mon_HR_std=monitor_data.get('HR-std', ""),
+                        mon_HR_count=monitor_data.get('HR-count', ""),
+                        mon_RR_mean=monitor_data.get('RR-mean', ""),
+                        mon_RR_std=monitor_data.get('RR-std', ""),
+                        mon_RR_count=monitor_data.get('RR-count', ""),
+                        vsc_HR_mean=vsc_data.get('HR-mean', ""),
+                        vsc_HR_std=vsc_data.get('HR-std', ""),
+                        vsc_HR_count=vsc_data.get('HR-count', ""),
+                        vsc_RR_mean=vsc_data.get('RR-mean', ""),
+                        vsc_RR_std=vsc_data.get('RR-std', ""),
+                        vsc_RR_count=vsc_data.get('RR-count', "")
+                    )
+                csv_text += line + "\n"
+
+    logging.debug(csv_text)
+    with open("data.csv", "w") as text_file:
+        text_file.write(csv_text)
+
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.DEBUG)
-    get_experimental_ppg()
+    # get_experimental_ppg()
+    convert_ppg_data_to_csv()
