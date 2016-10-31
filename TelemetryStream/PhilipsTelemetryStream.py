@@ -563,9 +563,9 @@ if __name__ == '__main__':
 
     opts = parse_args()
     # opts.splunk = "perseus"
-    opts.gui = "SimpleStripchart"
+    # opts.gui = "SimpleStripchart"
     # ECG is 64 samples and Pleth is 32 samples every 0.25 secs
-    opts.values = ["Pleth", 32*4, 'ECG', 64*4]
+    # opts.values = ["Pleth", 32*4, 'ECG', 64*4]
     # Pleth _must_ be listed first if both Pleth and ECG are included
 
     tstream = PhilipsTelemetryStream(port=opts.port, values=opts.values, polling_interval=0.05)

@@ -34,6 +34,8 @@ class Splunk:
         if not self.service.apps:
             raise IOError
 
+DATA_DIR = "/Users/derek/Data/PPG"
+
 def get_experimental_ppg():
 
     splunk = Splunk()
@@ -53,14 +55,18 @@ def get_experimental_ppg():
         date = item['datestr']
         subjects[subject] = {'date': date}
 
+    subjects['s27']['date'] = '2016-08-11'  # Error in the data -- has same tag on earlier day
     logging.debug(subjects)
 
-    for subject, value in subjects.iteritems():
+    for subject in ['s22', 's24', 's27']:
+    # for subject, value in subjects.iteritems():
+
+        value = subjects[subject]
 
         date = value['date']
 
         # Get window names and start times
-        with open('/Users/derek/Desktop/extraction segments + windows for s1-s30/{subject} segments + windows.csv'.format(subject=subject)) as csvfile:
+        with open('{dir}/extraction segments + windows for s1-s30/{subject} segments + windows.csv'.format(dir=DATA_DIR, subject=subject)) as csvfile:
             reader = csv.reader(csvfile)
             r=[]
             for item in reader:
@@ -157,7 +163,7 @@ def get_experimental_ppg():
     logging.debug( pprint.pformat(subjects) )
 
     # Save all data to file
-    with open('data.json', 'w') as outfile:
+    with open('data1.json', 'w') as outfile:
         json.dump(subjects, outfile, sort_keys=True, indent=4,
                   ensure_ascii=False)
 
@@ -167,12 +173,13 @@ def get_experimental_ppg():
 def convert_ppg_data_to_csv():
 
     # Read in file
-    with open("data.json", 'r') as infile:
+    with open("data1.json", 'r') as infile:
         data = json.load(infile)
 
     csv_text = ""
 
     for subject in data.keys():
+        if 'summary' not in data[subject].keys(): continue
         for window in data[subject]['summary'].keys():
             for segment in data[subject]['summary'][window]['segments'].keys():
 
@@ -205,7 +212,7 @@ def convert_ppg_data_to_csv():
                 csv_text += line + "\n"
 
     logging.debug(csv_text)
-    with open("data.csv", "w") as text_file:
+    with open("data1.csv", "w") as text_file:
         text_file.write(csv_text)
 
 if __name__ == "__main__":
