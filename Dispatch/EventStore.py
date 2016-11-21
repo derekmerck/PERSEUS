@@ -37,7 +37,7 @@ class SplunkEventStore(EventStore):
                     'alarm_code': "alarms.{}.code",
                     'alarm_source': "alarms.{}.source"}
 
-    def __init__(self):
+    def __init__(self, **kwargs):
 
         # Create a Service instance and log in
         self.service = SplunkClient.connect(
@@ -46,12 +46,14 @@ class SplunkEventStore(EventStore):
             username=os.environ['SPLUNK_USER'],
             password=os.environ['SPLUNK_PWORD'])
 
+        self.index = kwargs.get('index', "perseus")
+
         # Verify login
         if not self.service.apps:
             raise IOError
 
     @classmethod
-    def perseus_rule_to_query_str(cls, host, rule, time_span=30):
+    def perseus_rule_to_query_str(cls, index, host, rule, time_span=30):
         # Accept a rule, return a conjunctive query string
 
         def item_to_query_element(condition, value):
@@ -95,7 +97,7 @@ class SplunkEventStore(EventStore):
             for key, value in rule.iteritems():
                 qitems.append(item_to_query_element(key, value))
 
-        q = "search index=perseus host={host} | "\
+        q = "search index={index} host={host} | "\
             "eval alarm_sources=\"\" | "\
             "foreach alarms.*.source " \
                 "[eval alarm_sources='<<FIELD>>'+\",\"+alarm_sources] | " \
@@ -109,8 +111,11 @@ class SplunkEventStore(EventStore):
                 "avg(\"{spo2_fn}\") as spo2, " \
                 "values(alarm_codes) as alarm_code, " \
                 "values(alarm_sources) as alarm_source | " \
+            "predict bpm as pred_bpm future_timespan=4 | " \
+            "predict spo2 as pred_spo2 future_timespan=4 | " \
             "where {filter}" \
-            .format( host=host,
+            .format( index=index,
+                     host=host,
                      time_span=time_span,
                      bpm_fn="Heart Rate",
                      spo2_fn="SpO2",
@@ -142,7 +147,7 @@ class SplunkEventStore(EventStore):
 
     def get_summary(self, host, rule, time_span=30, query_args={}):
 
-        query_str = self.perseus_rule_to_query_str(host, rule, time_span)
+        query_str = self.perseus_rule_to_query_str(self.index, host, rule, time_span)
         response = self.service.jobs.oneshot(query_str, **query_args)
         # Get the results and convert to array of dictionaries using the ResultsReader
         reader = SplunkResults.ResultsReader(response)
@@ -156,41 +161,48 @@ class SplunkEventStore(EventStore):
 
 def test_splunk_event_store():
 
-    splunk = SplunkEventStore()
+    index="ppg"
+    host = "s20"
 
-    # TEST COMPLEX QUERY
+    splunk = SplunkEventStore(index=index)
 
-    host = "sample1"
+    # TEST A SIMPLE QUERY
     rule_str = """
-    alarm_source: [MATCH, ELEC_POTL]
-    alarm_code:   [MATCH, LEADS_OFF]
+    bpm: [GT, 0]
     """
     rule = yaml.load(rule_str)
-    query_str = SplunkEventStore.perseus_rule_to_query_str(host, rule)
+    query_str = SplunkEventStore.perseus_rule_to_query_str(index, host, rule)
     logging.debug(query_str)
-    assert query_str == '''search index=perseus host=sample1 | eval alarm_sources="" | foreach alarms.*.source [eval alarm_sources='<<FIELD>>'+","+alarm_sources] | makemv delim="," alarm_sources | eval alarm_codes="" | foreach alarms.*.code [eval alarm_codes='<<FIELD>>'+","+alarm_codes] | makemv delim="," alarm_codes | timechart span=30s avg("Heart Rate") as bpm, avg("SpO2") as spo2, values(alarm_codes) as alarm_code, values(alarm_sources) as alarm_source | where match(alarm_code, "LEADS_OFF") AND match(alarm_source, "ELEC_POTL")'''
+
+    assert query_str == '''search index=ppg host=s20 | eval alarm_sources="" | foreach alarms.*.source [eval alarm_sources='<<FIELD>>'+","+alarm_sources] | makemv delim="," alarm_sources | eval alarm_codes="" | foreach alarms.*.code [eval alarm_codes='<<FIELD>>'+","+alarm_codes] | makemv delim="," alarm_codes | timechart span=30s avg("Heart Rate") as bpm, avg("SpO2") as spo2, values(alarm_codes) as alarm_code, values(alarm_sources) as alarm_source | predict bpm as pred_bpm future_timespan=4 | predict spo2 as pred_spo2 future_timespan=4 | where bpm>0'''
 
     # TEST THAT VALID QUERY RETURNS ALL LINES
-    response = splunk.get_summary(host, rule)
+    response = splunk.get_summary(host, rule, 30)
     logging.debug(response)
-    assert len(response) == 100  # Actually 201
+    logging.debug(len(response))
+    assert len(response) == 42
 
-    # TEST THAT A TIME RESTRICTED QUERY RETURNS VALID LINES
-    query_args = {"earliest_time": "2016-06-23T17:29:00.000",
-                  "latest_time":   "2016-06-23T17:29:30.000"}
+    # TEST THAT A TIME RESTRICTED QUERY RETURNS FEWER LINES
+    query_args = {"earliest_time": "2016-07-28T11:30:00.000-4:00",
+                  "latest_time":   "2016-07-28T11:50:00.000-4:00"}
 
     response = splunk.get_summary(host, rule, 30, query_args)
     logging.debug(response)
-    assert len(response) == 1
+    logging.debug(len(response))
+    assert len(response) == 29
 
-    # THESE THAT A TIME RESTRICTED QUERY RETURNS NO LINES
-    query_args = {"earliest_time": "2015-09-08T13:27:30.000+04:00",
-                  "latest_time":   "2015-09-08T13:30:30.000+04:00"}
+    # TEST A COMPLEX QUERY
+    rule_str = """
+    pred_bpm: [GT, 100]
+    """
+    rule = yaml.load(rule_str)
+    query_str = SplunkEventStore.perseus_rule_to_query_str(index, host, rule)
+    logging.debug(query_str)
 
     response = splunk.get_summary(host, rule, 30, query_args)
     logging.debug(response)
-    assert len(response) == 0
-
+    logging.debug(len(response))
+    assert len(response) == 15
 
 if __name__ == "__main__":
 

@@ -395,7 +395,7 @@ if __name__ == "__main__":
     # opts.file = 'test.log'
     # opts.splunk = 'perseus'
     opts.gui = 'SimpleStripchart'
-    opts.values = ['ecg', 128, 'pleth', 32]
+    opts.values = ['ECG', 128, 'Pleth', 32]
 
     # Let's assume that we always only want to open a single stream
     tstream = SampleTelemetryStream(values=opts.values)
@@ -406,7 +406,7 @@ if __name__ == "__main__":
     def qos(*args, **kwargs):
         history = kwargs.get('sampled_data')
         if history:
-            val = history.get('ecg').get('samples').y > 0
+            val = history.get('ECG').get('samples').y > 0
             return {'qos': np.count_nonzero(val)}
         else:
             return -1

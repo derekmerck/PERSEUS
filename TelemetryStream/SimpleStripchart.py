@@ -15,7 +15,8 @@ See README.md for usage, notes, and license info.
 from __future__ import division
 
 import matplotlib
-matplotlib.use('tkagg')  # Better for Mac
+#matplotlib.use('TkAgg')  # Better for Mac
+#matplotlib.rcParams['backend'] = "TkAgg"
 
 import logging
 from matplotlib.lines import Line2D
@@ -48,11 +49,11 @@ class Stripchart(object):
                 return
             samples = channel.get('samples')
 
-            # logging.debug('Updating channel: {0} over range [{1},{2}] ({3} secs)'\
-            #               .format(self.name, samples.t.min(), samples.t.max(),
-            #                       samples.t.max() - samples.t.min()))
-            # logging.debug(samples.y)
-            # logging.debug(samples.t)
+            logging.debug('Updating channel: {0} over range [{1},{2}] ({3} secs)'\
+                          .format(self.name, samples.t.min(), samples.t.max(),
+                                  samples.t.max() - samples.t.min()))
+            logging.debug(samples.y)
+            logging.debug(samples.t)
 
             self.t = samples.t
             self.line.set_data(samples.t, samples.y)
@@ -111,6 +112,8 @@ class Stripchart(object):
         self.tic = time.time()
         self.toc = self.tic
 
+        exit()
+
     def update_data(self, data, sampled_data):
 
         # Update waveform time and data samples
@@ -138,6 +141,7 @@ class Stripchart(object):
     def redraw(self):
         self.toc = time.time()
         if (self.toc - self.tic) > self.redraw_interval:
+            logging.info("REDRAWING")
             current_time = datetime.datetime.now()
             current_secs = (current_time - self.start_time).total_seconds()
             # self.ax[0].set_xlim(self.strip0.t[0] + 1, self.strip0.t[-1] - 1)

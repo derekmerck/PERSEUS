@@ -11,8 +11,6 @@ $ rename 's/(\.txt$)//' *
 $ rename 's/(.*)/$1\.json/' *
 ```
 
-Setup Splunk with a new data type based on `_json` that expects a `timestamp` field for `_time`.
-
 I copied the data onto the Splunk container so I wouldn't have to upload them one at a time.
 
 ```
@@ -21,7 +19,9 @@ $ docker exec -it splunk /bin/bash
 $$ sudo chmod splunk:splunk /home/splunk/DATA_DIR/*
 ```
 
-Setup Splunk with a new data source in your target folder that extracts the host name with this regex:
+Setup Splunk with a new data _type_ based on `_json` that expects a `timestamp` field for `_time`.  
+
+Setup Splunk with a new data _source_ for the MP90 data in your target folder that extracts the host name with this regex:
 
 `.*-(?<host>.*).json`
 
@@ -29,11 +29,15 @@ This will assign each subject to a different hostname, which is convenient for s
 
 Repeat for vcs data.
 
-Setup Splunk with a new data type based on `csv` that uses the rex `%m,%d,%Y,%H,%M,%S` for `TIME_FORMAT` AND `0000,` for `TIME_PREFIX`.
+Setup Splunk with a new data _type_ based on `csv` that uses the regex `%m,%d,%Y,%H,%M,%S` for `TIME_FORMAT` AND `0000,` for `TIME_PREFIX`.
 
-Copy the csv files over to the container and then make a data source that assigns the host name with this regex:
+Copy the csv files over to the container and then make a data _source_ that assigns the host name with this regex:
 
 `.*(?<host>s.*)\smod\.csv`
+
+It looks like it may help to set both data sources to default to America/NY time as well (or whatever timezone the Splunk server thinks that it lives in).
+
+.json files for 22, 24, and 27 are too big to parse in a monitored file, and need to be loaded individually.
 
 You can run both as one-shot imports.  If it doesn't work, make your corrections, drop the index, rebuild the index, and disable and then re-enable the data source to re-import.
 

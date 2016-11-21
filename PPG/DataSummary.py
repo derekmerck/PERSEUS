@@ -58,8 +58,9 @@ def get_experimental_ppg():
     subjects['s27']['date'] = '2016-08-11'  # Error in the data -- has same tag on earlier day
     logging.debug(subjects)
 
-    for subject in ['s22', 's24', 's27']:
-    # for subject, value in subjects.iteritems():
+    # for subject in ['s1']:
+    # for subject in ['s22', 's24', 's27']:
+    for subject, value in subjects.iteritems():
 
         value = subjects[subject]
 
@@ -83,7 +84,7 @@ def get_experimental_ppg():
         segments = {
             "A1": {"start": 10, "duration": 20},
             "A2": {"start": 50, "duration": 10},
-            "B1": {"start": 20, "duration": 10},
+            "B1": {"start": 10, "duration": 20},
             "B2": {"start": 20, "duration": 10},
             "C":  {"start": 30, "duration": 30},
             "D":  {"start": 50, "duration": 10},
