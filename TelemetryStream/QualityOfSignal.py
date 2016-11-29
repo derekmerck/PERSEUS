@@ -18,7 +18,7 @@ class QualityOfSignal():
     def __init__(self):
         pass
 
-    def isPPGGoodQuality(self, ppgSig, tsofSig, fs, **kwargs):
+    def isPPGGoodQuality(self, ppgSig, fs, **kwargs):
 
         # Check to see if opt specified, otherwise use default
         if 'opt' in kwargs:
@@ -203,15 +203,17 @@ class QualityOfSignal():
 
         while(1):
 
-            # Check that this works!
-            ix_pre = np.minimum(int(z[-1][0]),subIdx).astype(int)
-
+            # look for the first location where z > z0
             try:
-                ix = np.amin(np.where(z[ix_pre] > z0))
+
+                # Look in z[subIdx] (and make sure it doesn't go past z's size)
+                # find first index where z > the mean of z
+                tempIndex = np.trim_zeros(subIdx*(z.size>subIdx), 'b')
+                ix = np.amin(np.where(z[tempIndex] > z0)[0])
             except:
                 break
 
-            ix = subIdx[ix]
+            ix = tempIndex[ix]
             tPnt.append(ix)
             srcWin = np.r_[np.maximum(0,ix - wSmp): ix + wSmp]
             #if the window has passed the length of the data, then exit
@@ -237,7 +239,7 @@ class QualityOfSignal():
                 SSFCrossThresholdArray[np.remainder(idx, MedianArrayWinSize)] = np.mean(z[srcWin])*DetectionThreshold
                 z0 = np.median(SSFCrossThresholdArray)
                 minSSF = np.min(z[srcWin]) + SSFAmp *AmplitudeRatio
-                a = srcWin[1] + np.min(np.where(z[srcWin] >= minSSF))
+                a = srcWin[0] + np.min(np.where(z[srcWin] >= minSSF))
                 onset.append(a)
 
                 # adaptively determine analysis window for next cycle
@@ -279,14 +281,14 @@ class QualityOfSignal():
             blowpass = 1
 
         if blowpass == 1:
-            b,a = scipy.signal.ellip(p, rp, rs, wn)
+            b, a = scipy.signal.ellip(p, rp, rs, wn)
 
         else:
             # This was "size", but probably should be len
             if len(wn) > 1:
-                b,a = scipy.signal.ellip(p, rp, rs, wn, 'stop')
+                b, a = scipy.signal.ellip(p, rp, rs, wn, 'stop')
             else:
-                b,a = scipy.signal.ellip(p, rp, rs, wn, 'high')
+                b, a = scipy.signal.ellip(p, rp, rs, wn, 'high')
 
         osig = scipy.signal.filtfilt(b, a, sig)
 
@@ -319,14 +321,36 @@ class QualityOfSignal():
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
-    # The dataset is the one Xiao sent us, just pickled
-    # ts = the timestamps of that data (generated using the samplingFreq)
-    import pickle
-    signal = pickle.load(open('sample/signal.p', 'rb'))
-    signal = signal[0]
-    ts = pickle.load(open('sample/ts.p', 'rb'))
+    # Importing test data from csv files
+    plethData = np.genfromtxt('../samples/10.25.2016_x00-11_ple_converted.csv', delimiter=',')
+    QosData = np.genfromtxt('../samples/10.25.2016_x00-11_qos_converted.csv', delimiter=',')
+    plethData = plethData[:, 1]
+    QosData = QosData[:, 1]
 
-    fs = 240
+    # Initialize data relevant parameters
+    fs = 125
+    t0 = fs*10
+    delt = 250 # ms
+    winL = 7 # seconds
+
+    # Run our code and compare results
     SigCheck = QualityOfSignal()
-    check = SigCheck.isPPGGoodQuality(signal, ts, fs)
-    print(check)
+
+    qualityFlag = []
+    tofT = []
+    # Loop through all the data
+    t00 = t0
+    for i in range(0, 500):
+        qualityFlag.append(SigCheck.isPPGGoodQuality(plethData[t0:t0 + winL * fs], fs))
+        t0 = np.floor(t0+fs*delt/1000)
+        tofT.append(i*delt/1000)
+
+    t11 = t0
+    tofS = np.r_[0:(t11-t00)/fs:1/fs]
+
+    maxData = int(np.ndarray.max(plethData[t00:t11]))
+    plt.plot(tofS,plethData[t00:t11]/maxData, 'b')
+    plt.plot(tofT,qualityFlag, 'ro', markersize=2)
+    axes = plt.gca()
+    axes.set_ylim([-1.2, 1.2])
+    plt.show()

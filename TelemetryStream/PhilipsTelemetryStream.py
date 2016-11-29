@@ -568,7 +568,9 @@ if __name__ == '__main__':
     # opts.values = ["Pleth", 32*4, 'ECG', 64*4]
     # Pleth _must_ be listed first if both Pleth and ECG are included
 
-    tstream = PhilipsTelemetryStream(port=opts.port, values=opts.values, polling_interval=0.05)
+    tstream = PhilipsTelemetryStream(port=opts.port,
+                                     values=opts.values,
+                                     polling_interval=0.05)
 
     # Wrapper for UCSF QoS code
     def qos(*args, **kwargs):
@@ -576,8 +578,7 @@ if __name__ == '__main__':
         history = kwargs.get('sampled_data')
         if history:
             res = my_qos.isPPGGoodQuality(history.get('Pleth').get('samples').y,
-                           history.get('Pleth').get('samples').t,
-                           32*4)
+                                          history.get('Pleth').get('samples').t)
             return {'qos': res}
         else:
             return -1

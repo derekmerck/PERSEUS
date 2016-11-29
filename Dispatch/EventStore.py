@@ -123,28 +123,6 @@ class SplunkEventStore(EventStore):
 
         return q
 
-        # Complicated, but the idea here is to create a timechart over the time window being considered
-        # complete with predicted values for bpm and spo2, then filter it down with a "where" clause.
-        # fillnull is used so predict doesn't fail (filling after timechart is very slow for some reason).
-        # max(variable) is used so that the -1 fill doesn't affect the predicted values.
-        q = "search index=perseus host={host} | " \
-            "fillnull value=-1 {bpm_fn}, {spo2_fn} | " \
-            "timechart span={time_span}s max({bpm_fn}) as bpm, max({spo2_fn}) as spo2, values({as_fn}) as alarm_source, values({ac_fn}) as alarm_code | " \
-            "predict bpm as pred_bpm future_timespan={ft} | predict spo2 as pred_spo2 future_timespan={ft} | " \
-            "stats max(bpm) as bpm, max(spo2) as spo2, max(pred_bpm) as pred_bpm, max(pred_spo2) as pred_spo2, values(alarm_source) as alarm_source, values(alarm_code) as alarm_code | " \
-            "where {filter}".format(host=host,
-                                    bpm_fn=cls.field_names['bpm'],
-                                    spo2_fn=cls.field_names['spo2'],
-                                    ac_fn=cls.field_names['alarm_code'],
-                                    as_fn=cls.field_names['alarm_source'],
-                                    time_span=time_span,
-                                    ft=10,  # 10 steps of time_span size, ie, 100 seconds
-                                    filter=" AND ".join(qitems))
-
-
-        # index=perseus host=sample1A | fillnull value=-1 bpm_1, spo2 | timechart span=10s max(bpm_1) as bpm, max(spo2) as spo2, values(alert_source) as alarm_source, values(alert_code) as alarm_code | predict bpm as pred_bpm future_timespan=10| predict spo2 as pred_spo2 future_timespan=10 | stats max(bpm) as bpm, max(spo2) as spo2, max(pred_bpm) as pred_bpm, max(pred_spo2) as pred_spo2, values(alarm_source) as alarm_source, values(alarm_code) as alarm_code
-        return q
-
     def get_summary(self, host, rule, time_span=30, query_args={}):
 
         query_str = self.perseus_rule_to_query_str(self.index, host, rule, time_span)
