@@ -201,6 +201,7 @@ class QualityOfSignal():
         SSFCrossThresholdArray = np.ones((MedianArrayWinSize,1))*z0*DetectionThreshold
         idx = 1
 
+        # Keep loop going while onsets detected
         while(1):
 
             # look for the first location where z > z0

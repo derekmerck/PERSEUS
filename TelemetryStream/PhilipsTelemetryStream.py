@@ -460,7 +460,8 @@ class PhilipsTelemetryStream(TelemetryStream):
 
         # logging.debug(m)
 
-        # This is 'NOM_ECG_ELEC_POTL_II' on my monitors, but let's many _any_ ECG wave label to ECG
+        # This is 'NOM_ECG_ELEC_POTL_II' on my monitors, but let's map _any_ ECG wave label to ECG
+        # especially b/c it seems to change to NOM_ECG_ELEC_POTL_V when leads are changed.
         ecg_label = None
         for key in m.keys():
             if 'ECG' in key:

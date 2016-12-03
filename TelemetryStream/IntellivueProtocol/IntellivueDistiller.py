@@ -125,7 +125,7 @@ class IntellivueDistiller(object):
                                         fs = int(8192/decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_TIME_PD_SAMP']['AttributeValue']['RelativeTime'])
 
                                         # Initialize numpy array for timestamps and data (length is fs*desired file time - time already elapsed)
-                                        self.VitalsWaveData[label] = np.zeros((2,fs*self.fileTime - fs*int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192)), dtype = 'float32')
+                                        # self.VitalsWaveData[label] = np.zeros((2,fs*self.fileTime - fs*int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192)), dtype = 'float32')
 
                                         # # Set numpy data array in HDF5 file
                                         # self.VitalsGroup.create_dataset(label, data = self.VitalsNumericsAlarmsData[label])
@@ -163,7 +163,7 @@ class IntellivueDistiller(object):
                                 fs = int(8192/decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_TIME_PD_SAMP']['AttributeValue']['RelativeTime'])
 
                                 # Initialize numpy array - 1hr
-                                self.VitalsWaveData[label] = np.zeros((2,fs*self.fileTime - fs*int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192)), dtype = 'float32')
+                                # self.VitalsWaveData[label] = np.zeros((2,fs*self.fileTime - fs*int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192)), dtype = 'float32')
 
                                 # # Set numpy array in HDF5 file
                                 # self.VitalsGroup.create_dataset(label, data = self.VitalsNumericsAlarmsData[label])
