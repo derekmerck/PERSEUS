@@ -394,8 +394,8 @@ if __name__ == "__main__":
     # Test output types, as if this were given on the command line
     # opts.file = 'test.log'
     # opts.splunk = 'perseus'
-    opts.gui = 'SimpleStripchart'
-    opts.values = ['ECG', 128, 'Pleth', 32]
+    # opts.gui = 'SimpleStripchart'
+    # opts.values = ['ECG', 128, 'Pleth', 32]
 
     # Let's assume that we always only want to open a single stream
     tstream = SampleTelemetryStream(values=opts.values)

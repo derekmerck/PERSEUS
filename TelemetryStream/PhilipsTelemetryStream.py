@@ -33,8 +33,7 @@ def qos(*args, **kwargs):
     history = kwargs.get('sampled_data')
     if history:
         res = my_qos.isPPGGoodQuality(history.get('Pleth').get('samples').y,
-                                      history.get('Pleth').get('samples').t,
-                                      32 * 4)
+                                      history.get('Pleth').get('samples').t)
         return {'qos': res}
     else:
         return -1

@@ -78,8 +78,6 @@ $ python PERSEUS.py listener --port COM3 --splunk perseus
 
 See the [TelemetryStream README](TelemetryStream/README.md) for more details on the Intelivue serial protocol and setup instructions for using PERSEUS Listener with Raspberry Pi hardware.
 
-See the [TelemetryLogs README](TelemetryLogger/README.md) for details on how to setup a client system with CWRU's stand alone decoder and a log shipper.
-
 
 ### PERSEUS Dispatch Setup
 
@@ -100,7 +98,7 @@ Once the event store (Splunk, for example) is setup and the clients are running,
 $ python PERSEUS.py dispatch --config my_config.yaml
 ```
 
-Future work includes developing a fabric- or Ansible-based system to deploy and bring up the entire PERSEUS network automatically.
+Future work includes developing an Ansible-based system to deploy and bring up the entire PERSEUS network automatically.
 
 
 ## Security
