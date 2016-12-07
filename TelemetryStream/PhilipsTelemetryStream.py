@@ -33,7 +33,7 @@ def qos(*args, **kwargs):
     history = kwargs.get('sampled_data')
     if history:
         res = my_qos.isPPGGoodQuality(history.get('Pleth').get('samples').y,
-                                      history.get('Pleth').get('samples').t)
+                                      32 * 4)
         return {'qos': res}
     else:
         return -1
@@ -571,17 +571,6 @@ if __name__ == '__main__':
     tstream = PhilipsTelemetryStream(port=opts.port,
                                      values=opts.values,
                                      polling_interval=0.05)
-
-    # Wrapper for UCSF QoS code
-    def qos(*args, **kwargs):
-        my_qos = QoS()
-        history = kwargs.get('sampled_data')
-        if history:
-            res = my_qos.isPPGGoodQuality(history.get('Pleth').get('samples').y,
-                                          history.get('Pleth').get('samples').t)
-            return {'qos': res}
-        else:
-            return -1
 
     # Attach any post-processing functions
     tstream.add_update_func(qos)

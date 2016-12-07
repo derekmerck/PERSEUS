@@ -343,7 +343,7 @@ def configure_parser(parser):
     parser.add_argument('-s', '--splunk', help="Name of a Splunk index for event logging")
     parser.add_argument('-g', '--gui', help="Display a graphic user interface, e.g., 'SimpleStripchart'")
     # Default for PL203 usb to serial device
-    parser.add_argument('-p', '--port', help="Device port (or 'test')", default="/dev/cu.usbserial")
+    parser.add_argument('-p', '--port', help="Device port (or 'sample')", default="/dev/cu.usbserial")
     parser.add_argument('--values', nargs="+",
                         help="List of paired value names and frequencies to monitor, e.g. 'Pleth 128 ECG 256'",
                         default=['Pleth', 128, 'ECG', 256])
