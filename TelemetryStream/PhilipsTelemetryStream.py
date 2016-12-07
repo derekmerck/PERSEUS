@@ -24,8 +24,9 @@ from TelemetryStream import *
 from QualityOfSignal import QualityOfSignal as QoS
 
 __description__ = "PERSEUS telemetry stream listener for Philips Invellivue devices with serial connections"
-__version_info__ = ('0', '7', '1')
+__version_info__ = ('0', '7', '2')
 __version__ = '.'.join(__version_info__)
+
 
 # Wrapper for UCSF QoS code
 def qos(*args, **kwargs):
@@ -33,7 +34,7 @@ def qos(*args, **kwargs):
     history = kwargs.get('sampled_data')
     if history:
         res = my_qos.isPPGGoodQuality(history.get('Pleth').get('samples').y,
-                                      32 * 4)
+                                      32 * 4)  # For Philips, Pleth frequency is 32 per 1/4 second
         return {'qos': res}
     else:
         return -1

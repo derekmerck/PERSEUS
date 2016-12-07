@@ -29,7 +29,7 @@ __url__ = "https://github.com/derekmerck/PERSEUS"
 __author__ = 'Derek Merck'
 __email__ = "derek_merck@brown.edu"
 __license__ = "MIT"
-__version_info__ = ('0', '3', '4')
+__version_info__ = ('0', '3', '5')
 __version__ = '.'.join(__version_info__)
 
 __hash__ = None
