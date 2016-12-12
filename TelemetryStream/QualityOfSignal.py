@@ -90,7 +90,7 @@ class QualityOfSignal():
         beatLeninMS = 1000*np.diff(fiducialPnt)/fs
 
         # find beats with the length between the max and min beat length
-        idx_min = np.where(beatLeninMS > minBeatLeninMS)[0]
+        idx_min = np.where(beatLeninMS > minBeatLeninMS)[0]  # This is a fix for ARM numpy
         idx_max = np.where(beatLeninMS < maxBeatLeninMS)[0]
         idx = np.intersect1d(idx_min, idx_max)
         if idx.size == 0:

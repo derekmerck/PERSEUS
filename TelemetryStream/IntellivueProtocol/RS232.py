@@ -16,8 +16,8 @@ import serial
 import serial.tools.list_ports
 import struct
 import logging
-import os.path
 import itertools
+
 
 class RS232(object):
     """
@@ -51,7 +51,12 @@ class RS232(object):
 
     # Returns value from uint16 binary
     def get16(self, data):
-        return struct.unpack('>H', data)[0]
+        try:
+            ret = struct.unpack('>H', data)[0]
+        except struct.error:
+            # Occasionally get a bad message format, returning 0 will fail the CRC check and ignore
+            ret = 0
+        return ret
 
     # Returns uint16 binary from value
     def set16(self, data):

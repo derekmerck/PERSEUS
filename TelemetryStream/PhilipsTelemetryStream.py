@@ -34,7 +34,7 @@ def qos(*args, **kwargs):
     history = kwargs.get('sampled_data')
     if history:
         res = my_qos.isPPGGoodQuality(history.get('Pleth').get('samples').y,
-                                      32 * 4)  # For Philips, Pleth frequency is 32 per 1/4 second
+                                      32 * 4)  # For Philips monitors, Pleth frequency is 32 per 1/4 second
         return {'qos': res}
     else:
         return -1
