@@ -467,12 +467,18 @@ class PhilipsTelemetryStream(TelemetryStream):
             if 'ECG' in key:
                 ecg_label = key
                 break
+        bp_sys_label = None
+        for key in m.keys():
+            if 'SYS' in key:
+                bp_sys_label = key
+                break
 
         ret =  {'ECG': m.get(ecg_label),
                 'Pleth': m.get('PLETH wave label'),
                 'Heart Rate': m.get('Heart Rate'),
                 'SpO2': m.get('Arterial Oxygen Saturation'),
-                'Systolic Blood Pressure': m.get('non-invasive blood pressure_SYS'),
+                'Systolic Blood Pressure': m.get(bp_sys_label),
+                # 'Systolic Blood Pressure': m.get('non-invasive blood pressure_SYS'),
                 'Respiration Rate': m.get('Respiration Rate'),
                 'alarms': m.get('alarms'),
                 'timestamp': m.get('timestamp')}
