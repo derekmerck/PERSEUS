@@ -471,6 +471,7 @@ class PhilipsTelemetryStream(TelemetryStream):
         for key in m.keys():
             if 'SYS' in key:
                 bp_sys_label = key
+                logging.debug("BP label/value: {0}:{1}".format(bp_sys_label, m.get(bp_sys_label)))
                 break
 
         ret =  {'ECG': m.get(ecg_label),
