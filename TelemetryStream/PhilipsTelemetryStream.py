@@ -458,7 +458,7 @@ class PhilipsTelemetryStream(TelemetryStream):
     def condense(m):
         # Second pass distillation, from long intermediate format to condensed PERSEUS format
 
-        # logging.debug(m)
+        logging.debug(m)
 
         # This is 'NOM_ECG_ELEC_POTL_II' on my monitors, but let's map _any_ ECG wave label to ECG
         # especially b/c it seems to change to NOM_ECG_ELEC_POTL_V when leads are changed.
