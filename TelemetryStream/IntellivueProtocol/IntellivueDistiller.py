@@ -270,6 +270,9 @@ class IntellivueDistiller(object):
 
         currentTime = None
 
+        # Print out the pre-refined message
+        logging.debug(decoded_message)
+
         # Go through all of the Single Context Polls
         for singleContextPolls in decoded_message['PollMdibDataReplyExt']['PollInfoList']:
 
