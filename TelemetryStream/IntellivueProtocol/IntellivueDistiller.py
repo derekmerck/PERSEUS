@@ -61,6 +61,8 @@ class IntellivueDistiller(object):
     def refine(self, decoded_message):
         # Handle a decoded message
 
+        logging.debug(decoded_message)
+
         m = None # Secondary message decoding to "important stuff"
         if decoded_message['PollMdibDataReplyExt']['Type']['OIDType'] == 'NOM_MOC_VMO_METRIC_SA_RT':
             m = self.refine_wave_message(decoded_message)
