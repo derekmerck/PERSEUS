@@ -361,7 +361,7 @@ class IntellivueDistiller(object):
 
                             # If the label has been created,
                             if True:
-                            # Fixed per Uday "I'm not sure why we were holding it to only one label for a compound value".
+                            # Fixed per Uday "I'm not sure why we were holding it to only one label for a compound value".  xxx
                             # if label in self.VitalsNumericsAlarmsData['Info']:
 
                                 # Store temporary time values
