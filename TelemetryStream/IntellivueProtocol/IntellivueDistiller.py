@@ -357,11 +357,12 @@ class IntellivueDistiller(object):
                         if 'NOM_ATTR_NU_CMPD_VAL_OBS' in decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']:
 
                             # NOT unique label (each value within the compound value has it)
+                            # Fixed per Uday, "I'm totally guessing now."
                             label = decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_ID_LABEL']['AttributeValue']['TextId']
 
                             # If the label has been created,
                             if True:
-                            # Fixed per Uday "I'm not sure why we were holding it to only one label for a compound value".  xxx
+                            # Fixed per Uday "I'm not sure why we were holding it to only one label for a compound value".
                             # if label in self.VitalsNumericsAlarmsData['Info']:
 
                                 # Store temporary time values
@@ -420,11 +421,11 @@ class IntellivueDistiller(object):
 
                                                 # Store data
                                                 if currentTime in self.VitalsNumericsAlarmsData:
-                                                    self.VitalsNumericsAlarmsData[currentTime][label] = temp_value
+                                                    self.VitalsNumericsAlarmsData[currentTime][scada_label] = temp_value
                                                 else:
                                                     self.VitalsNumericsAlarmsData[currentTime] = {}
                                                     self.VitalsNumericsAlarmsData[currentTime]['timestamp'] = temp_time
-                                                    self.VitalsNumericsAlarmsData[currentTime][label] = temp_value
+                                                    self.VitalsNumericsAlarmsData[currentTime][scada_label] = temp_value
 
                                             # add to index
                                             #self.Vitals['Info'][scada_label]['Index'] += 1
