@@ -342,11 +342,11 @@ class IntellivueDistiller(object):
 
                                     # Store data
                                     if currentTime in self.VitalsNumericsAlarmsData:
-                                        self.VitalsNumericsAlarmsData[currentTime][scada_label] = temp_value
+                                        self.VitalsNumericsAlarmsData[currentTime][label] = temp_value
                                     else:
                                         self.VitalsNumericsAlarmsData[currentTime] = {}
                                         self.VitalsNumericsAlarmsData[currentTime]['timestamp'] = temp_time
-                                        self.VitalsNumericsAlarmsData[currentTime][scada_label] = temp_value
+                                        self.VitalsNumericsAlarmsData[currentTime][label] = temp_value
 
                         # If compound data type...
                         if 'NOM_ATTR_NU_CMPD_VAL_OBS' in decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']:
@@ -416,11 +416,11 @@ class IntellivueDistiller(object):
 
                                                 # Store data
                                                 if currentTime in self.VitalsNumericsAlarmsData:
-                                                    self.VitalsNumericsAlarmsData[currentTime][label] = temp_value
+                                                    self.VitalsNumericsAlarmsData[currentTime][scada_label] = temp_value
                                                 else:
                                                     self.VitalsNumericsAlarmsData[currentTime] = {}
                                                     self.VitalsNumericsAlarmsData[currentTime]['timestamp'] = temp_time
-                                                    self.VitalsNumericsAlarmsData[currentTime][label] = temp_value
+                                                    self.VitalsNumericsAlarmsData[currentTime][scada_label] = temp_value
 
                                             # add to index
                                             #self.Vitals['Info'][scada_label]['Index'] += 1
