@@ -468,11 +468,16 @@ class PhilipsTelemetryStream(TelemetryStream):
                 ecg_label = key
                 break
 
+        bp = {'systolic': m.get('non-invasive blood pressure_SYS'),
+              'diastolic': m.get('non-invasive blood pressure_DIA'),
+              'mean': m.get('non-invasive blood pressure_MEAN')
+              }
+
         ret =  {'ECG': m.get(ecg_label),
                 'Pleth': m.get('PLETH wave label'),
                 'Heart Rate': m.get('Heart Rate'),
                 'SpO2': m.get('Arterial Oxygen Saturation'),
-                'Blood Pressure': m.get('non-invasive blood pressure'),
+                'Non-invasive Blood Pressure': bp,
                 'Respiration Rate': m.get('Respiration Rate'),
                 'alarms': m.get('alarms'),
                 'timestamp': m.get('timestamp')}
