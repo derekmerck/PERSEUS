@@ -355,7 +355,9 @@ class IntellivueDistiller(object):
                             #label = decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_ID_LABEL']['AttributeValue']['TextId']
 
                             # If the label has been created,
-                            if label in self.VitalsNumericsAlarmsData['Info']:
+                            if True:
+                            # Fixed per Uday "I'm not sure why we were holding it to only one label for a compound value".
+                            # if label in self.VitalsNumericsAlarmsData['Info']:
 
                                 # Store temporary time values
                                 temp_time = (decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192
