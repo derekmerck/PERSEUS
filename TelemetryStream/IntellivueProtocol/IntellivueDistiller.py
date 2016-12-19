@@ -352,7 +352,8 @@ class IntellivueDistiller(object):
                         if 'NOM_ATTR_NU_CMPD_VAL_OBS' in decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']:
 
                             # NOT unique label (each value within the compound value has it)
-                            #label = decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_ID_LABEL']['AttributeValue']['TextId']
+                            # Fixed per Uday, "I'm totally guessing now."
+                            label = decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_ID_LABEL']['AttributeValue']['TextId']
 
                             # If the label has been created,
                             if True:
