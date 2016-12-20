@@ -473,14 +473,20 @@ class PhilipsTelemetryStream(TelemetryStream):
               'mean': m.get('non-invasive blood pressure_MEAN')
               }
 
+        airway = {'etCO2': m.get('etCO2'),
+                  'Respiration Rate': m.get('Airway Respiration Rate')}
+
         ret =  {'ECG': m.get(ecg_label),
                 'Pleth': m.get('PLETH wave label'),
                 'Heart Rate': m.get('Heart Rate'),
                 'SpO2': m.get('Arterial Oxygen Saturation'),
-                'Non-invasive Blood Pressure': bp,
                 'Respiration Rate': m.get('Respiration Rate'),
+                'Non-invasive Blood Pressure': bp,
+                'Airway': airway,
                 'alarms': m.get('alarms'),
                 'timestamp': m.get('timestamp')}
+
+        # TODO: Recursively go through ret and delete any None keys or {}...
 
         # logging.debug(ret)
 
