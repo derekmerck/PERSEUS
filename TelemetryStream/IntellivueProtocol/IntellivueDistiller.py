@@ -353,7 +353,8 @@ class IntellivueDistiller(object):
 
                             # NOT unique label (each value within the compound value has it)
                             # Fixed per Uday, "I'm totally guessing now."
-                            label = decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_ID_LABEL']['AttributeValue']['TextId']
+                            # Removed again to fix a re-emergent bug
+                            # label = decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_ID_LABEL']['AttributeValue']['TextId']
 
                             # If the label has been created,
                             if True:

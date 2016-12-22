@@ -470,8 +470,7 @@ class PhilipsTelemetryStream(TelemetryStream):
 
         bp = {'systolic': m.get('non-invasive blood pressure_SYS'),
               'diastolic': m.get('non-invasive blood pressure_DIA'),
-              'mean': m.get('non-invasive blood pressure_MEAN')
-              }
+              'mean': m.get('non-invasive blood pressure_MEAN')}
 
         airway = {'etCO2': m.get('etCO2'),
                   'Respiration Rate': m.get('Airway Respiration Rate')}
