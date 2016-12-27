@@ -143,7 +143,7 @@ class RS232(object):
         indices = []
 
         # iterate through message and store indices of 0xc1,0xc0,0x7d
-        for i in range(0, len(message)):
+        for i in range(0, len(message)-1):
             if message[i] == 0x7D:
                 if message[i+1] == 0xC0 ^ 0x20:
                     indices.append((i, 192))  # 0xc0 = 192
