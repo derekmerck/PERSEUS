@@ -10,6 +10,7 @@ from __future__ import unicode_literals, division
 import random
 import argparse
 import logging
+import logging.handlers
 import time
 import json
 import socket
@@ -214,7 +215,8 @@ class TelemetryEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
-class JSONLogHandler(logging.FileHandler):
+class JSONLogHandler(logging.handlers.TimedRotatingFileHandler):
+#class JSONLogHandler(logging.FileHandler):
 
     def __init__(self, *args, **kwargs):
         super(JSONLogHandler, self).__init__(*args)
@@ -366,6 +368,7 @@ def attach_loggers(tstream, opts):
     # Attach any additional loggers
     if opts.file:
         # Add a file stuctured log handler that only saves "INFO" level messages
+        # Should be able to include the following parameters here: when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False
         fh = JSONLogHandler(opts.file, host_time=opts.host_time)
         fh.setLevel(logging.INFO)
         tstream.logger.addHandler(fh)
