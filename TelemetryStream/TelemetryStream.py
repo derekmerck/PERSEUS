@@ -219,7 +219,7 @@ class JSONLogHandler(logging.handlers.TimedRotatingFileHandler):
 #class JSONLogHandler(logging.FileHandler):
 
     def __init__(self, *args, **kwargs):
-        super(JSONLogHandler, self).__init__(*args)
+        super(JSONLogHandler, self).__init__(*args, **kwargs)
         self.show_host_time = kwargs.get('host_time', False)
 
     def emit(self, record):
