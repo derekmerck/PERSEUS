@@ -25,7 +25,7 @@ class SplunkEventStore():
         if not self.service.apps:
             raise IOError
 
-    def do_query(self, q, q_args={}):
+    def do_query(self, q, **q_args):
 
         response = self.service.jobs.oneshot(q, **q_args)
         # Get the results and convert to array of dictionaries using the ResultsReader
@@ -43,11 +43,15 @@ if __name__=="__main__":
     s = SplunkEventStore(host="localhost",
                          port="8089",
                          username="admin",
-                         password="password")
+                         password="splunk")
 
     q = "search index=dose StudyDescription=\"*BRAIN*\""
+    q_args = {
+        "earliest_time": "2017-01-01T12:00:00.000-05:00",
+        "latest_time": "2017-01-31T12:00:00.000-05:00"
+    }
 
-    r = s.do_query(q)
+    r = s.do_query(q, **q_args)
 
     logging.debug(pprint.pformat(r))
 
