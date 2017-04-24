@@ -162,8 +162,8 @@ class TelemetryStream(object):
         # logging.debug(sampled_data_args)
         if sampled_data_args:
             for key, freq in zip(sampled_data_args[0::2], sampled_data_args[1::2]):
-                self.sampled_data[key] = {'freq': freq,
-                                          'samples': SampledDataBuffer(freq, self.sampled_data_dur)}
+                self.sampled_data[key] = {'freq': int(freq),
+                                          'samples': SampledDataBuffer(int(freq), self.sampled_data_dur)}
 
         # logging.debug('sampled data array')
         # logging.debug(self.sampled_data)
