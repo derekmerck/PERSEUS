@@ -1,15 +1,12 @@
 """
 For Python 2.7.x
 
-Second iteration of offline visual dataviewer and annotator. Written in Bokeh 0.12.4.
+Third iteration of offline visual dataviewer and annotator. Written in Bokeh 0.12.4.
 As per the documentation and gallery examples, script makes use of global variables. Will try to make easier to read in
 future revisions, but initial attempts at class based OOP version was slower than current implementation.
 
 Run using:
-    bokeh serve --show ScriptName.py --args ppgFile.txt qosFile.txt ekgFile.txt [ppgQosAnnotation.txt] [ekgAnnotation.txt]
-
-Example:
-    bokeh serve --show ppgAnnotator.py --args data/sample_plethraw.txt data/sample_qosraw.txt data/sample_ekg.txt
+    bokeh serve --show ScriptName.py --args sqlFile.db [-s pleth/qosAnnotation.txt] [-e ekgAnnotation.txt]
 
 @author: aoyalowo
 
@@ -30,18 +27,24 @@ from __future__ import division
 import argparse
 import datetime
 import warnings
+# import memory_profiler
+import logging
 
+import numpy as np
 import pandas as pd
 from bokeh.io import curdoc
-from bokeh.models import Range1d, DatetimeTickFormatter, Circle
+from bokeh.models import Range1d, DatetimeTickFormatter, Circle, ColumnDataSource, Label
 from bokeh.models.layouts import Column, HBox, VBox
 from bokeh.models.tools import HoverTool, BoxSelectTool, TapTool, WheelZoomTool, ResizeTool, BoxAnnotation
-from bokeh.models.widgets import Slider, TextInput, Button, RadioButtonGroup
+from bokeh.models.widgets import Slider, TextInput, Button, RadioButtonGroup, DataTable, TableColumn
 from bokeh.plotting import figure
 
 import annotatorSettings
 import csv
 import os.path
+
+logger = logging.getLogger()
+logger.disabled = True
 
 # FIXME: Clean up load data (functions perhaps?)
 def parse_args():
@@ -54,19 +57,23 @@ def parse_args():
 
     """
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('ppgFile')
-    parser.add_argument('qosFile')
-    parser.add_argument('ekgFile')
+    import time
 
-    parser.add_argument('-s','--spo2QosAnnotatedFile', default="initials_ppgFile", nargs='?')
-    parser.add_argument('-e','--ekgAnnotatedFile', default="initials_ekgFile", nargs='?')
+    now = time.strftime("%Y-%m-%dT%H-%M-%S")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('sqlFile')
+    # parser.add_argument('qosFile')
+    # parser.add_argument('ekgFile')
+
+    parser.add_argument('-s','--spo2QosAnnotatedFile', default="{}_ppgFile.txt".format(now), nargs='?')
+    parser.add_argument('-e','--ekgAnnotatedFile', default="{}_ekgFile.txt".format(now), nargs='?')
     parsedArgs = parser.parse_args()
 
     return parsedArgs
 
 args = parse_args()
-print(args)
+logger.info(args)
 
 # Check to see if annotated files exist.
 if os.path.isfile(args.spo2QosAnnotatedFile):
@@ -76,7 +83,7 @@ if os.path.isfile(args.spo2QosAnnotatedFile):
 
 else:
 
-    with open("{}_{}_SpO2-Qos-annotations.txt".format(args.ppgFile,args.spo2QosAnnotatedFile),'w') as outfile:
+    with open(args.spo2QosAnnotatedFile,'w') as outfile:
         outfile.write('{},{},{},{}'.format('startTime','endTime','ppgNote','qosNote'))
         outfile.write('\n')
 
@@ -89,7 +96,7 @@ if os.path.isfile(args.ekgAnnotatedFile):
     ekgAnnotatedFile = args.ekgAnnotatedFile
 
 else:
-    with open("{}_{}_EKG-annotations.txt".format(args.ekgFile,args.ekgAnnotatedFile),'w') as outfile:
+    with open(args.ekgAnnotatedFile,'w') as outfile:
         outfile.write('{},{},{}'.format('startTime','endTime','ekgNote'))
         outfile.write('\n')
 
@@ -99,18 +106,80 @@ else:
 #### 2. Create dataframes from loaded data. ####
 ################################################
 
+import sqlite3
+
+conn = sqlite3.connect(args.sqlFile)
+conn.row_factory = sqlite3.Row
+c = conn.cursor()
+v = conn.cursor()
+
+
+# alarms = c.execute('SELECT * FROM alarms')
+
+
 # Note: Timestamps are read in and kept as object dtype
-ppgDataFrame = pd.read_csv(args.ppgFile, header=0, names=['time', 'pleth'], low_memory=False)
-qosDataFrame = pd.read_csv(args.qosFile, header=0, names=['time', 'qos'], low_memory=False)
-ekgDataFrame = pd.read_csv(args.ekgFile, header=0, names=['time', 'ekg'], low_memory=False)
+# ppgDataFrame = pd.read_csv(args.ppgFile, header=0, names=['time', 'pleth'], low_memory=False)
+# qosDataFrame = pd.read_csv(args.qosFile, header=0, names=['time', 'qos'], low_memory=False)
+# ekgDataFrame = pd.read_csv(args.ekgFile, header=0, names=['time', 'ekg'], low_memory=False)
 
 # FIXME: Clean up plots
 ###########################
 #### 3. CREATE VIEWERS ####
 ###########################
 
+vitalViewer = figure(
+    title="SpO2",
+    plot_width= annotatorSettings.viewerWidth,
+    plot_height=annotatorSettings.spo2ViewerHeight,
+    toolbar_location=None,
+    # toolbar_sticky=False,
+    x_axis_type='datetime',
+    y_range=annotatorSettings.spo2YRange,
+
+)
+
+# Control how string values axis should be displayed at a certain zoom/scale.
+# http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
+vitalViewer.xaxis.formatter = DatetimeTickFormatter(
+    years=["%D %T"],
+    months=["%D %T"],
+    days=["%D %T"],
+    hours=["%D %T"],
+    hourmin=["%D %T"],
+    minutes=["%D %T"],
+    minsec=["%D %T"],
+    seconds=["%D %T"],
+    milliseconds=["%D %T.%3N"],
+)
+
+vitalViewer2 = figure(
+    title="Heart Rate",
+    plot_width= annotatorSettings.viewerWidth,
+    plot_height=annotatorSettings.hrViewerHeigth,
+    toolbar_location=None,
+    # toolbar_sticky=False,
+    x_axis_type='datetime',
+    y_range=annotatorSettings.hrYRange,
+
+)
+
+# Control how string values axis should be displayed at a certain zoom/scale.
+# http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
+vitalViewer2.xaxis.formatter = DatetimeTickFormatter(
+    years=["%D %T"],
+    months=["%D %T"],
+    days=["%D %T"],
+    hours=["%D %T"],
+    hourmin=["%D %T"],
+    minutes=["%D %T"],
+    minsec=["%D %T"],
+    seconds=["%D %T"],
+    milliseconds=["%D %T.%3N"],
+)
+
+
 ekgViewer = figure(
-    title=args.ekgFile,
+    # title=args.ekgFile,
     plot_width= annotatorSettings.viewerWidth,
     plot_height=annotatorSettings.ekgViewerHeight,
     toolbar_location='below',
@@ -135,7 +204,7 @@ ekgViewer.xaxis.formatter = DatetimeTickFormatter(
 )
 
 ppgViewer = figure(
-    title=args.ppgFile,
+    # title=args.ppgFile,
     plot_width=annotatorSettings.viewerWidth,
     plot_height=annotatorSettings.ppgViewerHeight,
     toolbar_location='below',
@@ -191,15 +260,41 @@ ekgViewer.toolbar.active_drag = box_select_ekg
 ekgViewer.toolbar.active_scroll = wheel_zoom_ekg
 ekgViewer.toolbar.active_tap = tap_tool_ekg
 
+
+hoverSpO2 = HoverTool(
+    point_policy='snap_to_data',
+    line_policy='nearest',
+    tooltips=[
+        ("index", "$index"),
+        ("Value", "@y"),
+        ("Time", '@time'),
+    ],
+)
+
+hoverHR = HoverTool(
+    point_policy='snap_to_data',
+    line_policy='nearest',
+    tooltips=[
+        ("index", "$index"),
+        ("Value", "@y"),
+        ("Time", '@time'),
+    ],
+)
+
 ppgViewer.add_tools(hover, box_select, tap_tool, resizeTool)
 ppgViewer.toolbar.active_drag = box_select
 ppgViewer.toolbar.active_scroll = wheel_zoom
 ppgViewer.toolbar.active_tap = tap_tool
 
+vitalViewer.add_tools(hoverSpO2)
+vitalViewer2.add_tools(hoverHR)
+
 ######################################################
 #### 4. CREATE LINES AND DATASOURCES FOR PLOTTING ####
 ######################################################
 
+vitalLine = vitalViewer.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.5)
+vitalLine2 = vitalViewer2.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.5)
 ekgLine = ekgViewer.line(x=[], y=[], color=annotatorSettings.ekgLineColor, alpha=0.5)
 ppgLine = ppgViewer.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.5)
 qosMarkers = ppgViewer.circle(x=[], y=[], color=annotatorSettings.qosMarkerColor, y_range_name='qosRange', line_width=0)
@@ -207,6 +302,10 @@ qosMarkers = ppgViewer.circle(x=[], y=[], color=annotatorSettings.qosMarkerColor
 ekgDataSource = ekgLine.data_source
 ppgDataSource = ppgLine.data_source
 qosDataSource = qosMarkers.data_source
+vitalDataSource = vitalLine.data_source
+vitalDataSource2 = vitalLine2.data_source
+
+
 
 qosMarkers.selection_glyph = Circle(fill_color=annotatorSettings.qosMarkerColor, visible=True)
 qosMarkers.nonselection_glyph = Circle(fill_color=annotatorSettings.qosMarkerColor, visible=True)
@@ -221,7 +320,9 @@ windowInSecs = annotatorSettings.windowInSecs
 yScalesToSelect = [annotatorSettings.ppgYRange,[-10000,10000],[-30000,30000]]
 
 currentPage = annotatorSettings.initializePage
-totalPages = int(ppgDataFrame['time'].size / (windowInSecs * fs)) - 1
+i = conn.cursor()
+totalPages = i.execute("SELECT COUNT('index') FROM alarms").fetchone()[0]
+
 
 ekgColorSelector = annotatorSettings.ekgColorSelector
 ppgColorSelector = annotatorSettings.ppgColorSelector
@@ -237,44 +338,75 @@ bckButton = Button(label="Previous")
 jumpSlider = Slider(title='Jump to page', start=0, end=totalPages, step=1)
 yScaleSlider = Slider(title='Y-scale', start=1, end=len(yScalesToSelect), step=1)
 timeSlider = Slider(title='Window in secs', start=annotatorSettings.timeSliderStart, end=annotatorSettings.timeSliderEnd, value=annotatorSettings.timeSliderInitialValue, step=annotatorSettings.timeSliderStep)
-pageIndicator = TextInput(value='{0!s}/{1!s}'.format(currentPage, totalPages), title='Current Page')
+pageIndicator = TextInput(value='{0!s}/{1!s}'.format(currentPage+1, totalPages), title='Current Page')
 annotationTextInput = TextInput(title='Enter annotation below:')
-ekgButtonGroup = RadioButtonGroup(labels=annotatorSettings.ekgCodes, active=0)
-ppgButtonGroup = RadioButtonGroup(labels=annotatorSettings.ppgCodes, active=0)
-qosButtonGroup = RadioButtonGroup(labels=annotatorSettings.qosCodes, active=0)
+ekgButtonGroup = RadioButtonGroup(labels=annotatorSettings.ekgCodes, active=0, width=annotatorSettings.viewerWidth)
+ppgButtonGroup = RadioButtonGroup(labels=annotatorSettings.ppgCodes, active=0, width=annotatorSettings.viewerWidth)
+qosButtonGroup = RadioButtonGroup(labels=annotatorSettings.qosCodes, active=0, width=annotatorSettings.viewerWidth)
 
 # FIXME: Clean up callbacks
 ###############################
 #### 7. CALLBACK FUNCTIONS ####
 ###############################
 
+# @profile
 def change_page():
     """ Request new data to be served to the plot.
     """
 
     # Call globals just as a reminder to denote what is local and what is global. Globals only being accesed, not reassigned.
-    global ppgDataFrame, qosDataFrame, ekgDataFrame, ppgDataSource, qosDataSource, ekgDataSource
+    global ppgDataFrame, qosDataFrame, ekgDataFrame, ppgDataSource, qosDataSource, ekgDataSource, currentPage, vitalDataSource, vitalDataSource2
+
+    alarms = c.execute('SELECT * FROM alarms WHERE "index" = ?',(currentPage,))
+    result = alarms.fetchone()
+    time = result[1]
+    keys = str(result.keys())
+    keyValues = str(list(result))
+    logger.info(time)
+
+    ekgViewer.title.text = "EKG " + keyValues
+    ppgViewer.title.text = "Pleth " + keyValues
+
+    t = v.execute("SELECT * FROM vitals WHERE (timestamp > DATETIME(?, ?) AND timestamp < DATETIME(?, ?))",(time,'-{} seconds'.format(windowInSecs//2),time,'+{} seconds'.format(windowInSecs//2))).fetchall()
+    correspondingVitalTimes = np.array([item['timestamp'] for item in t])
+    vitalValues = np.array([item['values(SpO2)'] for item in t], dtype=np.float)
+    vitalValues2 = np.array([item['values(Heart Rate)'] for item in t], dtype=np.float)
+    idx = np.argwhere(~np.isnan(vitalValues))
+    idx2 = np.argwhere(~np.isnan(vitalValues2))
+    logger.info(vitalValues)
+
 
     # Grab a certain number of PPG datapoints based on window size, page, and fs.
-    ppgTimesAsStr = ppgDataFrame['time'][currentPage * windowInSecs * fs:(currentPage * windowInSecs * fs) + (windowInSecs * fs)]
+    t = v.execute("SELECT * FROM pleth WHERE (timestamp > DATETIME(?, ?) AND timestamp < DATETIME(?, ?))",(time,'-{} seconds'.format(windowInSecs//2),time,'+{} seconds'.format(windowInSecs//2))).fetchall()
+    ppgTimesAsStr = np.array([item['timestamp'] for item in t])
+    ppgValues = np.array([item['first(Pleth)'] for item in t])
+    logger.info(ppgValues)
+
 
     # Grab the qos times corresponding to the grabbed PPG times (via conditional indexing).
-    correspondingQosTimes = qosDataFrame['time'][qosDataFrame['time'] >= ppgTimesAsStr.values[0]][qosDataFrame['time'] <= ppgTimesAsStr.values[-1]]
-    qosValues = qosDataFrame['qos'][correspondingQosTimes.index]
+    t = v.execute("SELECT * FROM qos WHERE (timestamp > DATETIME(?, ?) AND timestamp < DATETIME(?, ?))",(time,'-{} seconds'.format(windowInSecs//2),time,'+{} seconds'.format(windowInSecs//2))).fetchall()
+    correspondingQosTimes = np.array([item['timestamp'] for item in t])
+    qosValues = np.array([item['values(qos)'] for item in t])
+    logger.info(qosValues)
 
-    # Grab the ekg times corresponding to the grabbed PPG times (via conditional indexing).
-    correspondingEkgTimes = ekgDataFrame['time'][ekgDataFrame['time'] >= ppgTimesAsStr.values[0]][ekgDataFrame['time'] <= ppgTimesAsStr.values[-1]]
-    ekgValues = ekgDataFrame['ekg'][correspondingEkgTimes.index]
+    # # Grab the ekg times corresponding to the grabbed PPG times (via conditional indexing).
+    t = v.execute("SELECT * FROM ekg WHERE (timestamp > DATETIME(?, ?) AND timestamp < DATETIME(?, ?))",(time,'-{} seconds'.format(windowInSecs//2),time,'+{} seconds'.format(windowInSecs//2))).fetchall()
+    correspondingEkgTimes = np.array([item['timestamp'] for item in t])
+    ekgValues = np.array([item['first(ecg)'] for item in t])
+    logger.info(ekgValues)
 
     # BEST PRACTICE --- update .data in one step with a new dict (according to Bokeh site/docs).
     # Create new dictionaries which will hold new "step" of data.
     newPpgData = dict()
     newQosData = dict()
     newEkgData = dict()
+    newVitalData = dict()
+    newVitalData2 = dict()
+
 
     # Convert times to datetime objects (for bokeh axis) and assign values to new dicts.
     newPpgData['x'] = pd.to_datetime(ppgTimesAsStr)
-    newPpgData['y'] = ppgDataFrame['pleth'][currentPage * windowInSecs * fs:(currentPage * windowInSecs * fs) + (windowInSecs * fs)]
+    newPpgData['y'] = ppgValues
     newPpgData['time'] = ppgTimesAsStr
 
     newEkgData['x'] = pd.to_datetime(correspondingEkgTimes)
@@ -285,15 +417,27 @@ def change_page():
     newQosData['y'] = qosValues
     newQosData['time'] = correspondingQosTimes
 
+    newVitalData['x'] = pd.to_datetime(correspondingVitalTimes[idx].ravel())
+    newVitalData['y'] = vitalValues[idx]
+    newVitalData['time'] = correspondingVitalTimes[idx]
+
+    newVitalData2['x'] = pd.to_datetime(correspondingVitalTimes[idx2].ravel())
+    newVitalData2['y'] = vitalValues2[idx2]
+    newVitalData2['time'] = correspondingVitalTimes[idx2]
+
+
     # Update the datasources with the new data.
     ekgDataSource.data = newEkgData
     ppgDataSource.data = newPpgData
     qosDataSource.data = newQosData
+    vitalDataSource.data = newVitalData
+    vitalDataSource2.data = newVitalData2
+
 
     # Change the value of the page indicator.
-    pageIndicator.value = '{0!s}/{1!s}'.format(currentPage, totalPages)
+    pageIndicator.value = '{0!s}/{1!s}'.format(currentPage+1, totalPages)
 
-    # print(currentPage, '/', totalPages)
+    # logger.info(currentPage, '/', totalPages)
 
 
 def jump_forward():
@@ -357,7 +501,7 @@ def slide_to_page(attrname, old, new):
         jump_backward()
 
     else:
-        print('error')
+        logger.info('error')
 
 
 def resize_y_scale(attrname, old, new):
@@ -407,8 +551,9 @@ def change_time_window(attrname, old, new):
     global windowInSecs, totalPages, jumpSlider
 
     windowInSecs = new
-    totalPages = int(ppgDataFrame['time'].size / (windowInSecs * fs)) - 1
+    # totalPages = int(ppgDataFrame['time'].size / (windowInSecs * fs)) - 1
     jumpSlider.end = totalPages
+    change_page()
 
 
 def ppgViewerSelectionCallback(attr, old, new):
@@ -667,10 +812,15 @@ jump_forward()
 ###################################################
 
 curdoc().add_root(Column(
-
-    ekgViewer,
-    VBox(HBox(ekgButtonGroup, ppgButtonGroup, qosButtonGroup), HBox(pageIndicator, bckButton, fwdButton)),
+    vitalViewer,
+    vitalViewer2,
     ppgViewer,
+    ekgViewer,
+    ekgButtonGroup,
+    ppgButtonGroup,
+    qosButtonGroup,
+    HBox(pageIndicator, bckButton, fwdButton),
+    # VBox(HBox(ekgButtonGroup, ppgButtonGroup, qosButtonGroup), HBox(pageIndicator, bckButton, fwdButton)),
     HBox(yScaleSlider, timeSlider, jumpSlider),
 
 )
