@@ -129,6 +129,7 @@ v = conn.cursor()
 
 vitalViewer = figure(
     title="SpO2",
+    tools="",
     plot_width= annotatorSettings.viewerWidth,
     plot_height=annotatorSettings.spo2ViewerHeight,
     toolbar_location=None,
@@ -154,6 +155,7 @@ vitalViewer.xaxis.formatter = DatetimeTickFormatter(
 
 vitalViewer2 = figure(
     title="Heart Rate",
+    tools="",
     plot_width= annotatorSettings.viewerWidth,
     plot_height=annotatorSettings.hrViewerHeigth,
     toolbar_location=None,
@@ -166,6 +168,84 @@ vitalViewer2 = figure(
 # Control how string values axis should be displayed at a certain zoom/scale.
 # http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
 vitalViewer2.xaxis.formatter = DatetimeTickFormatter(
+    years=["%D %T"],
+    months=["%D %T"],
+    days=["%D %T"],
+    hours=["%D %T"],
+    hourmin=["%D %T"],
+    minutes=["%D %T"],
+    minsec=["%D %T"],
+    seconds=["%D %T"],
+    milliseconds=["%D %T.%3N"],
+)
+
+vitalViewer3 = figure(
+    title="BP SYS",
+    tools="",
+    plot_width= annotatorSettings.viewerWidth,
+    plot_height=annotatorSettings.vitalViewerHeights,
+    toolbar_location=None,
+    # toolbar_sticky=False,
+    x_axis_type='datetime',
+    y_range=annotatorSettings.YRange3,
+
+)
+
+# Control how string values axis should be displayed at a certain zoom/scale.
+# http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
+vitalViewer3.xaxis.formatter = DatetimeTickFormatter(
+    years=["%D %T"],
+    months=["%D %T"],
+    days=["%D %T"],
+    hours=["%D %T"],
+    hourmin=["%D %T"],
+    minutes=["%D %T"],
+    minsec=["%D %T"],
+    seconds=["%D %T"],
+    milliseconds=["%D %T.%3N"],
+)
+
+vitalViewer4 = figure(
+    title="BP MEAN",
+    tools="",
+    plot_width= annotatorSettings.viewerWidth,
+    plot_height=annotatorSettings.vitalViewerHeights,
+    toolbar_location=None,
+    # toolbar_sticky=False,
+    x_axis_type='datetime',
+    y_range=annotatorSettings.YRange4,
+
+)
+
+# Control how string values axis should be displayed at a certain zoom/scale.
+# http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
+vitalViewer4.xaxis.formatter = DatetimeTickFormatter(
+    years=["%D %T"],
+    months=["%D %T"],
+    days=["%D %T"],
+    hours=["%D %T"],
+    hourmin=["%D %T"],
+    minutes=["%D %T"],
+    minsec=["%D %T"],
+    seconds=["%D %T"],
+    milliseconds=["%D %T.%3N"],
+)
+
+vitalViewer5 = figure(
+    title="BP DIA",
+    tools="",
+    plot_width= annotatorSettings.viewerWidth,
+    plot_height=annotatorSettings.vitalViewerHeights,
+    toolbar_location=None,
+    # toolbar_sticky=False,
+    x_axis_type='datetime',
+    y_range=annotatorSettings.YRange5,
+
+)
+
+# Control how string values axis should be displayed at a certain zoom/scale.
+# http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
+vitalViewer5.xaxis.formatter = DatetimeTickFormatter(
     years=["%D %T"],
     months=["%D %T"],
     days=["%D %T"],
@@ -281,6 +361,36 @@ hoverHR = HoverTool(
     ],
 )
 
+hover3 = HoverTool(
+    point_policy='snap_to_data',
+    line_policy='nearest',
+    tooltips=[
+        ("index", "$index"),
+        ("Value", "@y"),
+        ("Time", '@time'),
+    ],
+)
+
+hover4 = HoverTool(
+    point_policy='snap_to_data',
+    line_policy='nearest',
+    tooltips=[
+        ("index", "$index"),
+        ("Value", "@y"),
+        ("Time", '@time'),
+    ],
+)
+
+hover5 = HoverTool(
+    point_policy='snap_to_data',
+    line_policy='nearest',
+    tooltips=[
+        ("index", "$index"),
+        ("Value", "@y"),
+        ("Time", '@time'),
+    ],
+)
+
 ppgViewer.add_tools(hover, box_select, tap_tool, resizeTool)
 ppgViewer.toolbar.active_drag = box_select
 ppgViewer.toolbar.active_scroll = wheel_zoom
@@ -288,6 +398,10 @@ ppgViewer.toolbar.active_tap = tap_tool
 
 vitalViewer.add_tools(hoverSpO2)
 vitalViewer2.add_tools(hoverHR)
+vitalViewer3.add_tools(hover3)
+vitalViewer4.add_tools(hover4)
+vitalViewer5.add_tools(hover5)
+
 
 ######################################################
 #### 4. CREATE LINES AND DATASOURCES FOR PLOTTING ####
@@ -295,6 +409,10 @@ vitalViewer2.add_tools(hoverHR)
 
 vitalLine = vitalViewer.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.5)
 vitalLine2 = vitalViewer2.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.5)
+vitalLine3 = vitalViewer3.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.5)
+vitalLine4 = vitalViewer4.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.5)
+vitalLine5 = vitalViewer5.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.5)
+
 ekgLine = ekgViewer.line(x=[], y=[], color=annotatorSettings.ekgLineColor, alpha=0.5)
 ppgLine = ppgViewer.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.5)
 qosMarkers = ppgViewer.circle(x=[], y=[], color=annotatorSettings.qosMarkerColor, y_range_name='qosRange', line_width=0)
@@ -304,6 +422,10 @@ ppgDataSource = ppgLine.data_source
 qosDataSource = qosMarkers.data_source
 vitalDataSource = vitalLine.data_source
 vitalDataSource2 = vitalLine2.data_source
+vitalDataSource3 = vitalLine3.data_source
+vitalDataSource4 = vitalLine4.data_source
+vitalDataSource5 = vitalLine5.data_source
+
 
 
 
@@ -355,7 +477,7 @@ def change_page():
     """
 
     # Call globals just as a reminder to denote what is local and what is global. Globals only being accesed, not reassigned.
-    global ppgDataFrame, qosDataFrame, ekgDataFrame, ppgDataSource, qosDataSource, ekgDataSource, currentPage, vitalDataSource, vitalDataSource2
+    global ppgDataFrame, qosDataFrame, ekgDataFrame, ppgDataSource, qosDataSource, ekgDataSource, currentPage, vitalDataSource, vitalDataSource2,vitalDataSource3,vitalDataSource4,vitalDataSource5
 
     alarms = c.execute('SELECT * FROM alarms WHERE "index" = ?',(currentPage,))
     result = alarms.fetchone()
@@ -371,8 +493,16 @@ def change_page():
     correspondingVitalTimes = np.array([item['timestamp'] for item in t])
     vitalValues = np.array([item['values(SpO2)'] for item in t], dtype=np.float)
     vitalValues2 = np.array([item['values(Heart Rate)'] for item in t], dtype=np.float)
+    vitalValues3 = np.array([item['values(Non-invasive Blood Pressure.systolic)'] for item in t], dtype=np.float)
+    vitalValues4 = np.array([item['values(Non-invasive Blood Pressure.mean)'] for item in t], dtype=np.float)
+    vitalValues5 = np.array([item['values(Non-invasive Blood Pressure.diastolic)'] for item in t], dtype=np.float)
+
     idx = np.argwhere(~np.isnan(vitalValues))
     idx2 = np.argwhere(~np.isnan(vitalValues2))
+    idx3 = np.argwhere(~np.isnan(vitalValues3))
+    idx4 = np.argwhere(~np.isnan(vitalValues4))
+    idx5 = np.argwhere(~np.isnan(vitalValues5))
+
     logger.info(vitalValues)
 
 
@@ -402,6 +532,10 @@ def change_page():
     newEkgData = dict()
     newVitalData = dict()
     newVitalData2 = dict()
+    newVitalData3 = dict()
+    newVitalData4 = dict()
+    newVitalData5 = dict()
+
 
 
     # Convert times to datetime objects (for bokeh axis) and assign values to new dicts.
@@ -425,6 +559,18 @@ def change_page():
     newVitalData2['y'] = vitalValues2[idx2]
     newVitalData2['time'] = correspondingVitalTimes[idx2]
 
+    newVitalData3['x'] = pd.to_datetime(correspondingVitalTimes[idx3].ravel())
+    newVitalData3['y'] = vitalValues3[idx3]
+    newVitalData3['time'] = correspondingVitalTimes[idx3]
+
+    newVitalData4['x'] = pd.to_datetime(correspondingVitalTimes[idx4].ravel())
+    newVitalData4['y'] = vitalValues4[idx4]
+    newVitalData4['time'] = correspondingVitalTimes[idx4]
+
+    newVitalData5['x'] = pd.to_datetime(correspondingVitalTimes[idx5].ravel())
+    newVitalData5['y'] = vitalValues5[idx5]
+    newVitalData5['time'] = correspondingVitalTimes[idx5]
+
 
     # Update the datasources with the new data.
     ekgDataSource.data = newEkgData
@@ -432,6 +578,9 @@ def change_page():
     qosDataSource.data = newQosData
     vitalDataSource.data = newVitalData
     vitalDataSource2.data = newVitalData2
+    vitalDataSource3.data = newVitalData3
+    vitalDataSource4.data = newVitalData4
+    vitalDataSource5.data = newVitalData5
 
 
     # Change the value of the page indicator.
@@ -814,6 +963,9 @@ jump_forward()
 curdoc().add_root(Column(
     vitalViewer,
     vitalViewer2,
+    vitalViewer3,
+    vitalViewer4,
+    vitalViewer5,
     ppgViewer,
     ekgViewer,
     ekgButtonGroup,

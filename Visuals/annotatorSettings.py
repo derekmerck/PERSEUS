@@ -19,6 +19,10 @@ ppgYRange = [0,5000]
 ekgYRange = [-1.5,1.5]
 spo2YRange = [50,100]
 hrYRange = [0,200]
+YRange3 = [0,200]
+YRange4 = [0,200]
+YRange5 = [0,200]
+
 
 # Width and height options for viewers.
 viewerWidth = 1200
@@ -26,6 +30,7 @@ ekgViewerHeight = 250
 ppgViewerHeight = 250
 spo2ViewerHeight = 100
 hrViewerHeigth = 100
+vitalViewerHeights = 100
 
 # Line color and qos color options.
 ekgLineColor = 'navy'
