@@ -1,9 +1,5 @@
 """
-Contributions:
-Contributors:
-
-Original copyright (c) 2015-2016, Uday Agrawal, Adewole Oyalowo, Asaad Lab under MIT License. See full license and associated
-project at < https://bitbucket.org/asaadneurolab/pymind/ > .
+See associated project at < https://bitbucket.org/asaadneurolab/pymind/ > .
 
 Requires pyserial
 
@@ -313,4 +309,3 @@ if __name__ == '__main__':
 
     logging.basicConfig(level=logging.DEBUG)
     ser = RS232('/dev/cu.usbserial')
-
