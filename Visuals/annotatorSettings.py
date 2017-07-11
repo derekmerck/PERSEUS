@@ -17,24 +17,24 @@ qosColorSelector = ['#FF00FF', 'blue', 'gray','orange']
 
 ppgYRange = [0,5000]
 ekgYRange = [-1.5,1.5]
-spo2YRange = [50,100]
-hrYRange = [0,200]
-YRange3 = [0,200]
-YRange4 = [0,200]
-YRange5 = [0,200]
+spo2YRange = [50,120]
+hrYRange = [0,250]
+YRange3 = [0,250]
+YRange4 = [0,250]
+YRange5 = [0,250]
 
 
 # Width and height options for viewers.
-viewerWidth = 1200
+viewerWidth = 1500
 ekgViewerHeight = 250
 ppgViewerHeight = 250
 spo2ViewerHeight = 100
 hrViewerHeigth = 100
-vitalViewerHeights = 100
+vitalViewerHeights = 250
 
 # Line color and qos color options.
-ekgLineColor = 'navy'
-ppgLineColor = 'navy'
+ekgLineColor = 'black'
+ppgLineColor = 'black'
 qosMarkerColor = 'red'
 
 ##############
@@ -45,7 +45,9 @@ qosMarkerColor = 'red'
 initializePage = -1
 
 # Initial amount of data to display (in seconds).
-windowInSecs = 30
+windowInSecs = 60
+
+timeAroundAlarm = 300
 
 # Frequency of PPG signal. Helps determine number of datapoints to grab per window.
 ppgFrequency = 125
