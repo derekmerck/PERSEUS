@@ -28,9 +28,10 @@ YRange5 = [0,250]
 viewerWidth = 1500
 ekgViewerHeight = 250
 ppgViewerHeight = 250
-spo2ViewerHeight = 100
-hrViewerHeigth = 100
-vitalViewerHeights = 250
+spo2ViewerHeight = 150
+hrViewerHeight = 150
+nibpViewerHeight = 150
+defaultViewerHeights = 250
 
 # Line color and qos color options.
 ekgLineColor = 'black'

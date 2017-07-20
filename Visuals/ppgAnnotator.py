@@ -1,7 +1,7 @@
 """
 For Python 2.7.x
 
-Fourth iteration of offline visual dataviewer and annotator. Written in Bokeh 0.12.4.
+Fifth iteration of offline visual dataviewer and annotator. Written in Bokeh 0.12.6.
 As per the documentation and gallery examples, script makes use of global variables. Will try to make easier to read in
 future revisions, but initial attempts at class based OOP version was slower than current implementation.
 
@@ -136,7 +136,7 @@ del physio_df
 
 def create_viewer(title,y_range,toolbar_location=None,toolbar_sticky=False,tools="",
                     plot_width=annotatorSettings.viewerWidth,
-                    plot_height=annotatorSettings.vitalViewerHeights,x_axis_type='datetime',
+                    plot_height=annotatorSettings.defaultViewerHeights,x_axis_type='datetime',
                     add_tools=True):
 
     viewer = figure(
@@ -190,7 +190,9 @@ def create_viewer(title,y_range,toolbar_location=None,toolbar_sticky=False,tools
     return viewer
 
 
-vitalViewer3 = create_viewer("Vitals: HR (magenta), SpO2 (cyan), NIBP (navy)",annotatorSettings.YRange3)
+bpViewer = create_viewer("Non-invasive Blood Pressure",annotatorSettings.YRange3,plot_height=annotatorSettings.nibpViewerHeight)
+hrViewer = create_viewer("Heart Rate",annotatorSettings.hrYRange,plot_height=annotatorSettings.hrViewerHeight)
+spo2Viewer = create_viewer("SpO2",annotatorSettings.spo2YRange,plot_height=annotatorSettings.spo2ViewerHeight)
 
 ekgViewer = create_viewer("ECG",annotatorSettings.ekgYRange)
 
@@ -205,11 +207,11 @@ ppgViewer2.extra_y_ranges = {"qosRange": Range1d(start=-1.1, end=1.1)}
 #### 4. CREATE LINES AND DATASOURCES FOR PLOTTING ####
 ######################################################
 
-vitalLine = vitalViewer3.line(x=[], y=[], color='cyan', alpha=0.5,line_width=4)
-vitalLine2 = vitalViewer3.line(x=[], y=[], color='magenta', alpha=0.5,line_width=4)
-vitalLine3 = vitalViewer3.line(x=[], y=[], color='navy', alpha=0.5,line_width=4)
-vitalLine4 = vitalViewer3.line(x=[], y=[], color='navy', alpha=0.5,line_width=4)
-vitalLine5 = vitalViewer3.line(x=[], y=[], color='navy', alpha=0.5,line_width=4)
+hrLine = hrViewer.line(x=[], y=[], color='black')
+spo2Line = spo2Viewer.line(x=[], y=[], color='black')
+nibpSysLine = bpViewer.line(x=[], y=[], color='black')
+nibpMeanLine = bpViewer.line(x=[], y=[], color='black')
+nibpDiaLine = bpViewer.line(x=[], y=[], color='black')
 
 ekgLine = ekgViewer.line(x=[], y=[], color=annotatorSettings.ekgLineColor, alpha=0.9)
 ppgLine = ppgViewer.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.9)
@@ -222,11 +224,11 @@ ppgDataSource = ppgLine.data_source
 ppgDataSource2 = ppgLine2.data_source
 qosDataSource = qosMarkers.data_source
 qosDataSource2 = qosMarkers2.data_source
-vitalDataSource = vitalLine.data_source
-vitalDataSource2 = vitalLine2.data_source
-vitalDataSource3 = vitalLine3.data_source
-vitalDataSource4 = vitalLine4.data_source
-vitalDataSource5 = vitalLine5.data_source
+hrDataSource = hrLine.data_source
+nibpSysDataSource = nibpSysLine.data_source
+nibpMeanDataSource = nibpMeanLine.data_source
+nibpDiaDataSource = nibpDiaLine.data_source
+spo2DataSource = spo2Line.data_source
 
 ##################################
 #### 5. SETTINGS FOR DISPLAYS ####
@@ -316,14 +318,14 @@ def change_page():
     """
 
     # Call globals just as a reminder to denote what is local and what is global. Globals only being accesed, not reassigned.
-    global ppgDataFrame, qosDataFrame, ekgDataFrame, ppgDataSource, qosDataSource, ekgDataSource, currentPage, vitalDataSource, vitalDataSource2,vitalDataSource3,vitalDataSource4,vitalDataSource5, cleaned_physio_df, alarms
+    # global ppgDataFrame, qosDataFrame, ekgDataFrame, ppgDataSource, qosDataSource, ekgDataSource, currentPage, vitalDataSource, vitalDataSource2,vitalDataSource3,vitalDataSource4,vitalDataSource5, cleaned_physio_df, alarms
+    global isolated_physio_df
 
     isolated_physio_df = cleaned_physio_df[alarm-pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm)):alarm+pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm))]
 
     isolated_physio_df[["diastolic_bp","mean_bp","systolic_bp"]] = isolated_physio_df["Non-invasive Blood Pressure"].apply(pd.Series).apply(pd.to_numeric,errors='coerce')
 
     start = isolated_physio_df.index[0].to_pydatetime()
-    qosStart = start + pd.Timedelta('5 seconds')
     increment = currentPage*pd.Timedelta("{} seconds".format(annotatorSettings.windowInSecs))
     window_length = pd.Timedelta("{} seconds".format(annotatorSettings.windowInSecs))
 
@@ -334,11 +336,11 @@ def change_page():
     newQosData = dict()
     newQosData2 = dict()
     newEkgData = dict()
-    newVitalData = dict()
-    newVitalData2 = dict()
-    newVitalData3 = dict()
-    newVitalData4 = dict()
-    newVitalData5 = dict()
+    newHrData = dict()
+    newSpo2Data = dict()
+    newNibpSysData = dict()
+    newNibpMeanData = dict()
+    newNibpDiaData = dict()
 
     # Convert times to datetime objects (for bokeh axis) and assign values to new dicts.
     newPpgData['x'] = np.hstack(isolated_physio_df[start+increment:start+increment+window_length].Pleth.dropna().index.to_series().apply(expand_pleth_times))
@@ -356,23 +358,20 @@ def change_page():
     newQosData2['x'] = qos_df_offset[start+increment:start+increment+window_length].qos.dropna().index.to_series()
     newQosData2['y'] = qos_df_offset[start+increment:start+increment+window_length].qos.dropna()
 
-    # newQosData2['x'] = isolated_physio_df[start+increment:start+increment+window_length].qos.dropna().index.to_series() - pd.Timedelta('5 seconds')
-    # newQosData2['y'] = isolated_physio_df[start+increment:start+increment+window_length].qos.dropna()
+    newSpo2Data['x'] = isolated_physio_df[start+increment:start+increment+window_length].SpO2.dropna().index.to_series()
+    newSpo2Data['y'] = isolated_physio_df[start+increment:start+increment+window_length].SpO2.dropna()
 
-    newVitalData['x'] = isolated_physio_df[start+increment:start+increment+window_length].SpO2.dropna().index.to_series()
-    newVitalData['y'] = isolated_physio_df[start+increment:start+increment+window_length].SpO2.dropna()
+    newHrData['x'] = isolated_physio_df[start+increment:start+increment+window_length]["Heart Rate"].dropna().index.to_series()
+    newHrData['y'] = isolated_physio_df[start+increment:start+increment+window_length]["Heart Rate"].dropna()
 
-    newVitalData2['x'] = isolated_physio_df[start+increment:start+increment+window_length]["Heart Rate"].dropna().index.to_series()
-    newVitalData2['y'] = isolated_physio_df[start+increment:start+increment+window_length]["Heart Rate"].dropna()
+    newNibpSysData['x'] = isolated_physio_df[start+increment:start+increment+window_length].systolic_bp.dropna().index.to_series()
+    newNibpSysData['y'] = isolated_physio_df[start+increment:start+increment+window_length].systolic_bp.dropna()
 
-    newVitalData3['x'] = isolated_physio_df[start+increment:start+increment+window_length].systolic_bp.dropna().index.to_series()
-    newVitalData3['y'] = isolated_physio_df[start+increment:start+increment+window_length].systolic_bp.dropna()
+    newNibpMeanData['x'] = isolated_physio_df[start+increment:start+increment+window_length].mean_bp.dropna().index.to_series()
+    newNibpMeanData['y'] = isolated_physio_df[start+increment:start+increment+window_length].mean_bp.dropna()
 
-    newVitalData4['x'] = isolated_physio_df[start+increment:start+increment+window_length].mean_bp.dropna().index.to_series()
-    newVitalData4['y'] = isolated_physio_df[start+increment:start+increment+window_length].mean_bp.dropna()
-
-    newVitalData5['x'] = isolated_physio_df[start+increment:start+increment+window_length].diastolic_bp.dropna().index.to_series()
-    newVitalData5['y'] = isolated_physio_df[start+increment:start+increment+window_length].diastolic_bp.dropna()
+    newNibpDiaData['x'] = isolated_physio_df[start+increment:start+increment+window_length].diastolic_bp.dropna().index.to_series()
+    newNibpDiaData['y'] = isolated_physio_df[start+increment:start+increment+window_length].diastolic_bp.dropna()
 
 
     # Update the datasources with the new data.
@@ -381,11 +380,11 @@ def change_page():
     ppgDataSource2.data = newPpgData2
     qosDataSource.data = newQosData
     qosDataSource2.data = newQosData2
-    vitalDataSource.data = newVitalData
-    vitalDataSource2.data = newVitalData2
-    vitalDataSource3.data = newVitalData3
-    vitalDataSource4.data = newVitalData4
-    vitalDataSource5.data = newVitalData5
+    hrDataSource.data = newHrData
+    spo2DataSource.data = newSpo2Data
+    nibpSysDataSource.data = newNibpSysData
+    nibpMeanDataSource.data = newNibpMeanData
+    nibpDiaDataSource.data = newNibpDiaData
 
     # logger.info(newVitalData)
 
@@ -768,7 +767,9 @@ print(alarms_df.iloc[current_alarm_number])
 ###################################################
 
 curdoc().add_root(Column(
-    vitalViewer3,
+    bpViewer,
+    hrViewer,
+    spo2Viewer,
     ppgViewer,
     ppgButtonGroup,
     ppgViewer2,
