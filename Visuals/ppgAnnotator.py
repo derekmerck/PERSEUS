@@ -34,7 +34,7 @@ import numpy as np
 import pandas as pd
 from bokeh.io import curdoc
 from bokeh.models import Range1d, DatetimeTickFormatter, Circle, ColumnDataSource, Label
-from bokeh.models.layouts import Column, HBox, VBox
+from bokeh.models.layouts import Column, HBox, VBox, Row
 from bokeh.models.tools import HoverTool, BoxSelectTool, TapTool, WheelZoomTool, ResizeTool, BoxAnnotation
 from bokeh.models.widgets import Slider, TextInput, Button, RadioButtonGroup, DataTable, TableColumn
 from bokeh.plotting import figure
@@ -132,7 +132,6 @@ physio_df.tz_localize('Etc/GMT+4',copy=False)
 cleaned_physio_df = physio_df.groupby("timestamp").first().combine_first(physio_df.groupby("timestamp").last())
 cleaned_physio_df[['Heart Rate','Respiration Rate','SpO2','qos']] = cleaned_physio_df[['Heart Rate','Respiration Rate','SpO2','qos']].apply(pd.to_numeric,errors='coerce')
 
-
 del physio_df
 
 # ppgDataFrame = pd.read_csv(args.ppgFile, header=0, names=['time', 'pleth'], low_memory=False)
@@ -144,60 +143,137 @@ del physio_df
 #### 3. CREATE VIEWERS ####
 ###########################
 
-vitalViewer = figure(
-    title="SpO2",
-    tools="",
-    plot_width= annotatorSettings.viewerWidth,
-    plot_height=annotatorSettings.spo2ViewerHeight,
-    toolbar_location=None,
-    # toolbar_sticky=False,
-    x_axis_type='datetime',
-    y_range=annotatorSettings.spo2YRange,
 
-)
+def create_viewer(title,y_range,toolbar_location=None,toolbar_sticky=False,tools="",
+                    plot_width=annotatorSettings.viewerWidth,
+                    plot_height=annotatorSettings.vitalViewerHeights,x_axis_type='datetime',
+                    add_tools=True):
 
-# Control how string values axis should be displayed at a certain zoom/scale.
-# http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
-vitalViewer.xaxis.formatter = DatetimeTickFormatter(
-    years=["%D %T"],
-    months=["%D %T"],
-    days=["%D %T"],
-    hours=["%D %T"],
-    hourmin=["%D %T"],
-    minutes=["%D %T"],
-    minsec=["%D %T"],
-    seconds=["%D %T"],
-    milliseconds=["%D %T.%3N"],
-)
+    viewer = figure(
+        title=title,
+        tools=tools,
+        plot_width=plot_width,
+        plot_height=plot_height,
+        toolbar_location=toolbar_location,
+        # toolbar_sticky=False,
+        x_axis_type=x_axis_type,
+        y_range=y_range,
 
-vitalViewer2 = figure(
-    title="Heart Rate",
-    tools="",
-    plot_width= annotatorSettings.viewerWidth,
-    plot_height=annotatorSettings.hrViewerHeigth,
-    toolbar_location=None,
-    # toolbar_sticky=False,
-    x_axis_type='datetime',
-    y_range=annotatorSettings.hrYRange,
+    )
 
-)
+    viewer.xaxis.formatter = DatetimeTickFormatter(
+        years=["%D %T"],
+        months=["%D %T"],
+        days=["%D %T"],
+        hours=["%D %T"],
+        hourmin=["%D %T"],
+        minutes=["%D %T"],
+        minsec=["%D %T"],
+        seconds=["%D %T"],
+        milliseconds=["%D %T.%3N"],
+    )
 
-# Control how string values axis should be displayed at a certain zoom/scale.
-# http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
-vitalViewer2.xaxis.formatter = DatetimeTickFormatter(
-    years=["%D %T"],
-    months=["%D %T"],
-    days=["%D %T"],
-    hours=["%D %T"],
-    hourmin=["%D %T"],
-    minutes=["%D %T"],
-    minsec=["%D %T"],
-    seconds=["%D %T"],
-    milliseconds=["%D %T.%3N"],
-)
+    # Create tools to add to ekgViewer.
+    wheel_zoom = WheelZoomTool()
+    tap_tool = TapTool()
+    resizeTool = ResizeTool()
+    box_select = BoxSelectTool(dimensions="width")
+    hover = HoverTool(
+        point_policy='snap_to_data',
+        line_policy='nearest',
+        tooltips=[
+            ("index", "$index"),
+            ("Value", "@y"),
+            # ("Time", '@time'),
+        ],
+    )
 
+    if add_tools:
+        viewer.add_tools(hover, box_select, tap_tool,resizeTool)
+        viewer.toolbar.active_drag = box_select
+        viewer.toolbar.active_scroll = wheel_zoom
+        viewer.toolbar.active_tap = tap_tool
+
+    return viewer
+
+
+vitalViewer3 = create_viewer("Vitals: HR (magenta), SpO2 (cyan), NIBP (navy)",annotatorSettings.YRange3,add_tools=False)
+
+ekgViewer = create_viewer("ECG",annotatorSettings.ekgYRange)
+
+ppgViewer = create_viewer("Pleth",annotatorSettings.ppgYRange)
+ppgViewer.extra_y_ranges = {"qosRange": Range1d(start=-1.1, end=1.1)}
+
+ppgViewer2 = create_viewer("Pleth",annotatorSettings.ppgYRange)
+ppgViewer2.extra_y_ranges = {"qosRange": Range1d(start=-1.1, end=1.1)}
+
+
+# vitalViewer = figure(
+#     title="SpO2",
+#     tools="",
+#     plot_width= annotatorSettings.viewerWidth,
+#     plot_height=annotatorSettings.spo2ViewerHeight,
+#     toolbar_location=None,
+#     # toolbar_sticky=False,
+#     x_axis_type='datetime',
+#     y_range=annotatorSettings.spo2YRange,
+#
+# )
+#
+# # Control how string values axis should be displayed at a certain zoom/scale.
+# # http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
+# vitalViewer.xaxis.formatter = DatetimeTickFormatter(
+#     years=["%D %T"],
+#     months=["%D %T"],
+#     days=["%D %T"],
+#     hours=["%D %T"],
+#     hourmin=["%D %T"],
+#     minutes=["%D %T"],
+#     minsec=["%D %T"],
+#     seconds=["%D %T"],
+#     milliseconds=["%D %T.%3N"],
+# )
+#
+# vitalViewer2 = figure(
+#     title="Heart Rate",
+#     tools="",
+#     plot_width= annotatorSettings.viewerWidth,
+#     plot_height=annotatorSettings.hrViewerHeigth,
+#     toolbar_location=None,
+#     # toolbar_sticky=False,
+#     x_axis_type='datetime',
+#     y_range=annotatorSettings.hrYRange,
+#
+# )
+#
+# # Control how string values axis should be displayed at a certain zoom/scale.
+# # http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
+# vitalViewer2.xaxis.formatter = DatetimeTickFormatter(
+#     years=["%D %T"],
+#     months=["%D %T"],
+#     days=["%D %T"],
+#     hours=["%D %T"],
+#     hourmin=["%D %T"],
+#     minutes=["%D %T"],
+#     minsec=["%D %T"],
+#     seconds=["%D %T"],
+#     milliseconds=["%D %T.%3N"],
+# )
+#
+# # vitalViewer3 = figure(
+# #     title="Non-invasive Blood Pressure",
+# #     tools="",
+# #     plot_width= annotatorSettings.viewerWidth,
+# #     plot_height=annotatorSettings.vitalViewerHeights,
+# #     toolbar_location=None,
+# #     # toolbar_sticky=False,
+# #     x_axis_type='datetime',
+# #     y_range=annotatorSettings.YRange3,
+# #
+# # )
+#
 # vitalViewer3 = figure(
-#     title="Non-invasive Blood Pressure",
+#     title="Vitals: HR (magenta), SpO2 (cyan), NIBP (navy)",
 #     tools="",
 #     plot_width= annotatorSettings.viewerWidth,
 #     plot_height=annotatorSettings.vitalViewerHeights,
@@ -207,48 +283,89 @@ vitalViewer2.xaxis.formatter = DatetimeTickFormatter(
 #     y_range=annotatorSettings.YRange3,
 #
 # )
-
-vitalViewer3 = figure(
-    title="Vitals: HR (magenta), SpO2 (cyan), NIBP (navy)",
-    tools="",
-    plot_width= annotatorSettings.viewerWidth,
-    plot_height=annotatorSettings.vitalViewerHeights,
-    toolbar_location=None,
-    # toolbar_sticky=False,
-    x_axis_type='datetime',
-    y_range=annotatorSettings.YRange3,
-
-)
-
-# Control how string values axis should be displayed at a certain zoom/scale.
-# http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
-vitalViewer3.xaxis.formatter = DatetimeTickFormatter(
-    years=["%D %T"],
-    months=["%D %T"],
-    days=["%D %T"],
-    hours=["%D %T"],
-    hourmin=["%D %T"],
-    minutes=["%D %T"],
-    minsec=["%D %T"],
-    seconds=["%D %T"],
-    milliseconds=["%D %T.%3N"],
-)
 #
-# vitalViewer4 = figure(
-#     title="BP MEAN",
-#     tools="",
+# # Control how string values axis should be displayed at a certain zoom/scale.
+# # http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
+# vitalViewer3.xaxis.formatter = DatetimeTickFormatter(
+#     years=["%D %T"],
+#     months=["%D %T"],
+#     days=["%D %T"],
+#     hours=["%D %T"],
+#     hourmin=["%D %T"],
+#     minutes=["%D %T"],
+#     minsec=["%D %T"],
+#     seconds=["%D %T"],
+#     milliseconds=["%D %T.%3N"],
+# )
+# #
+# # vitalViewer4 = figure(
+# #     title="BP MEAN",
+# #     tools="",
+# #     plot_width= annotatorSettings.viewerWidth,
+# #     plot_height=annotatorSettings.vitalViewerHeights,
+# #     toolbar_location=None,
+# #     # toolbar_sticky=False,
+# #     x_axis_type='datetime',
+# #     y_range=annotatorSettings.YRange4,
+# #
+# # )
+# #
+# # # Control how string values axis should be displayed at a certain zoom/scale.
+# # # http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
+# # vitalViewer4.xaxis.formatter = DatetimeTickFormatter(
+# #     years=["%D %T"],
+# #     months=["%D %T"],
+# #     days=["%D %T"],
+# #     hours=["%D %T"],
+# #     hourmin=["%D %T"],
+# #     minutes=["%D %T"],
+# #     minsec=["%D %T"],
+# #     seconds=["%D %T"],
+# #     milliseconds=["%D %T.%3N"],
+# # )
+# #
+# # vitalViewer5 = figure(
+# #     title="BP DIA",
+# #     tools="",
+# #     plot_width= annotatorSettings.viewerWidth,
+# #     plot_height=annotatorSettings.vitalViewerHeights,
+# #     toolbar_location=None,
+# #     # toolbar_sticky=False,
+# #     x_axis_type='datetime',
+# #     y_range=annotatorSettings.YRange5,
+# #
+# # )
+# #
+# # # Control how string values axis should be displayed at a certain zoom/scale.
+# # # http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
+# # vitalViewer5.xaxis.formatter = DatetimeTickFormatter(
+# #     years=["%D %T"],
+# #     months=["%D %T"],
+# #     days=["%D %T"],
+# #     hours=["%D %T"],
+# #     hourmin=["%D %T"],
+# #     minutes=["%D %T"],
+# #     minsec=["%D %T"],
+# #     seconds=["%D %T"],
+# #     milliseconds=["%D %T.%3N"],
+# # )
+#
+#
+# ekgViewer = figure(
+#     # title=args.ekgFile,
+#     title = "ECG",
 #     plot_width= annotatorSettings.viewerWidth,
-#     plot_height=annotatorSettings.vitalViewerHeights,
-#     toolbar_location=None,
-#     # toolbar_sticky=False,
+#     plot_height=annotatorSettings.ekgViewerHeight,
+#     toolbar_location='below',
+#     toolbar_sticky=False,
 #     x_axis_type='datetime',
-#     y_range=annotatorSettings.YRange4,
+#     y_range=annotatorSettings.ekgYRange,
 #
 # )
 #
 # # Control how string values axis should be displayed at a certain zoom/scale.
 # # http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
-# vitalViewer4.xaxis.formatter = DatetimeTickFormatter(
+# ekgViewer.xaxis.formatter = DatetimeTickFormatter(
 #     years=["%D %T"],
 #     months=["%D %T"],
 #     days=["%D %T"],
@@ -260,21 +377,17 @@ vitalViewer3.xaxis.formatter = DatetimeTickFormatter(
 #     milliseconds=["%D %T.%3N"],
 # )
 #
-# vitalViewer5 = figure(
-#     title="BP DIA",
-#     tools="",
-#     plot_width= annotatorSettings.viewerWidth,
-#     plot_height=annotatorSettings.vitalViewerHeights,
-#     toolbar_location=None,
-#     # toolbar_sticky=False,
+# ppgViewer = figure(
+#     # title=args.ppgFile,
+#     title = "Pleth",
+#     plot_width=annotatorSettings.viewerWidth,
+#     plot_height=annotatorSettings.ppgViewerHeight,
+#     toolbar_location='below',
+#     toolbar_sticky=False,
 #     x_axis_type='datetime',
-#     y_range=annotatorSettings.YRange5,
-#
+#     y_range=annotatorSettings.ppgYRange,
 # )
-#
-# # Control how string values axis should be displayed at a certain zoom/scale.
-# # http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
-# vitalViewer5.xaxis.formatter = DatetimeTickFormatter(
+# ppgViewer.xaxis.formatter = DatetimeTickFormatter(
 #     years=["%D %T"],
 #     months=["%D %T"],
 #     days=["%D %T"],
@@ -285,124 +398,54 @@ vitalViewer3.xaxis.formatter = DatetimeTickFormatter(
 #     seconds=["%D %T"],
 #     milliseconds=["%D %T.%3N"],
 # )
-
-
-ekgViewer = figure(
-    # title=args.ekgFile,
-    title = "ECG",
-    plot_width= annotatorSettings.viewerWidth,
-    plot_height=annotatorSettings.ekgViewerHeight,
-    toolbar_location='below',
-    toolbar_sticky=False,
-    x_axis_type='datetime',
-    y_range=annotatorSettings.ekgYRange,
-
-)
-
-# Control how string values axis should be displayed at a certain zoom/scale.
-# http://bokeh.pydata.org/en/latest/docs/reference/models/formatters.html
-ekgViewer.xaxis.formatter = DatetimeTickFormatter(
-    years=["%D %T"],
-    months=["%D %T"],
-    days=["%D %T"],
-    hours=["%D %T"],
-    hourmin=["%D %T"],
-    minutes=["%D %T"],
-    minsec=["%D %T"],
-    seconds=["%D %T"],
-    milliseconds=["%D %T.%3N"],
-)
-
-ppgViewer = figure(
-    # title=args.ppgFile,
-    title = "Pleth",
-    plot_width=annotatorSettings.viewerWidth,
-    plot_height=annotatorSettings.ppgViewerHeight,
-    toolbar_location='below',
-    toolbar_sticky=False,
-    x_axis_type='datetime',
-    y_range=annotatorSettings.ppgYRange,
-)
-ppgViewer.extra_y_ranges = {"qosRange": Range1d(start=-1.1, end=1.1)}
-ppgViewer.xaxis.formatter = DatetimeTickFormatter(
-    years=["%D %T"],
-    months=["%D %T"],
-    days=["%D %T"],
-    hours=["%D %T"],
-    hourmin=["%D %T"],
-    minutes=["%D %T"],
-    minsec=["%D %T"],
-    seconds=["%D %T"],
-    milliseconds=["%D %T.%3N"],
-)
-
-# Create tools to add to ppgViewer.
-wheel_zoom = WheelZoomTool()
-tap_tool = TapTool()
-resizeTool = ResizeTool()
-box_select = BoxSelectTool(dimensions="width")
-hover = HoverTool(
-    point_policy='snap_to_data',
-    line_policy='nearest',
-    tooltips=[
-        ("index", "$index"),
-        ("Value", "@y"),
-        # ("Time", '@time'),
-    ],
-)
-
-# Create tools to add to ekgViewer.
-wheel_zoom_ekg = WheelZoomTool()
-tap_tool_ekg = TapTool()
-resizeTool_ekg = ResizeTool()
-box_select_ekg = BoxSelectTool(dimensions="width")
-hover_ekg = HoverTool(
-    point_policy='snap_to_data',
-    line_policy='nearest',
-    tooltips=[
-        ("index", "$index"),
-        ("Value", "@y"),
-        # ("Time", '@time'),
-    ],
-)
-
-ekgViewer.add_tools(hover_ekg, box_select_ekg, tap_tool_ekg,resizeTool_ekg)
-ekgViewer.toolbar.active_drag = box_select_ekg
-ekgViewer.toolbar.active_scroll = wheel_zoom_ekg
-ekgViewer.toolbar.active_tap = tap_tool_ekg
-
-
-hoverSpO2 = HoverTool(
-    point_policy='snap_to_data',
-    line_policy='nearest',
-    tooltips=[
-        ("index", "$index"),
-        ("Value", "@y"),
-        # ("Time", '@time'),
-    ],
-)
-
-hoverHR = HoverTool(
-    point_policy='snap_to_data',
-    line_policy='nearest',
-    tooltips=[
-        ("index", "$index"),
-        ("Value", "@y"),
-        # ("Time", '@time'),
-    ],
-)
-
-hover3 = HoverTool(
-    point_policy='snap_to_data',
-    line_policy='nearest',
-    tooltips=[
-        ("index", "$index"),
-        ("Value", "@y"),
-        # ("Time", '@time'),
-    ],
-)
 #
-# hover4 = HoverTool(
+#
+# ppgViewer2 = figure(
+#     # title=args.ppgFile,
+#     title = "Pleth",
+#     plot_width=annotatorSettings.viewerWidth,
+#     plot_height=annotatorSettings.ppgViewerHeight,
+#     toolbar_location='below',
+#     toolbar_sticky=False,
+#     x_axis_type='datetime',
+#     y_range=annotatorSettings.ppgYRange,
+# )
+# ppgViewer2.extra_y_ranges = {"qosRange": Range1d(start=-1.1, end=1.1)}
+# ppgViewer2.xaxis.formatter = DatetimeTickFormatter(
+#     years=["%D %T"],
+#     months=["%D %T"],
+#     days=["%D %T"],
+#     hours=["%D %T"],
+#     hourmin=["%D %T"],
+#     minutes=["%D %T"],
+#     minsec=["%D %T"],
+#     seconds=["%D %T"],
+#     milliseconds=["%D %T.%3N"],
+# )
+#
+# # Create tools to add to ppgViewer.
+# wheel_zoom = WheelZoomTool()
+# tap_tool = TapTool()
+# resizeTool = ResizeTool()
+# box_select = BoxSelectTool(dimensions="width")
+# hover = HoverTool(
+#     point_policy='snap_to_data',
+#     line_policy='nearest',
+#     tooltips=[
+#         # ("index", "$index"),
+#         ("date", "@x{%F %T}"),
+#         ("Value", "@y"),
+#         # ("Time", '@time'),
+#     ],
+#     formatters={"x": "datetime"},
+# )
+#
+# # Create tools to add to ekgViewer.
+# wheel_zoom_ekg = WheelZoomTool()
+# tap_tool_ekg = TapTool()
+# resizeTool_ekg = ResizeTool()
+# box_select_ekg = BoxSelectTool(dimensions="width")
+# hover_ekg = HoverTool(
 #     point_policy='snap_to_data',
 #     line_policy='nearest',
 #     tooltips=[
@@ -412,7 +455,13 @@ hover3 = HoverTool(
 #     ],
 # )
 #
-# hover5 = HoverTool(
+# ekgViewer.add_tools(hover_ekg, box_select_ekg, tap_tool_ekg,resizeTool_ekg)
+# ekgViewer.toolbar.active_drag = box_select_ekg
+# ekgViewer.toolbar.active_scroll = wheel_zoom_ekg
+# ekgViewer.toolbar.active_tap = tap_tool_ekg
+#
+#
+# hoverSpO2 = HoverTool(
 #     point_policy='snap_to_data',
 #     line_policy='nearest',
 #     tooltips=[
@@ -421,15 +470,80 @@ hover3 = HoverTool(
 #         # ("Time", '@time'),
 #     ],
 # )
-
-ppgViewer.add_tools(hover, box_select, tap_tool, resizeTool)
-ppgViewer.toolbar.active_drag = box_select
-ppgViewer.toolbar.active_scroll = wheel_zoom
-ppgViewer.toolbar.active_tap = tap_tool
-
-vitalViewer.add_tools(hoverSpO2)
-vitalViewer2.add_tools(hoverHR)
-vitalViewer3.add_tools(hover3)
+#
+# hoverHR = HoverTool(
+#     point_policy='snap_to_data',
+#     line_policy='nearest',
+#     tooltips=[
+#         ("index", "$index"),
+#         ("Value", "@y"),
+#         # ("Time", '@time'),
+#     ],
+# )
+#
+# hover3 = HoverTool(
+#     point_policy='snap_to_data',
+#     line_policy='nearest',
+#     tooltips=[
+#         ("index", "$index"),
+#         ("Value", "@y"),
+#         # ("Time", '@time'),
+#     ],
+# )
+# #
+# # hover4 = HoverTool(
+# #     point_policy='snap_to_data',
+# #     line_policy='nearest',
+# #     tooltips=[
+# #         ("index", "$index"),
+# #         ("Value", "@y"),
+# #         # ("Time", '@time'),
+# #     ],
+# # )
+# #
+# # hover5 = HoverTool(
+# #     point_policy='snap_to_data',
+# #     line_policy='nearest',
+# #     tooltips=[
+# #         ("index", "$index"),
+# #         ("Value", "@y"),
+# #         # ("Time", '@time'),
+# #     ],
+# # )
+#
+#
+# # Create tools to add to ppgViewer.
+# wheel_zoom2 = WheelZoomTool()
+# tap_tool2 = TapTool()
+# resizeTool2 = ResizeTool()
+# box_select2 = BoxSelectTool(dimensions="width")
+# hover2 = HoverTool(
+#     point_policy='snap_to_data',
+#     line_policy='nearest',
+#     tooltips=[
+#         # ("index", "$index"),
+#         ("date", "@x{%F %T}"),
+#         ("Value", "@y"),
+#         # ("Time", '@time'),
+#     ],
+#     formatters={"x": "datetime"},
+# )
+#
+# ppgViewer.add_tools(hover, box_select, tap_tool, resizeTool)
+# ppgViewer.toolbar.active_drag = box_select
+# ppgViewer.toolbar.active_scroll = wheel_zoom
+# ppgViewer.toolbar.active_tap = tap_tool
+#
+# ppgViewer2.add_tools(hover2, box_select2, tap_tool2, resizeTool2)
+# ppgViewer2.toolbar.active_drag = box_select2
+# ppgViewer2.toolbar.active_scroll = wheel_zoom2
+# ppgViewer2.toolbar.active_tap = tap_tool2
+#
+#
+#
+# vitalViewer.add_tools(hoverSpO2)
+# vitalViewer2.add_tools(hoverHR)
+# vitalViewer3.add_tools(hover3)
 # vitalViewer4.add_tools(hover4)
 # vitalViewer5.add_tools(hover5)
 
@@ -446,11 +560,16 @@ vitalLine5 = vitalViewer3.line(x=[], y=[], color='navy', alpha=0.5,line_width=4)
 
 ekgLine = ekgViewer.line(x=[], y=[], color=annotatorSettings.ekgLineColor, alpha=0.9)
 ppgLine = ppgViewer.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.9)
+ppgLine2 = ppgViewer2.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.9)
 qosMarkers = ppgViewer.circle(x=[], y=[], color=annotatorSettings.qosMarkerColor, y_range_name='qosRange', line_width=0)
+qosMarkers2 = ppgViewer2.circle(x=[], y=[], color='green', y_range_name='qosRange', line_width=0)
+
 
 ekgDataSource = ekgLine.data_source
 ppgDataSource = ppgLine.data_source
+ppgDataSource2 = ppgLine2.data_source
 qosDataSource = qosMarkers.data_source
+qosDataSource2 = qosMarkers2.data_source
 vitalDataSource = vitalLine.data_source
 vitalDataSource2 = vitalLine2.data_source
 vitalDataSource3 = vitalLine3.data_source
@@ -460,8 +579,8 @@ vitalDataSource5 = vitalLine5.data_source
 
 
 
-qosMarkers.selection_glyph = Circle(fill_color=annotatorSettings.qosMarkerColor, visible=True)
-qosMarkers.nonselection_glyph = Circle(fill_color=annotatorSettings.qosMarkerColor, visible=True)
+# qosMarkers.selection_glyph = Circle(fill_color=annotatorSettings.qosMarkerColor, visible=True)
+# qosMarkers.nonselection_glyph = Circle(fill_color=annotatorSettings.qosMarkerColor, visible=True)
 
 ##################################
 #### 5. SETTINGS FOR DISPLAYS ####
@@ -491,7 +610,6 @@ fwdButton = Button(label="Next")
 bckButton = Button(label="Previous")
 fwdAlarmButton = Button(label="Next Alarm")
 bckAlarmButton = Button(label="Previous Alarm")
-
 
 jumpSlider = Slider(title='Jump to page', start=0, end=totalPages, step=1)
 yScaleSlider = Slider(title='Y-scale', start=1, end=len(yScalesToSelect), step=1)
@@ -528,7 +646,7 @@ def next_alarm():
 
     currentPage = -1
 
-    logger.info(alarm)
+    logger.info(alarms_df.iloc[current_alarm_number])
 
     jump_forward()
 
@@ -543,7 +661,9 @@ def previous_alarm():
 
     currentPage = -1
 
-    logger.info(alarm)
+    # logger.info(alarm)
+    logger.info(alarms_df.iloc[current_alarm_number])
+
 
     jump_backward()
 
@@ -553,13 +673,14 @@ def change_page():
     """
 
     # Call globals just as a reminder to denote what is local and what is global. Globals only being accesed, not reassigned.
-    global ppgDataFrame, qosDataFrame, ekgDataFrame, ppgDataSource, qosDataSource, ekgDataSource, currentPage, vitalDataSource, vitalDataSource2,vitalDataSource3,vitalDataSource4,vitalDataSource5, cleaned_physio_df, alarms
+    global ppgDataFrame, qosDataFrame, ekgDataFrame, ppgDataSource, qosDataSource, ekgDataSource, currentPage, vitalDataSource, vitalDataSource2,vitalDataSource3,vitalDataSource4,vitalDataSource5, cleaned_physio_df, alarms, qosDataSource2, ppgDataSource2
 
     isolated_physio_df = cleaned_physio_df[alarm-pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm)):alarm+pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm))]
 
     isolated_physio_df[["diastolic_bp","mean_bp","systolic_bp"]] = isolated_physio_df["Non-invasive Blood Pressure"].apply(pd.Series).apply(pd.to_numeric,errors='coerce')
 
     start = isolated_physio_df.index[0].to_pydatetime()
+    qosStart = start + pd.Timedelta('5 seconds')
     increment = currentPage*pd.Timedelta("{} seconds".format(annotatorSettings.windowInSecs))
     window_length = pd.Timedelta("{} seconds".format(annotatorSettings.windowInSecs))
 
@@ -613,7 +734,9 @@ def change_page():
     # BEST PRACTICE --- update .data in one step with a new dict (according to Bokeh site/docs).
     # Create new dictionaries which will hold new "step" of data.
     newPpgData = dict()
+    newPpgData2 = dict()
     newQosData = dict()
+    newQosData2 = dict()
     newEkgData = dict()
     newVitalData = dict()
     newVitalData2 = dict()
@@ -628,6 +751,11 @@ def change_page():
     newPpgData['y'] = np.hstack(isolated_physio_df[start+increment:start+increment+window_length].Pleth.dropna())
     # newPpgData['time'] = ppgTimesAsStr
 
+    newPpgData['x'] = np.hstack(isolated_physio_df[start+increment:start+increment+window_length].Pleth.dropna().index.to_series().apply(expand_pleth_times))
+    newPpgData['y'] = np.hstack(isolated_physio_df[start+increment:start+increment+window_length].Pleth.dropna())
+    # newPpgData['time'] = ppgTimesAsStr
+
+
     newEkgData['x'] = np.hstack(isolated_physio_df[start+increment:start+increment+window_length].ECG.dropna().index.to_series().apply(expand_ecg_times))
     newEkgData['y'] = np.hstack(isolated_physio_df[start+increment:start+increment+window_length].ECG.dropna())
     # newEkgData['time'] = correspondingEkgTimes
@@ -635,6 +763,9 @@ def change_page():
     newQosData['x'] = isolated_physio_df[start+increment:start+increment+window_length].qos.dropna().index.to_series()
     newQosData['y'] = isolated_physio_df[start+increment:start+increment+window_length].qos.dropna()
     # newQosData['time'] = correspondingQosTimes
+
+    newQosData2['x'] = isolated_physio_df[start+increment:start+increment+window_length].qos.dropna().index.to_series() - pd.Timedelta('5 seconds')
+    newQosData2['y'] = isolated_physio_df[start+increment:start+increment+window_length].qos.dropna()
 
     newVitalData['x'] = isolated_physio_df[start+increment:start+increment+window_length].SpO2.dropna().index.to_series()
     newVitalData['y'] = isolated_physio_df[start+increment:start+increment+window_length].SpO2.dropna()
@@ -661,6 +792,7 @@ def change_page():
     ekgDataSource.data = newEkgData
     ppgDataSource.data = newPpgData
     qosDataSource.data = newQosData
+    qosDataSource2.data = newQosData2
     vitalDataSource.data = newVitalData
     vitalDataSource2.data = newVitalData2
     vitalDataSource3.data = newVitalData3
@@ -704,92 +836,91 @@ def jump_backward():
         pass
 
 
-def slide_to_page(attrname, old, new):
-    """Set the current page to the value indicated by the slider on movement.
-
-    Parameters -- required by bokeh
-    ----------
-    attrname:str
-        'value'
-
-    old:int
-        Previous value of the slider widget
-
-    new:int
-        New (i.e. just changed to) value of the slider widget
-
-    Returns
-    -------
-
-    """
-
-    global currentPage, jumpSlider
-
-    if jumpSlider.value > currentPage:
-
-        # -1 for python vs slider indexing
-        currentPage = jumpSlider.value - 1
-        jump_forward()
-
-    elif jumpSlider.value < currentPage:
-        currentPage = jumpSlider.value + 1
-        jump_backward()
-
-    else:
-        logger.info('error')
-
-
-def resize_y_scale(attrname, old, new):
-    """Change the scale of the y-axis.
-
-    Parameters -- required by Bokeh
-    ----------
-    attrname:str
-        'value'
-
-    old:int
-        Previous value of the slider widget
-
-    new:int
-        New (i.e. just changed to) value of the slider widget
-
-    Returns
-    -------
-
-    """
-
-    global yScalesToSelect, ppgViewer
-
-    newScale = yScalesToSelect[new - 1]
-    ppgViewer.y_range.start = newScale[0]
-    ppgViewer.y_range.end = newScale[1]
+# def slide_to_page(attrname, old, new):
+#     """Set the current page to the value indicated by the slider on movement.
+#
+#     Parameters -- required by bokeh
+#     ----------
+#     attrname:str
+#         'value'
+#
+#     old:int
+#         Previous value of the slider widget
+#
+#     new:int
+#         New (i.e. just changed to) value of the slider widget
+#
+#     Returns
+#     -------
+#
+#     """
+#
+#     global currentPage, jumpSlider
+#
+#     if jumpSlider.value > currentPage:
+#
+#         # -1 for python vs slider indexing
+#         currentPage = jumpSlider.value - 1
+#         jump_forward()
+#
+#     elif jumpSlider.value < currentPage:
+#         currentPage = jumpSlider.value + 1
+#         jump_backward()
+#
+#     else:
+#         logger.info('error')
 
 
-def change_time_window(attrname, old, new):
-    """Change the scale of the y-axis.
+# def resize_y_scale(attrname, old, new):
+#     """Change the scale of the y-axis.
+#
+#     Parameters -- required by Bokeh
+#     ----------
+#     attrname:str
+#         'value'
+#
+#     old:int
+#         Previous value of the slider widget
+#
+#     new:int
+#         New (i.e. just changed to) value of the slider widget
+#
+#     Returns
+#     -------
+#
+#     """
+#
+#     global yScalesToSelect, ppgViewer
+#
+#     newScale = yScalesToSelect[new - 1]
+#     ppgViewer.y_range.start = newScale[0]
+#     ppgViewer.y_range.end = newScale[1]
 
-    Parameters -- required by Bokeh
-    ----------
-    attrname:str
-        'value'
 
-    old:int
-        Previous value of the slider widget
-
-    new:int
-        New (i.e. just changed to) value of the slider widget
-
-    Returns
-    -------
-    """
-
-    global windowInSecs, totalPages, jumpSlider
-
-    windowInSecs = new
-    # totalPages = int(ppgDataFrame['time'].size / (windowInSecs * fs)) - 1
-    jumpSlider.end = totalPages
-    change_page()
-
+# def change_time_window(attrname, old, new):
+#     """Change the scale of the y-axis.
+#
+#     Parameters -- required by Bokeh
+#     ----------
+#     attrname:str
+#         'value'
+#
+#     old:int
+#         Previous value of the slider widget
+#
+#     new:int
+#         New (i.e. just changed to) value of the slider widget
+#
+#     Returns
+#     -------
+#     """
+#
+#     global windowInSecs, totalPages, jumpSlider
+#
+#     windowInSecs = new
+#     # totalPages = int(ppgDataFrame['time'].size / (windowInSecs * fs)) - 1
+#     jumpSlider.end = totalPages
+#     change_page()
 
 def ppgViewerSelectionCallback(attr, old, new):
     """Create an annotation based on the geometry of the box select tool.
@@ -840,7 +971,6 @@ def ppgViewerSelectionCallback(attr, old, new):
     qosComments.right = x1
 
     save_annotation_dimensions(x0,x1,args.spo2QosAnnotatedFile)
-
 
 def ekgViewerSelectionCallback(attr, old, new):
     """Create an annotation based on the geometry of the box select tool.
@@ -918,13 +1048,13 @@ def save_annotation_dimensions(left, right, file):
     else:
         warnings.warn('nothing implemented')
 
-def annotate_selection(attrname, old, new):
-
-    if new == '':
-        pass
-    else:
-
-        annotationTextInput.value = ''
+# def annotate_selection(attrname, old, new):
+#
+#     if new == '':
+#         pass
+#     else:
+#
+#         annotationTextInput.value = ''
 
 #########################
 #### OTHER FUNCTIONS ####
@@ -1033,16 +1163,17 @@ fwdButton.on_click(jump_forward)
 bckButton.on_click(jump_backward)
 fwdAlarmButton.on_click(next_alarm)
 bckAlarmButton.on_click(previous_alarm)
-jumpSlider.on_change('value', slide_to_page)
-yScaleSlider.on_change('value', resize_y_scale)
-timeSlider.on_change('value', change_time_window)
-annotationTextInput.on_change('value', annotate_selection)
+# jumpSlider.on_change('value', slide_to_page)
+# yScaleSlider.on_change('value', resize_y_scale)
+# timeSlider.on_change('value', change_time_window)
+# annotationTextInput.on_change('value', annotate_selection)
 
 #######################
 #### 9. INITIALIZE ####
 #######################
 
 jump_forward()
+logger.info(alarms_df.iloc[current_alarm_number])
 
 ###################################################
 #### 10. Add plot and widgets to the document. ####
@@ -1055,12 +1186,13 @@ curdoc().add_root(Column(
     # vitalViewer4,
     # vitalViewer5,
     ppgViewer,
+    # ppgViewer2,
     ekgViewer,
     ekgButtonGroup,
     ppgButtonGroup,
     qosButtonGroup,
-    HBox(pageIndicator, bckButton, fwdButton),
-    HBox(alarmIndicator, bckAlarmButton, fwdAlarmButton),
+    Row(pageIndicator, bckButton, fwdButton),
+    Row(alarmIndicator, bckAlarmButton, fwdAlarmButton),
     # VBox(HBox(ekgButtonGroup, ppgButtonGroup, qosButtonGroup), HBox(pageIndicator, bckButton, fwdButton)),
     # HBox(yScaleSlider, timeSlider, jumpSlider),
 
