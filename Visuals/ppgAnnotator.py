@@ -119,7 +119,7 @@ physio_df = pd.read_json(args.rawJsonFile, lines=True)
 physio_df.set_index("timestamp",inplace=True)
 physio_df.tz_localize('Etc/GMT+4',copy=False)
 
-cleaned_physio_df = physio_df.groupby("timestamp").first().combine_first(physio_df.groupby("timestamp").last())
+cleaned_physio_df = physio_df.groupby(physio_df.index).first().combine_first(physio_df.groupby(physio_df.index).last())
 cleaned_physio_df[['Heart Rate','Respiration Rate','SpO2','qos']] = cleaned_physio_df[['Heart Rate','Respiration Rate','SpO2','qos']].apply(pd.to_numeric,errors='coerce')
 qos_df_offset = cleaned_physio_df[["qos"]].set_index(cleaned_physio_df.index - pd.Timedelta('5 seconds'))
 
