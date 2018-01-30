@@ -777,27 +777,29 @@ def load_existing_ppgQos_annotations(startTime, endTime, ppgNote, qosNote):
 
     global ppgColorSelector, ppgViewer
 
-    ppgIdx = annotatorSettings.ppgCodes.index(ppgNote)
-    qosIdx = annotatorSettings.qosCodes.index(qosNote)
+    if ppgNote != '':
+        ppgIdx = annotatorSettings.ppgCodes.index(ppgNote)
 
-    # Use ppgNote and qosNote to determine color of loaded annotation to add to plot.
-    ppgComments = BoxAnnotation(fill_color=ppgColorSelector[ppgIdx])
-    ppgViewer.add_layout(ppgComments)
+        # Use ppgNote and qosNote to determine color of loaded annotation to add to plot.
+        ppgComments = BoxAnnotation(fill_color=ppgColorSelector[ppgIdx])
+        ppgViewer.add_layout(ppgComments)
 
-    # FIXME: Timestamp issue likely in the future.
-    # I honestly do not know why these values work...but there is a current issue with Bokeh datetime.
-    # I subtracted the timestamp provided by x1 and the known epoch UTC timestamp of 1/1/2020 to get 18000000000000.
-    # I divided by various magnitudes of 10 until timestamp on bokeh was correct.
-    ppgComments.left = pd.to_datetime(str(startTime)).tz_localize('Etc/GMT+4')
-    ppgComments.right = pd.to_datetime(str(endTime)).tz_localize('Etc/GMT+4')
+        # FIXME: Timestamp issue likely in the future.
+        # I honestly do not know why these values work...but there is a current issue with Bokeh datetime.
+        # I subtracted the timestamp provided by x1 and the known epoch UTC timestamp of 1/1/2020 to get 18000000000000.
+        # I divided by various magnitudes of 10 until timestamp on bokeh was correct.
+        ppgComments.left = pd.to_datetime(str(startTime)).tz_localize('Etc/GMT+4')
+        ppgComments.right = pd.to_datetime(str(endTime)).tz_localize('Etc/GMT+4')
 
-    qosComments = BoxAnnotation(fill_color=qosColorSelector[qosIdx],fill_alpha=0.5)
-    ppgViewer2.add_layout(qosComments)
-    # qosComments.top = annotatorSettings.ppgYRange[1]
-    # qosComments.bottom = annotatorSettings.ppgYRange[1] - 100
+    if qosNote != '':
+        qosIdx = annotatorSettings.qosCodes.index(qosNote)
+        qosComments = BoxAnnotation(fill_color=qosColorSelector[qosIdx],fill_alpha=0.5)
+        ppgViewer2.add_layout(qosComments)
+        # qosComments.top = annotatorSettings.ppgYRange[1]
+        # qosComments.bottom = annotatorSettings.ppgYRange[1] - 100
 
-    qosComments.left = pd.to_datetime(str(startTime)).tz_localize('Etc/GMT+4')
-    qosComments.right = pd.to_datetime(str(endTime)).tz_localize('Etc/GMT+4')
+        qosComments.left = pd.to_datetime(str(startTime)).tz_localize('Etc/GMT+4')
+        qosComments.right = pd.to_datetime(str(endTime)).tz_localize('Etc/GMT+4')
 
 def load_existing_ekgAnnotations(startTime, endTime, ekgNote):
     """Loads existing annotations from file.
