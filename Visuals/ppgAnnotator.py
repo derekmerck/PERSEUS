@@ -1,7 +1,7 @@
 """
 For Python 2.7.x
 
-Fifth iteration of offline visual dataviewer and annotator. Written in Bokeh 0.12.6.
+Sixth(?) iteration of offline visual dataviewer and annotator. Written in Bokeh 0.12.6.
 As per the documentation and gallery examples, script makes use of global variables. Will try to make easier to read in
 future revisions, but initial attempts at class based OOP version was slower than current implementation.
 
@@ -26,6 +26,7 @@ from __future__ import division
 
 import argparse
 import datetime
+import time
 import warnings
 # import memory_profiler
 import logging
@@ -33,7 +34,7 @@ import logging
 import numpy as np
 import pandas as pd
 from bokeh.io import curdoc
-from bokeh.models import Range1d, DatetimeTickFormatter, Circle, ColumnDataSource, Label
+from bokeh.models import Range1d, DatetimeTickFormatter, Circle, ColumnDataSource, Label, Span
 from bokeh.models.layouts import Column, HBox, VBox, Row
 from bokeh.models.tools import HoverTool, BoxSelectTool, TapTool, WheelZoomTool, ResizeTool, BoxAnnotation
 from bokeh.models.widgets import Slider, TextInput, Button, RadioButtonGroup, DataTable, TableColumn
@@ -121,12 +122,22 @@ physio_df.tz_localize('Etc/GMT+4',copy=False)
 
 cleaned_physio_df = physio_df.groupby(physio_df.index).first().combine_first(physio_df.groupby(physio_df.index).last())
 cleaned_physio_df[['Heart Rate','Respiration Rate','SpO2','qos']] = cleaned_physio_df[['Heart Rate','Respiration Rate','SpO2','qos']].apply(pd.to_numeric,errors='coerce')
-qos_df_offset = cleaned_physio_df[["qos"]].set_index(cleaned_physio_df.index - pd.Timedelta('5 seconds'))
 
 cols = [0,7]
 cleaned_physio_df.drop(cleaned_physio_df.columns[cols],axis=1,inplace=True)
+qos_df_offset = cleaned_physio_df[["qos"]].set_index(cleaned_physio_df.index - pd.Timedelta('5 seconds'))
 
-del physio_df
+
+isolated_dfs = []
+isolated_qos_dfs = []
+for alarm in alarms:
+    df = cleaned_physio_df[alarm-pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm)):alarm+pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm))]
+    qdf = qos_df_offset[alarm-pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm)):alarm+pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm))]
+    df[["diastolic_bp","mean_bp","systolic_bp"]] = df["Non-invasive Blood Pressure"].apply(pd.Series).apply(pd.to_numeric,errors='coerce')
+    isolated_dfs.append(df)
+    isolated_qos_dfs.append(qdf)
+
+del physio_df, cleaned_physio_df, qos_df_offset
 
 # FIXME: Clean up plots
 ###########################
@@ -172,7 +183,7 @@ def create_viewer(title,y_range,toolbar_location=None,toolbar_sticky=False,tools
         point_policy='snap_to_data',
         line_policy='nearest',
         tooltips=[
-        # ("index", "$index"),
+        ("index", "$index"),
         ("Time", "@x{%F %T.%3N %Z}"),
         ("Value", "@y"),
         # ("Time", '@time'),
@@ -207,11 +218,11 @@ ppgViewer2.extra_y_ranges = {"qosRange": Range1d(start=-1.1, end=1.1)}
 #### 4. CREATE LINES AND DATASOURCES FOR PLOTTING ####
 ######################################################
 
-hrLine = hrViewer.line(x=[], y=[], color='black')
-spo2Line = spo2Viewer.line(x=[], y=[], color='black')
-nibpSysLine = bpViewer.line(x=[], y=[], color='black')
-nibpMeanLine = bpViewer.line(x=[], y=[], color='black')
-nibpDiaLine = bpViewer.line(x=[], y=[], color='black')
+hrLine = hrViewer.line(x=[], y=[], color=annotatorSettings.hrLineColor)
+spo2Line = spo2Viewer.line(x=[], y=[], color=annotatorSettings.spo2LineColor)
+nibpSysLine = bpViewer.line(x=[], y=[], color=annotatorSettings.nibpSysLineColor)
+nibpMeanLine = bpViewer.line(x=[], y=[], color=annotatorSettings.nibpMeanLineColor)
+nibpDiaLine = bpViewer.line(x=[], y=[], color=annotatorSettings.nibpDiaLineColor)
 
 ekgLine = ekgViewer.line(x=[], y=[], color=annotatorSettings.ekgLineColor, alpha=0.9)
 ppgLine = ppgViewer.line(x=[], y=[], color=annotatorSettings.ppgLineColor, alpha=0.9)
@@ -309,21 +320,22 @@ def previous_alarm():
     # logger.info(alarm)
     print(alarms_df.iloc[current_alarm_number])
 
-
     jump_backward()
 
-# @profile
+#@profile
 def change_page():
     """ Request new data to be served to the plot.
     """
 
     # Call globals just as a reminder to denote what is local and what is global. Globals only being accesed, not reassigned.
     # global ppgDataFrame, qosDataFrame, ekgDataFrame, ppgDataSource, qosDataSource, ekgDataSource, currentPage, vitalDataSource, vitalDataSource2,vitalDataSource3,vitalDataSource4,vitalDataSource5, cleaned_physio_df, alarms
-    global isolated_physio_df
+    global isolated_physio_df, current_alarm_number
 
-    isolated_physio_df = cleaned_physio_df[alarm-pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm)):alarm+pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm))]
+    isolated_physio_df = isolated_dfs[current_alarm_number]
+    qos_df_offset = isolated_qos_dfs[current_alarm_number]
 
-    isolated_physio_df[["diastolic_bp","mean_bp","systolic_bp"]] = isolated_physio_df["Non-invasive Blood Pressure"].apply(pd.Series).apply(pd.to_numeric,errors='coerce')
+    # cleaned_physio_df[alarm-pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm)):alarm+pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm))]
+    # isolated_physio_df[["diastolic_bp","mean_bp","systolic_bp"]] = isolated_physio_df["Non-invasive Blood Pressure"].apply(pd.Series).apply(pd.to_numeric,errors='coerce')
 
     start = isolated_physio_df.index[0].to_pydatetime()
     increment = currentPage*pd.Timedelta("{} seconds".format(annotatorSettings.windowInSecs))
@@ -387,6 +399,43 @@ def change_page():
     nibpDiaDataSource.data = newNibpDiaData
 
     # logger.info(newVitalData)
+
+    # print(alarm > start + increment and alarm < start+increment+window_length)
+    # if alarm > start+increment and alarm < start+increment+window_length:
+    #     # loc = pd.to_datetime(alarm).tz_localize('Etc/GMT+4')
+    #     # loc = pd.to_datetime(alarm)
+    #     # loc = time.mktime(alarm.timetuple())*1000
+    #     # vline = Span(dimension='height', line_color='red', line_width=3)
+    #     # ekgViewer.add_layout(vline)
+    #     # vline.location = loc
+    #
+    #     ala = BoxAnnotation(fill_color='purple',fill_alpha=0.5)
+    #     ala2 = BoxAnnotation(fill_color='purple',fill_alpha=0.5)
+    #     ala3 = BoxAnnotation(fill_color='purple',fill_alpha=0.5)
+    #     ala4 = BoxAnnotation(fill_color='purple',fill_alpha=0.5)
+    #     ala5 = BoxAnnotation(fill_color='purple',fill_alpha=0.5)
+    #     ala6 = BoxAnnotation(fill_color='purple',fill_alpha=0.5)
+    #
+    #
+    #     ekgViewer.add_layout(ala)
+    #     ppgViewer.add_layout(ala2)
+    #     hrViewer.add_layout(ala3)
+    #     ekgViewer.add_layout(ala4)
+    #     bpViewer.add_layout(ala5)
+    #     spo2Viewer.add_layout(ala6)
+    #
+    #     ala.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    #     ala.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+    #     ala2.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    #     ala2.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+    #     ala3.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    #     ala3.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+    #     ala4.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    #     ala4.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+    #     ala5.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    #     ala5.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+    #     ala6.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    #     ala6.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
 
     # Change the value of the page indicator.
     pageIndicator.value = '{0!s}/{1!s}'.format(currentPage+1, totalPages)
@@ -548,16 +597,60 @@ def ppgViewerSelectionCallback(attr, old, new):
     ppgComments.left = x0
     ppgComments.right = x1
 
-    # Create box annotation. Color of annotation depends on which button in a group is selected (active).
-    qosComments = BoxAnnotation(fill_color=qosColorSelector[qosButtonGroup.active], fill_alpha=1)
-    ppgViewer.add_layout(qosComments)
+    # # Create box annotation. Color of annotation depends on which button in a group is selected (active).
+    # qosComments = BoxAnnotation(fill_color=qosColorSelector[qosButtonGroup.active], fill_alpha=1)
+    # ppgViewer.add_layout(qosComments)
+    #
+    # qosComments.top = annotatorSettings.ppgYRange[1]
+    # qosComments.bottom = annotatorSettings.ppgYRange[1] - 100
+    # qosComments.left = x0
+    # qosComments.right = x1
 
-    qosComments.top = annotatorSettings.ppgYRange[1]
-    qosComments.bottom = annotatorSettings.ppgYRange[1] - 100
+    save_annotation_dimensions(x0,x1,args.spo2QosAnnotatedFile)
+
+def ppgViewer2SelectionCallback(attr, old, new):
+    """Create an annotation based on the geometry of the box select tool.
+
+    Parameters
+    ----------
+    attr:str
+        'geometries'
+
+    old:list
+        e.g. [{'vx0': 464, 'vy0': 23.7869873046875, 'y0': 0, 'y1': 4503.400000000001, 'type': 'rect', 'x0': 1481149362095.9377, 'vx1': 552, 'x1': 1481149364565.3564, 'vy1': 341.03603515625}]
+
+    new:list
+        e.g. [{'vx0': 464, 'vy0': 23.7869873046875, 'y0': 0, 'y1': 4503.400000000001, 'type': 'rect', 'x0': 1481149362095.9377, 'vx1': 552, 'x1': 1481149364565.3564, 'vy1': 341.03603515625}]
+
+
+    Returns
+    -------
+
+    """
+
+    # Provide globals to help reader know what is local and global
+    global ppgViewer2, ppgDataFrame, args, ppgColorSelector, qosColorSelector, ppgButtonGroup, qosButtonGroup
+
+
+    # Edge case. Make sure minimum x value for annotation is 0.
+    if new[0]['x0'] < 0:
+        x0 = 0
+    else:
+        x0 = abs(int(new[0]['x0']))
+
+    x1 = abs(int(new[0]['x1']))
+
+    # Create box annotation. Color of annotation depends on which button in a group is selected (active).
+    qosComments = BoxAnnotation(fill_color=qosColorSelector[qosButtonGroup.active], fill_alpha=0.5)
+    ppgViewer2.add_layout(qosComments)
+
+    # qosComments.top = annotatorSettings.ppgYRange[1]
+    # qosComments.bottom = annotatorSettings.ppgYRange[1] - 100
     qosComments.left = x0
     qosComments.right = x1
 
-    save_annotation_dimensions(x0,x1,args.spo2QosAnnotatedFile)
+    save_annotation_dimensions(x0,x1,args.spo2QosAnnotatedFile,qos2=True)
+
 
 def ekgViewerSelectionCallback(attr, old, new):
     """Create an annotation based on the geometry of the box select tool.
@@ -599,23 +692,36 @@ def ekgViewerSelectionCallback(attr, old, new):
     save_annotation_dimensions(x0,x1,args.ekgAnnotatedFile)
 
 
-def save_annotation_dimensions(left, right, file):
+def save_annotation_dimensions(left, right, file, qos2=False):
 
     if file == args.spo2QosAnnotatedFile:
+        if not qos2:
+            ppgCode = dict(enumerate(annotatorSettings.ppgCodes))
+            qosCode = dict(enumerate(annotatorSettings.qosCodes))
 
-        ppgCode = dict(enumerate(annotatorSettings.ppgCodes))
-        qosCode = dict(enumerate(annotatorSettings.qosCodes))
+            # Save coordinates and values of notes and save to file.
+            with open(file,'a+') as outfile:
 
-        # Save coordinates and values of notes and save to file.
-        with open(file,'a+') as outfile:
+                outfile.write('{},{},{},'.format(datetime.datetime.fromtimestamp(left/1000).isoformat()[:-3],
+                                                   datetime.datetime.fromtimestamp(right/1000).isoformat()[:-3],
+                                                   ppgCode[ppgButtonGroup.active],
+                                                   )
+                              )
+                outfile.write('\n')
 
-            outfile.write('{},{},{},{}'.format(datetime.datetime.fromtimestamp(left/1000).isoformat()[:-3],
-                                               datetime.datetime.fromtimestamp(right/1000).isoformat()[:-3],
-                                               ppgCode[ppgButtonGroup.active],
-                                               qosCode[qosButtonGroup.active],
-                                               )
-                          )
-            outfile.write('\n')
+        else:
+            ppgCode = dict(enumerate(annotatorSettings.ppgCodes))
+            qosCode = dict(enumerate(annotatorSettings.qosCodes))
+
+            # Save coordinates and values of notes and save to file.
+            with open(file,'a+') as outfile:
+
+                outfile.write('{},{},,{}'.format(datetime.datetime.fromtimestamp(left/1000).isoformat()[:-3],
+                                                   datetime.datetime.fromtimestamp(right/1000).isoformat()[:-3],
+                                                   qosCode[qosButtonGroup.active],
+                                                   )
+                              )
+                outfile.write('\n')
 
 
     elif file == args.ekgAnnotatedFile:
@@ -682,16 +788,16 @@ def load_existing_ppgQos_annotations(startTime, endTime, ppgNote, qosNote):
     # I honestly do not know why these values work...but there is a current issue with Bokeh datetime.
     # I subtracted the timestamp provided by x1 and the known epoch UTC timestamp of 1/1/2020 to get 18000000000000.
     # I divided by various magnitudes of 10 until timestamp on bokeh was correct.
-    ppgComments.left = (pd.to_datetime(str(startTime)).value+18000000000000)/1000000
-    ppgComments.right = (pd.to_datetime(str(endTime)).value+18000000000000)/1000000
+    ppgComments.left = pd.to_datetime(str(startTime)).tz_localize('Etc/GMT+4')
+    ppgComments.right = pd.to_datetime(str(endTime)).tz_localize('Etc/GMT+4')
 
-    qosComments = BoxAnnotation(fill_color=qosColorSelector[qosIdx],fill_alpha=1)
-    ppgViewer.add_layout(qosComments)
-    qosComments.top = annotatorSettings.ppgYRange[1]
-    qosComments.bottom = annotatorSettings.ppgYRange[1] - 100
+    qosComments = BoxAnnotation(fill_color=qosColorSelector[qosIdx],fill_alpha=0.5)
+    ppgViewer2.add_layout(qosComments)
+    # qosComments.top = annotatorSettings.ppgYRange[1]
+    # qosComments.bottom = annotatorSettings.ppgYRange[1] - 100
 
-    qosComments.left = (pd.to_datetime(str(startTime)).value+18000000000000)/1000000
-    qosComments.right = (pd.to_datetime(str(endTime)).value+18000000000000)/1000000
+    qosComments.left = pd.to_datetime(str(startTime)).tz_localize('Etc/GMT+4')
+    qosComments.right = pd.to_datetime(str(endTime)).tz_localize('Etc/GMT+4')
 
 def load_existing_ekgAnnotations(startTime, endTime, ekgNote):
     """Loads existing annotations from file.
@@ -723,8 +829,8 @@ def load_existing_ekgAnnotations(startTime, endTime, ekgNote):
     # I honestly do not know why these values work...but there is a current issue with Bokeh datetime.
     # I subtracted the timestamp provided by x1 and the known epoch UTC timestamp of 1/1/2020 to get 18000000000000.
     # I divided by various magnitudes of 10 until timestamp on bokeh was correct.
-    ekgComments.left = (pd.to_datetime(str(startTime)).value+18000000000000)/1000000
-    ekgComments.right = (pd.to_datetime(str(endTime)).value+18000000000000)/1000000
+    ekgComments.left = pd.to_datetime(str(startTime)).tz_localize('Etc/GMT+4')
+    ekgComments.right = pd.to_datetime(str(endTime)).tz_localize('Etc/GMT+4')
 
 
 with open(spo2QosAnnotatedFile,'r') as readfile:
@@ -740,11 +846,42 @@ with open(ekgAnnotatedFile,'r') as readfile:
         load_existing_ekgAnnotations(row[0], row[1], row[2])
 
 
+for alarm in alarms:
+    ala = BoxAnnotation(fill_color=annotatorSettings.alarmColor,fill_alpha=0.5)
+    ala2 = BoxAnnotation(fill_color=annotatorSettings.alarmColor,fill_alpha=0.5)
+    ala3 = BoxAnnotation(fill_color=annotatorSettings.alarmColor,fill_alpha=0.5)
+    ala4 = BoxAnnotation(fill_color=annotatorSettings.alarmColor,fill_alpha=0.5)
+    ala5 = BoxAnnotation(fill_color=annotatorSettings.alarmColor,fill_alpha=0.5)
+    ala6 = BoxAnnotation(fill_color=annotatorSettings.alarmColor,fill_alpha=0.5)
+
+
+    ekgViewer.add_layout(ala)
+    ppgViewer.add_layout(ala2)
+    hrViewer.add_layout(ala3)
+    ekgViewer.add_layout(ala4)
+    bpViewer.add_layout(ala5)
+    spo2Viewer.add_layout(ala6)
+
+    ala.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    ala.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+    ala2.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    ala2.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+    ala3.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    ala3.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+    ala4.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    ala4.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+    ala5.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    ala5.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+    ala6.left = pd.to_datetime(str(alarm))-pd.Timedelta('0.25 seconds')
+    ala6.right = pd.to_datetime(str(alarm))+pd.Timedelta('0.25 seconds')
+
+
 #########################################
 #### 8. CONNECT FUNCTIONS TO WIDGETS ####
 #########################################
 
 ppgViewer.tool_events.on_change("geometries", ppgViewerSelectionCallback)
+ppgViewer2.tool_events.on_change("geometries", ppgViewer2SelectionCallback)
 ekgViewer.tool_events.on_change("geometries", ekgViewerSelectionCallback)
 fwdButton.on_click(jump_forward)
 bckButton.on_click(jump_backward)

@@ -2,14 +2,16 @@
 #### CODES ####
 ###############
 
-ekgCodes = ["EKG Not Interpretable", "EKG Interpretable", "EKG Disconnect",'Annotation Error','My new button']
-ppgCodes = ["PPG Not Interpretable", "PPG Interpretable", "PPG Disconnect",'Annotation Error','My new button']
-qosCodes = ["QoS Incorrect", "QoS Correct",'Annotation Error']
+ekgCodes = ["EKG INTERPRETABLE", "EKG NOT Interpretable", "EKG OFF", "EKG DISCONNECT event",     "Clin. SIGNIFICANT EKG alarm", "Clin. NOT Significant EKG alarm", "Clin. INDETERMINATE EKG alarm",     "Annotation ERROR"]
+ppgCodes = ["PPG INTERPRETABLE", "PPG NOT Interpretable", "PPG OFF", "PPG DISCONNECT event",     "Clin. SIGNIFICANT PPG alarm", "Clin. NOT Significant PPG alarm", "Clin. INDETERMINATE PPG alarm",     "Annotation ERROR"]
+#bpCodes = ["Clin. SIGNIFICANT BP alarm", "Clin. NOT Significant BP alarm", "Clin. INDETERMINATE BP alarm",     "Annotation ERROR"]
+#significanceCodes = ["EMERGENT", "URGENT", "NON-urgent", "INDETERMINATE",     "Annotation ERROR"]
+qosCodes = ["QoS CORRECT", "QoS NOT Correct",     "Annotation ERROR"]
 
 # Color options for annotations.
-ekgColorSelector = ['red', 'green', 'teal', 'black','orange']
-ppgColorSelector = ['red', 'green', 'teal', 'black','orange']
-qosColorSelector = ['#FF00FF', 'blue', 'gray','orange']
+ekgColorSelector = ["green", "red", "teal", "gray","orange","lime","brown","black"]
+ppgColorSelector = ["green", "red", "teal", "gray","orange","lime","brown","black"]
+qosColorSelector = ["#FF00FF", "blue", "gray","orange"]
 
 ####################
 #### APPEARANCE ####
@@ -34,9 +36,15 @@ nibpViewerHeight = 150
 defaultViewerHeights = 250
 
 # Line color and qos color options.
-ekgLineColor = 'black'
-ppgLineColor = 'black'
-qosMarkerColor = 'red'
+alarmColor = 'purple'
+ekgLineColor = "green"
+ppgLineColor = "blue"
+qosMarkerColor = "red"
+hrLineColor = 'black'
+spo2LineColor = 'black'
+nibpSysLineColor = 'blue'
+nibpMeanLineColor = 'black'
+nibpDiaLineColor = 'red'
 
 ##############
 #### MISC ####
@@ -48,7 +56,7 @@ initializePage = -1
 # Initial amount of data to display (in seconds).
 windowInSecs = 60
 
-timeAroundAlarm = 300
+timeAroundAlarm = 315  #ORIGINAL VALUE 300
 
 # Frequency of PPG signal. Helps determine number of datapoints to grab per window.
 ppgFrequency = 125
