@@ -113,31 +113,62 @@ alarms = alarms_df.index.to_pydatetime()
 
 number_of_alarms = alarms.size
 current_alarm_number = 0
-alarm = alarms[0]
+# alarm = alarms[0]
 
 # Note: Timestamps are read in and kept as object dtype
 physio_df = pd.read_json(args.rawJsonFile, lines=True)
 physio_df.set_index("timestamp",inplace=True)
 physio_df.tz_localize('Etc/GMT+4',copy=False)
 
-cleaned_physio_df = physio_df.groupby(physio_df.index).first().combine_first(physio_df.groupby(physio_df.index).last())
-cleaned_physio_df[['Heart Rate','Respiration Rate','SpO2','qos']] = cleaned_physio_df[['Heart Rate','Respiration Rate','SpO2','qos']].apply(pd.to_numeric,errors='coerce')
+pleth = physio_df['Pleth'].dropna()
+ecg = physio_df['ECG'].dropna()
+hr = physio_df['Heart Rate'].apply(pd.to_numeric,errors='coerce').dropna()
+spo2 = physio_df['SpO2'].apply(pd.to_numeric,errors='coerce').dropna()
+qos = physio_df['qos'].apply(pd.to_numeric,errors='coerce').dropna()
+qos = qos[~qos.index.duplicated(keep='first')]
+nibp = physio_df['Non-invasive Blood Pressure']
 
-cols = [0,7]
-cleaned_physio_df.drop(cleaned_physio_df.columns[cols],axis=1,inplace=True)
+cleaned_physio_df = pd.concat([pleth.reset_index(),ecg.reset_index(),hr.reset_index(),spo2.reset_index(),qos.reset_index(),nibp.reset_index()])
+cleaned_physio_df.set_index('timestamp',inplace=True)
+cleaned_physio_df.sort_index(inplace=True)
+# cleaned_physio_df.index = cleaned_physio_df.index.to_pydatetime()
+# print(cleaned_physio_df.head())
+
+# cleaned_physio_df = physio_df.groupby(physio_df.index).first().combine_first(physio_df.groupby(physio_df.index).last())
+# cleaned_physio_df[['Heart Rate','Respiration Rate','SpO2','qos']] = cleaned_physio_df[['Heart Rate','Respiration Rate','SpO2','qos']].apply(pd.to_numeric,errors='coerce')
+
+# cols = [0,7]
+# cleaned_physio_df.drop(cleaned_physio_df.columns[cols],axis=1,inplace=True)
+
+# print(cleaned_physio_df.head())
+
 qos_df_offset = cleaned_physio_df[["qos"]].set_index(cleaned_physio_df.index - pd.Timedelta('5 seconds'))
+
 
 
 isolated_dfs = []
 isolated_qos_dfs = []
 for alarm in alarms:
-    df = cleaned_physio_df[alarm-pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm)):alarm+pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm))]
-    qdf = qos_df_offset[alarm-pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm)):alarm+pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm))]
-    df[["diastolic_bp","mean_bp","systolic_bp"]] = df["Non-invasive Blood Pressure"].apply(pd.Series).apply(pd.to_numeric,errors='coerce')
+    # print(alarm)
+
+    star = pd.Timestamp(alarm-pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm)))
+    sto = pd.Timestamp(alarm+pd.Timedelta("{} seconds".format(annotatorSettings.timeAroundAlarm)))
+
+    # print(star)
+    # print(sto)
+    df = cleaned_physio_df[star:sto]
+    qdf = qos_df_offset[star:sto]
+    ndf = pd.DataFrame()
+    ndf[["diastolic_bp","mean_bp","systolic_bp"]] = df["Non-invasive Blood Pressure"].dropna().apply(pd.Series).apply(pd.to_numeric,errors='coerce')
+    df = pd.concat([df.reset_index(),ndf.reset_index()])
+    df.set_index('timestamp',inplace=True)
+    df.sort_index(inplace=True)
     isolated_dfs.append(df)
     isolated_qos_dfs.append(qdf)
 
 del physio_df, cleaned_physio_df, qos_df_offset
+del hr, spo2, qos, nibp, pleth, ecg
+
 
 # FIXME: Clean up plots
 ###########################
