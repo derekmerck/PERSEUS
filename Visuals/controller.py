@@ -41,6 +41,7 @@ def parse_args():
     parser.add_argument('-p','--preload', action="store_true")
     parser.add_argument('-s','--spo2QosAnnotatedFile', default="{}_ppgFile.txt".format(now), nargs='?')
     parser.add_argument('-e','--ekgAnnotatedFile', default="{}_ekgFile.txt".format(now), nargs='?')
+    parser.add_argument('-b','--bpAnnotatedFile', default="{}_bpFile.txt".format(now), nargs='?')
     parsedArgs = parser.parse_args()
 
     return parsedArgs
@@ -73,6 +74,19 @@ def check_files(args):
             outfile.write('\n')
 
             ekgAnnotatedFile = outfile.name
+
+    if os.path.isfile(args.bpAnnotatedFile):
+
+        warnings.warn("File {} already exists and will be written to. Please check to make sure you are annotating the correct file.".format(args.bpAnnotatedFile))
+
+        bpAnnotatedFile = args.bpAnnotatedFile
+
+    else:
+        with open(args.bpAnnotatedFile,'w') as outfile:
+            outfile.write('{},{},{}'.format('startTime','endTime','bpNote'))
+            outfile.write('\n')
+
+            bpAnnotatedFile = outfile.name
 
 def start_controller(args):
     logger.info('Loading user interface')
@@ -369,6 +383,18 @@ def save_annotation_dimensions(left, right, file, qos2=False):
                                             ))
             outfile.write('\n')
 
+    elif file == args.bpAnnotatedFile:
+
+        bpCode = dict(enumerate(annotatorSettings.bpCodes))
+
+        # Save coordinates and values of notes and save to file.
+        with open(file,'a+') as outfile:
+
+            outfile.write('{},{},{}'.format(datetime.datetime.fromtimestamp(left/1000).isoformat()[:-3],
+                                               datetime.datetime.fromtimestamp(right/1000).isoformat()[:-3],
+                                            bpCode[views.bpButtonGroup.active],
+                                            ))
+            outfile.write('\n')
 
     else:
         warnings.warn('nothing implemented')
@@ -448,6 +474,42 @@ def ekgViewerSelectionCallback(attr, old, new):
     views.ekgViewer.add_layout(ekgComments)
 
     save_annotation_dimensions(x0,x1,args.ekgAnnotatedFile)
+
+def bpViewerSelectionCallback(attr, old, new):
+    """Create an annotation based on the geometry of the box select tool.
+
+    Parameters
+    ----------
+    attr:str
+        'geometries'
+
+    old:list
+        e.g. [{'vx0': 464, 'vy0': 23.7869873046875, 'y0': 0, 'y1': 4503.400000000001, 'type': 'rect', 'x0': 1481149362095.9377, 'vx1': 552, 'x1': 1481149364565.3564, 'vy1': 341.03603515625}]
+
+    new:list
+        e.g. [{'vx0': 464, 'vy0': 23.7869873046875, 'y0': 0, 'y1': 4503.400000000001, 'type': 'rect', 'x0': 1481149362095.9377, 'vx1': 552, 'x1': 1481149364565.3564, 'vy1': 341.03603515625}]
+
+
+    Returns
+    -------
+
+    """
+
+    # Edge case. Make sure minimum x value for annotation is 0.
+    if new[0]['x0'] < 0:
+        x0 = 0
+    else:
+        x0 = abs(int(new[0]['x0']))
+
+    x1 = abs(int(new[0]['x1']))
+
+    # Create box annotation. Color of annotation depends on which button in a group is selected (active).
+    bpComments = BoxAnnotation(fill_color=annotatorSettings.bpColorSelector[views.bpButtonGroup.active])
+    bpComments.left = x0
+    bpComments.right = x1
+    views.bpViewer.add_layout(bpComments)
+
+    save_annotation_dimensions(x0,x1,args.bpAnnotatedFile)
 
 def load_existing_ppgQos_annotations(startTime, endTime, ppgNote, qosNote):
     """Loads existing annotations from file.
@@ -546,6 +608,7 @@ views.alarmIndicator.value='{0!s}/{1!s}'.format(alarmNumber+1,alarms.number_of_a
 views.ppgViewer.tool_events.on_change("geometries", ppgViewerSelectionCallback)
 views.ppgViewer2.tool_events.on_change("geometries", ppgViewer2SelectionCallback)
 views.ekgViewer.tool_events.on_change("geometries", ekgViewerSelectionCallback)
+views.bpViewer.tool_events.on_change("geometries", bpViewerSelectionCallback)
 
 alarmNumber +=1
 views.alarmIndicator.value='{0!s}/{1!s}'.format(alarmNumber+1,alarms.number_of_alarms)

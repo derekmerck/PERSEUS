@@ -4,7 +4,7 @@
 
 ekgCodes = ["EKG INTERPRETABLE", "EKG NOT Interpretable", "EKG OFF", "EKG DISCONNECT event",     "Clin. SIGNIFICANT EKG alarm", "Clin. NOT Significant EKG alarm", "Clin. INDETERMINATE EKG alarm",     "Annotation ERROR"]
 ppgCodes = ["PPG INTERPRETABLE", "PPG NOT Interpretable", "PPG OFF", "PPG DISCONNECT event",     "Clin. SIGNIFICANT PPG alarm", "Clin. NOT Significant PPG alarm", "Clin. INDETERMINATE PPG alarm",     "Annotation ERROR"]
-#bpCodes = ["Clin. SIGNIFICANT BP alarm", "Clin. NOT Significant BP alarm", "Clin. INDETERMINATE BP alarm",     "Annotation ERROR"]
+bpCodes = ["Clin. SIGNIFICANT BP alarm", "Clin. NOT Significant BP alarm", "Clin. INDETERMINATE BP alarm",     "Annotation ERROR"]
 #significanceCodes = ["EMERGENT", "URGENT", "NON-urgent", "INDETERMINATE",     "Annotation ERROR"]
 qosCodes = ["QoS CORRECT", "QoS NOT Correct",     "Annotation ERROR"]
 
@@ -12,6 +12,8 @@ qosCodes = ["QoS CORRECT", "QoS NOT Correct",     "Annotation ERROR"]
 ekgColorSelector = ["green", "red", "teal", "gray","orange","lime","brown","black"]
 ppgColorSelector = ["green", "red", "teal", "gray","orange","lime","brown","black"]
 qosColorSelector = ["#FF00FF", "blue", "gray","orange"]
+bpColorSelector = ["#FF00FF", "blue", "gray","orange"]
+
 
 ####################
 #### APPEARANCE ####

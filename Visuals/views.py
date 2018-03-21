@@ -136,10 +136,13 @@ annotationTextInput = TextInput(title='Enter annotation below:')
 ekgButtonGroup = RadioButtonGroup(labels=annotatorSettings.ekgCodes, active=0, width=annotatorSettings.viewerWidth)
 ppgButtonGroup = RadioButtonGroup(labels=annotatorSettings.ppgCodes, active=0, width=annotatorSettings.viewerWidth)
 qosButtonGroup = RadioButtonGroup(labels=annotatorSettings.qosCodes, active=0, width=annotatorSettings.viewerWidth)
+bpButtonGroup = RadioButtonGroup(labels=annotatorSettings.bpCodes, active=0, width=annotatorSettings.viewerWidth)
+
 
 def start_view():
     curdoc().add_root(Column(
         bpViewer,
+        bpButtonGroup,
         hrViewer,
         spo2Viewer,
         ppgViewer,
