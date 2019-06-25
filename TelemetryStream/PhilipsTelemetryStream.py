@@ -24,8 +24,10 @@ from TelemetryStream import *
 from QualityOfSignal import QualityOfSignal as QoS
 
 __description__ = "PERSEUS telemetry stream listener for Philips Invellivue devices with serial connections"
-__version_info__ = ('0', '7', '2')
+__version_info__ = ('0', '7', '3')
 __version__ = '.'.join(__version_info__)
+
+# updated 0.7.3 accounts for 8000Hz data collection throughout
 
 
 # Wrapper for UCSF QoS code
@@ -34,7 +36,7 @@ def qos(*args, **kwargs):
     history = kwargs.get('sampled_data')
     if history:
         res = my_qos.isPPGGoodQuality(history.get('Pleth').get('samples').y,
-                                      32 * 4)  # For Philips monitors, Pleth frequency is 32 per 1/4 second
+                                      125)  # For Philips monitors, Pleth frequency is 32 per 1.024/4 second
         return {'qos': res}
     else:
         return -1
@@ -72,7 +74,7 @@ class PhilipsTelemetryStream(TelemetryStream):
         # Note: The listener automatically shuts down after this many seconds
         # Max is
         self.dataCollectionTime = 72 * 60 * 60  # seconds
-        self.dataCollection = {'RelativeTime': self.dataCollectionTime * 8192}
+        self.dataCollection = {'RelativeTime': self.dataCollectionTime * 8000}
         self.KeepAliveTime = 0
         self.messageTimes = []
         self.desiredWaveParams = {'TextIdLabel': selectedDataTypes}
@@ -175,7 +177,7 @@ class PhilipsTelemetryStream(TelemetryStream):
                 self.KeepAliveTime = \
                     self.AssociationResponse['AssocRespUserData']['MDSEUserInfoStd']['supported_aprofiles'][
                         'AttributeList']['AVAType']['NOM_POLL_PROFILE_SUPPORT']['AttributeValue']['PollProfileSupport'][
-                        'min_poll_period']['RelativeTime'] / 8192
+                        'min_poll_period']['RelativeTime'] / 8000
                 self.MDSCreateEvent, self.MDSParameters = self.decoder.readData(event_message)
 
                 # Store the absolute time marker that everything else will reference
@@ -326,7 +328,7 @@ class PhilipsTelemetryStream(TelemetryStream):
     #                     if 'RelativeTime' in decoded_message['PollMdibDataReplyExt'] and \
     #                                     decoded_message['PollMdibDataReplyExt']['sequence_no'] != 0:
     #                         self.messageTimes.append((decoded_message['PollMdibDataReplyExt'][
-    #                                                       'RelativeTime'] - self.relativeInitialTime) / 8192)
+    #                                                       'RelativeTime'] - self.relativeInitialTime) / 8000)
     #                         # print(self.messageTimes[-1])
     #
     #                         # print('Received Monitor Data.')

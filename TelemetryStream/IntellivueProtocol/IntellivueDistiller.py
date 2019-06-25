@@ -1,5 +1,9 @@
 """
-See associated project at < https://bitbucket.org/asaadneurolab/pymind/ > .
+Contributions:
+Contributors:
+
+Original copyright (c) 2015-2016, Uday Agrawal, Adewole Oyalowo, Asaad Lab under MIT License. See full license and associated
+project at < https://bitbucket.org/asaadneurolab/pymind/ > .
 """
 
 from __future__ import division
@@ -23,8 +27,9 @@ class IntellivueDistiller(object):
         self.Intellivue = IntellivueDecoder()
 
         # Initialize data reading/writing variables
-        self.initialTime = str(datetime.datetime.now())
         self.initialTimeDateTime = datetime.datetime.now()
+        self.initialTime = str(self.initialTimeDateTime)
+
         self.relativeInitialTime = 0
 
         # Creates file to store data (without overwriting previous data)
@@ -49,7 +54,7 @@ class IntellivueDistiller(object):
 
     def timestamp(self, decoded_message):
         # Initialize timestamp
-        return self.initialTimeDateTime + datetime.timedelta(seconds=float((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192))
+        return self.initialTimeDateTime + datetime.timedelta(seconds=float((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000))
 
     def strftime(self, ts):
         return ts.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
@@ -118,10 +123,10 @@ class IntellivueDistiller(object):
 
                                         logging.debug(decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType'])
 
-                                        fs = int(8192/decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_TIME_PD_SAMP']['AttributeValue']['RelativeTime'])
+                                        fs = int(8000/decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_TIME_PD_SAMP']['AttributeValue']['RelativeTime'])
 
                                         # Initialize numpy array for timestamps and data (length is fs*desired file time - time already elapsed)
-                                        # self.VitalsWaveData[label] = np.zeros((2,fs*self.fileTime - fs*int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192)), dtype = 'float32')
+                                        # self.VitalsWaveData[label] = np.zeros((2,fs*self.fileTime - fs*int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000)), dtype = 'float32')
 
                                         # # Set numpy data array in HDF5 file
                                         # self.VitalsGroup.create_dataset(label, data = self.VitalsNumericsAlarmsData[label])
@@ -156,10 +161,10 @@ class IntellivueDistiller(object):
                                 self.VitalsWaveInfo[label] = {}
 
                                 # Sampling frequency
-                                fs = int(8192/decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_TIME_PD_SAMP']['AttributeValue']['RelativeTime'])
+                                fs = int(8000/decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_TIME_PD_SAMP']['AttributeValue']['RelativeTime'])
 
                                 # Initialize numpy array - 1hr
-                                # self.VitalsWaveData[label] = np.zeros((2,fs*self.fileTime - fs*int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192)), dtype = 'float32')
+                                # self.VitalsWaveData[label] = np.zeros((2,fs*self.fileTime - fs*int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000)), dtype = 'float32')
 
                                 # # Set numpy array in HDF5 file
                                 # self.VitalsGroup.create_dataset(label, data = self.VitalsNumericsAlarmsData[label])
@@ -194,7 +199,7 @@ class IntellivueDistiller(object):
 
                                     # Create temporary time and data variables
                                     temp_array = np.array(decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_SA_VAL_OBS']['AttributeValue']['SaObsValue']['PhysioValue']['VariableData']['value'])
-                                    temp_times = np.linspace((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192, (decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192 + temp_array.size/self.VitalsWaveInfo[label]['SamplingFreq'], temp_array.size)
+                                    temp_times = np.linspace((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000, (decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000 + temp_array.size/self.VitalsWaveInfo[label]['SamplingFreq'], temp_array.size, endpoint=False)
 
                                     #*self.checkPatientFile(self.VitalsWaveInfo[label], temp_array.size, self.VitalsNumericsAlarmsData[label].shape[1])
 
@@ -232,7 +237,7 @@ class IntellivueDistiller(object):
 
                                                 # Create temporary time and data variables
                                                 temp_array = np.array(decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]['ObservationPoll']['AttributeList']['AVAType']['NOM_ATTR_SA_CMPD_VAL_OBS']['AttributeValue']['SaObsValueCmp'][saObsValues]['SaObsValue']['PhysioValue']['VariableData']['value']).T
-                                                temp_times = np.linspace((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192, (decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192 + temp_array.size/self.VitalsWaveInfo[label]['SamplingFreq'], temp_array.size).T
+                                                temp_times = np.linspace((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000, (decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000 + temp_array.size/self.VitalsWaveInfo[label]['SamplingFreq'], temp_array.size, endpoint=False).T
 
                                                 #*self.checkPatientFile(self.VitalsWaveInfo[label], temp_array.size, self.VitalsNumericsAlarmsData[label].shape[1])
 
@@ -322,10 +327,10 @@ class IntellivueDistiller(object):
                             # If attributes confirmed, then can start storing
                             else:
                                 # temporary time values
-                                temp_time = (decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192
+                                temp_time = (decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000
 
                                 # Initialize timestamp
-                                currentTime = self.initialTimeDateTime + datetime.timedelta(seconds = int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192))
+                                currentTime = self.initialTimeDateTime + datetime.timedelta(seconds = int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000))
                                 currentTime = str(currentTime.time())
 
                                 # temporary values
@@ -358,10 +363,10 @@ class IntellivueDistiller(object):
                             # if label in self.VitalsNumericsAlarmsData['Info']:
 
                                 # Store temporary time values
-                                temp_time = (decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192
+                                temp_time = (decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000
 
                                 # Initialize timestamp
-                                currentTime = self.initialTimeDateTime + datetime.timedelta(seconds = int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192))
+                                currentTime = self.initialTimeDateTime + datetime.timedelta(seconds = int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000))
                                 currentTime = str(currentTime.time())
 
                                 # For each individual value within the compound
@@ -458,7 +463,7 @@ class IntellivueDistiller(object):
                     if type(decoded_message['PollMdibDataReplyExt']['PollInfoList'][singleContextPolls]['SingleContextPoll']['poll_info'][observationPolls]) == dict:
 
                         # Initialize timestamp
-                        currentTime = self.initialTimeDateTime + datetime.timedelta(seconds = int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8192))
+                        currentTime = self.initialTimeDateTime + datetime.timedelta(seconds = int((decoded_message['PollMdibDataReplyExt']['RelativeTime'] - self.relativeInitialTime)/8000))
                         currentTime = str(currentTime.time())
 
                         # Initialize currentTime
